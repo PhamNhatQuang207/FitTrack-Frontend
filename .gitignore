@@ -15,6 +15,7 @@ node_modules/
 .env.development.local
 .env.test.local
 .env.production.local
+# Note: .env.production is NOT ignored - it should be committed for Vercel deployment
 
 # Logs
 npm-debug.log*
