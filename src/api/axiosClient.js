@@ -1,8 +1,11 @@
 import axios from 'axios';
 
 // Create centralized axios instance
+// Note: Create React App uses process.env, not import.meta.env
+const BASE_URL = process.env.REACT_APP_API_URL || 'https://fittrack-backend-o6gq.onrender.com/api';
+
 const axiosClient = axios.create({
-    baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000/api',
+    baseURL: BASE_URL,
     headers: {
         'Content-Type': 'application/json'
     }
