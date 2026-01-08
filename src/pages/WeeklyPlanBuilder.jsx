@@ -77,11 +77,43 @@ export default function WeeklyPlanBuilder() {
       // Map plan days to schedule format
       const loadedSchedule = DAYS.map(day => {
         const planDay = plan.days.find(d => d.dayOfWeek === day.id);
-        if (planDay) {
+        if (planDay && planDay.workout && planDay.workout.exercises) {
+          // Normalize exercises to ensure they have sets array
+          const normalizedExercises = planDay.workout.exercises.map(ex => {
+            // If already has sets array, return as-is
+            if (ex.sets && Array.isArray(ex.sets)) {
+              return ex;
+            }
+            // Convert old format to new format
+            if (ex.targetSets && ex.targetReps !== undefined) {
+              const sets = [];
+              for (let i = 1; i <= ex.targetSets; i++) {
+                sets.push({
+                  setNumber: i,
+                  targetReps: ex.targetReps,
+                  targetWeight: ex.targetWeight || 0
+                });
+              }
+              return { ...ex, sets };
+            }
+            // If no valid format, create default
+            return {
+              ...ex,
+              sets: [
+                { setNumber: 1, targetReps: 10, targetWeight: 0 },
+                { setNumber: 2, targetReps: 10, targetWeight: 0 },
+                { setNumber: 3, targetReps: 10, targetWeight: 0 }
+              ]
+            };
+          });
+          
           return {
             ...day,
             isRestDay: planDay.isRestDay,
-            workout: planDay.workout || { name: "", exercises: [] }
+            workout: {
+              ...planDay.workout,
+              exercises: normalizedExercises
+            }
           };
         }
         return {
