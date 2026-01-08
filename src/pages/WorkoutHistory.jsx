@@ -45,7 +45,7 @@ export default function WorkoutHistory() {
   };
 
   const handleStartWorkout = (sessionId) => {
-    navigate(`/active-workout/${sessionId}`);
+    navigate(`/workout/${sessionId}`);
   };
 
   const handleCompleteWorkout = async (sessionId) => {

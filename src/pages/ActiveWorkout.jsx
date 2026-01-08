@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import axiosClient from "../api/axiosClient";
-import { ArrowLeft, Check, X, Play, CheckCircle2, Circle } from "lucide-react";
+import { ArrowLeft, Check, X, Play, CheckCircle2, Circle, Edit3, Search } from "lucide-react";
 import dashboardBg from "../assets/icons/dashboard_background.jpg";
 
 export default function ActiveWorkout() {
@@ -18,6 +18,11 @@ export default function ActiveWorkout() {
   // Track editable inputs for each set of each exercise
   // Format: { exerciseIndex: { setIndex: { reps, weight } } }
   const [setInputs, setSetInputs] = useState({});
+  
+  // Exercise management state
+  const [showExerciseModal, setShowExerciseModal] = useState(false);
+  const [availableExercises, setAvailableExercises] = useState([]);
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     fetchSession();
@@ -196,6 +201,84 @@ export default function ActiveWorkout() {
     }
   };
 
+  const handleManageExercises = async () => {
+    try {
+      const response = await axiosClient.get('/exercises');
+      setAvailableExercises(response.data);
+      setShowExerciseModal(true);
+    } catch (error) {
+      console.error("Error fetching exercises:", error);
+      alert("Failed to load exercises");
+    }
+  };
+
+  const handleAddExercise = (exercise) => {
+    const updatedExercises = [...session.exercises];
+    
+    // Check if already added
+    if (updatedExercises.find(ex => ex.exerciseId?.toString() === exercise._id || ex.exerciseName === exercise.name)) {
+      alert("Exercise already added");
+      return;
+    }
+    
+    updatedExercises.push({
+      exerciseId: exercise._id,
+      exerciseName: exercise.name,
+      category: exercise.category,
+      targetSets: 3,
+      targetReps: 10,
+      targetWeight: 0,
+      completed: false,
+      actualSets: []
+    });
+    
+    setSession({ ...session, exercises: updatedExercises });
+  };
+
+  const handleRemoveExercise = (exerciseIndex) => {
+    const updatedExercises = session.exercises.filter((_, idx) => idx !== exerciseIndex);
+    setSession({ ...session, exercises: updatedExercises });
+  };
+
+  const handleSaveExercises = async () => {
+    try {
+      await axiosClient.put(`/workout-sessions/${id}`, {
+        exercises: session.exercises
+      });
+      
+      // Re-initialize setInputs for new exercises
+      const initialInputs = {};
+      session.exercises.forEach((exercise, exIndex) => {
+        initialInputs[exIndex] = {};
+        const numSets = exercise.sets ? exercise.sets.length : exercise.targetSets;
+        for (let setIndex = 0; setIndex < numSets; setIndex++) {
+          const actualSet = exercise.actualSets?.find(s => s.setNumber === setIndex + 1);
+          if (actualSet) {
+            initialInputs[exIndex][setIndex] = {
+              reps: actualSet.reps,
+              weight: actualSet.weight
+            };
+          } else {
+            const targetReps = exercise.sets?.[setIndex]?.targetReps || exercise.targetReps || 0;
+            const targetWeight = exercise.sets?.[setIndex]?.targetWeight || exercise.targetWeight || 0;
+            initialInputs[exIndex][setIndex] = {
+              reps: targetReps,
+              weight: targetWeight
+            };
+          }
+        }
+      });
+      setSetInputs(initialInputs);
+      
+      setShowExerciseModal(false);
+      setSearchQuery('');
+      alert('Exercises updated successfully!');
+    } catch (error) {
+      console.error("Error saving exercises:", error);
+      alert("Failed to save exercises");
+    }
+  };
+
   const isSetCompleted = (exercise, setIndex) => {
     return exercise.actualSets?.some(s => s.setNumber === setIndex + 1);
   };
@@ -254,7 +337,15 @@ export default function ActiveWorkout() {
               <p className="text-xs md:text-sm text-gray-400">{completedExercises} / {totalExercises} exercises</p>
             </div>
             
-            <div className="flex-1"></div>
+            <div className="flex-1 flex justify-end">
+              <button
+                onClick={handleManageExercises}
+                className="flex items-center gap-2 px-3 md:px-4 py-2 bg-indigo-500 hover:bg-indigo-600 rounded-lg font-medium transition-colors text-sm md:text-base"
+              >
+                <Edit3 className="w-4 h-4" />
+                <span className="hidden sm:inline">Manage Exercise</span>
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -484,6 +575,121 @@ export default function ActiveWorkout() {
                 className="py-3 bg-blue-500 hover:bg-blue-600 rounded-lg font-medium transition-colors"
               >
                 Save & Complete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* Exercise Management Modal */}
+      {showExerciseModal && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-gray-800 rounded-xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col border border-gray-700">
+            {/* Modal Header */}
+            <div className="p-6 border-b border-gray-700">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-2xl font-bold">Manage Exercises</h2>
+                  <p className="text-gray-400 text-sm mt-1">Add or remove exercises from your workout</p>
+                </div>
+                <button
+                  onClick={() => setShowExerciseModal(false)}
+                  className="p-2 hover:bg-gray-700 rounded-lg transition-colors"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+            </div>
+
+            {/* Modal Body */}
+            <div className="flex-1 overflow-y-auto p-6">
+              <div className="grid md:grid-cols-2 gap-6">
+                {/* Available Exercises */}
+                <div>
+                  <h3 className="text-lg font-semibold mb-3 bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">Available Exercises</h3>
+                  
+                  <div className="mb-4 relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                    <input
+                      type="text"
+                      placeholder="Search exercises..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="w-full pl-10 pr-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                    />
+                  </div>
+                  
+                  <div className="space-y-2 max-h-96 overflow-y-auto">
+                    {availableExercises
+                      .filter(exercise => 
+                        exercise.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                        exercise.category.toLowerCase().includes(searchQuery.toLowerCase())
+                      )
+                      .map(exercise => (
+                      <div
+                        key={exercise._id}
+                        className="p-3 bg-gray-700/50 rounded-lg hover:bg-gray-700 transition-colors flex items-center justify-between"
+                      >
+                        <div>
+                          <p className="font-medium">{exercise.name}</p>
+                          <p className="text-xs text-gray-400">{exercise.category}</p>
+                        </div>
+                        <button
+                          onClick={() => handleAddExercise(exercise)}
+                          className="px-3 py-1 bg-blue-500 hover:bg-blue-600 rounded text-sm font-medium transition-colors"
+                        >
+                          Add
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Current Exercises */}
+                <div>
+                  <h3 className="text-lg font-semibold mb-4">
+                    Current Exercises ({session.exercises.length})
+                  </h3>
+                  <div className="space-y-2 max-h-96 overflow-y-auto">
+                    {session.exercises.length > 0 ? (
+                      session.exercises.map((exercise, index) => (
+                        <div
+                          key={index}
+                          className="p-3 bg-gray-700/50 rounded-lg hover:bg-gray-700 transition-colors flex items-center justify-between"
+                        >
+                          <div>
+                            <p className="font-medium">{exercise.exerciseName}</p>
+                            <p className="text-xs text-gray-400">{exercise.targetSets || 3} sets</p>
+                          </div>
+                          <button
+                            onClick={() => handleRemoveExercise(index)}
+                            className="px-3 py-1 bg-red-500 hover:bg-red-600 rounded text-sm font-medium transition-colors"
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      ))
+                    ) : (
+                      <p className="text-gray-500 text-center py-8">No exercises in workout</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="p-6 border-t border-gray-700 flex justify-end gap-3">
+              <button
+                onClick={() => setShowExerciseModal(false)}
+                className="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg font-medium transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSaveExercises}
+                className="px-4 py-2 bg-blue-500 hover:bg-blue-600 rounded-lg font-medium transition-colors"
+              >
+                Save Changes
               </button>
             </div>
           </div>
