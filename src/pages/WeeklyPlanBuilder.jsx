@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import axiosClient from "../api/axiosClient";
-import { ArrowLeft, Save, Plus, Trash2, X, Check, Search, ChevronRight, Trash } from "lucide-react";
+import { ArrowLeft, Save, Plus, Trash2, X, Check, Search, ChevronRight, Trash, ChevronDown } from "lucide-react";
 import dashboardBg from "../assets/icons/dashboard_background.jpg";
 
 const DAYS = [
@@ -495,16 +495,19 @@ export default function WeeklyPlanBuilder() {
                         className="w-full pl-10 pr-4 py-2 bg-gray-700/50 border border-gray-600 rounded-lg focus:border-blue-500 outline-none"
                       />
                     </div>
-                    <select
-                      value={selectedMuscleGroup}
-                      onChange={(e) => setSelectedMuscleGroup(e.target.value)}
-                      className="w-full px-4 py-2 bg-gray-700/50 border border-gray-600 rounded-lg focus:border-blue-500 outline-none"
-                    >
-                      <option value="all">All Muscle Groups</option>
-                      {MUSCLE_GROUPS.map(group => (
-                        <option key={group.id} value={group.id}>{group.name}</option>
-                      ))}
-                    </select>
+                    <div className="relative">
+                      <select
+                        value={selectedMuscleGroup}
+                        onChange={(e) => setSelectedMuscleGroup(e.target.value)}
+                        className="w-full pl-4 pr-10 py-2 bg-gray-700/50 border border-gray-600 rounded-lg focus:border-blue-500 outline-none appearance-none cursor-pointer"
+                      >
+                        <option value="all">All Muscle Groups</option>
+                        {MUSCLE_GROUPS.map(group => (
+                          <option key={group.id} value={group.id}>{group.name}</option>
+                        ))}
+                      </select>
+                      <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                    </div>
                   </div>
 
                   {/* Exercise List */}
