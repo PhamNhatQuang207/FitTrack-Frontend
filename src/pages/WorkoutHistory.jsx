@@ -203,16 +203,16 @@ export default function WorkoutHistory() {
                   className="p-6 cursor-pointer"
                   onClick={() => toggleExpand(session.id)}
                 >
-                  <div className="flex items-start justify-between">
+                  <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
                     <div className="flex-1">
-                      <div className="flex items-center gap-3">
-                        <h3 className="text-xl font-bold text-white">{session.name}</h3>
-                        <span className={`px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(session.status)}`}>
+                      <div className="flex flex-wrap items-center gap-2 md:gap-3">
+                        <h3 className="text-lg md:text-xl font-bold text-white">{session.name}</h3>
+                        <span className={`px-2 md:px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(session.status)}`}>
                           {session.status}
                         </span>
                       </div>
                       
-                      <div className="flex items-center gap-6 mt-3 text-sm text-gray-400">
+                      <div className="flex flex-wrap items-center gap-3 md:gap-6 mt-3 text-xs md:text-sm text-gray-400">
                         <div className="flex items-center gap-2">
                           <Calendar className="w-4 h-4" />
                           {formatDate(session.date)}
@@ -225,7 +225,7 @@ export default function WorkoutHistory() {
                         {session.status === 'completed' && (
                           <div className="flex items-center gap-2">
                             <TrendingUp className="w-4 h-4" />
-                            {calculateTotalVolume(session).toLocaleString()} kg total volume
+                            {calculateTotalVolume(session).toLocaleString()} kg
                           </div>
                         )}
                       </div>
