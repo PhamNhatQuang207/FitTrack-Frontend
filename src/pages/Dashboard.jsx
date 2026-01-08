@@ -243,7 +243,6 @@ export default function Dashboard() {
               )}
             </div>
           </div>
-          </div>
 
           {/* Progress Tracking Card */}
           <div
