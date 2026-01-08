@@ -293,7 +293,9 @@ export default function ActiveWorkout() {
                         <span className="font-semibold">Set {index + 1}</span>
                       </div>
                       <span className="text-gray-400">
-                        {currentExercise.targetReps} reps @ {currentExercise.targetWeight}kg
+                        {currentExercise.sets && currentExercise.sets[index]
+                          ? `${currentExercise.sets[index].targetReps} reps @ ${currentExercise.sets[index].targetWeight}kg`
+                          : `${currentExercise.targetReps || 0} reps @ ${currentExercise.targetWeight || 0}kg`}
                       </span>
                     </div>
                   </button>
