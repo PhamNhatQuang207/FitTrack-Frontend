@@ -261,15 +261,15 @@ export default function ActiveWorkout() {
         <div className="max-w-4xl mx-auto">
           
           {/* Current Exercise View */}
-          <div className="bg-gray-800/60 backdrop-blur-sm rounded-2xl p-8 border border-gray-700 mb-6">
-            <div className="flex items-center justify-between mb-6">
+          <div className="bg-gray-800/60 backdrop-blur-sm rounded-2xl p-4 md:p-8 border border-gray-700 mb-6">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6 gap-4">
               <div>
-                <h2 className="text-3xl font-bold mb-2">{currentExercise.exerciseName}</h2>
-                <p className="text-gray-400">{currentExercise.category}</p>
+                <h2 className="text-2xl md:text-3xl font-bold mb-2">{currentExercise.exerciseName}</h2>
+                <p className="text-gray-400 text-sm md:text-base">{currentExercise.category}</p>
               </div>
-              <div className="text-right">
-                <p className="text-4xl font-bold text-blue-400">{getExerciseProgress(currentExercise)}</p>
-                <p className="text-sm text-gray-400">sets completed</p>
+              <div className="text-left md:text-right">
+                <p className="text-3xl md:text-4xl font-bold text-blue-400">{getExerciseProgress(currentExercise)}</p>
+                <p className="text-xs md:text-sm text-gray-400">sets completed</p>
               </div>
             </div>
 
@@ -288,18 +288,18 @@ export default function ActiveWorkout() {
                 </div>
               </div>
             ) : (
-              <div className="grid grid-cols-3 gap-4 mb-6 p-4 bg-gray-700/30 rounded-xl">
+              <div className="grid grid-cols-3 gap-2 md:gap-4 mb-6 p-3 md:p-4 bg-gray-700/30 rounded-xl">
                 <div className="text-center">
-                  <p className="text-gray-400 text-sm mb-1">Sets</p>
-                  <p className="text-2xl font-bold">{currentExercise.targetSets || 0}</p>
+                  <p className="text-gray-400 text-xs md:text-sm mb-1">Sets</p>
+                  <p className="text-xl md:text-2xl font-bold">{currentExercise.targetSets || 0}</p>
                 </div>
                 <div className="text-center">
-                  <p className="text-gray-400 text-sm mb-1">Reps</p>
-                  <p className="text-2xl font-bold">{currentExercise.targetReps || 0}</p>
+                  <p className="text-gray-400 text-xs md:text-sm mb-1">Reps</p>
+                  <p className="text-xl md:text-2xl font-bold">{currentExercise.targetReps || 0}</p>
                 </div>
                 <div className="text-center">
-                  <p className="text-gray-400 text-sm mb-1">Weight</p>
-                  <p className="text-2xl font-bold">{currentExercise.targetWeight || 0}kg</p>
+                  <p className="text-gray-400 text-xs md:text-sm mb-1">Weight</p>
+                  <p className="text-xl md:text-2xl font-bold">{currentExercise.targetWeight || 0}kg</p>
                 </div>
               </div>
             )}
@@ -319,12 +319,12 @@ export default function ActiveWorkout() {
                         : 'bg-gray-700/30 border-gray-600'
                     }`}
                   >
-                    <div className="flex items-center justify-between gap-4">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                       {/* Checkbox and Set Number */}
-                      <div className="flex items-center gap-3 min-w-[100px]">
+                      <div className="flex items-center gap-3 min-w-[80px]">
                         <button
                           onClick={() => handleToggleSet(currentExerciseIndex, index)}
-                          className="focus:outline-none"
+                          className="focus:outline-none p-1"
                         >
                           {isCompleted ? (
                             <CheckCircle2 className="w-6 h-6 text-green-400" />
@@ -335,34 +335,37 @@ export default function ActiveWorkout() {
                         <span className="font-semibold">Set {index + 1}</span>
                       </div>
 
-                      {/* Editable Reps Input */}
-                      <div className="flex items-center gap-2">
-                        <input
-                          type="number"
-                          value={inputValues.reps}
-                          onChange={(e) => handleSetInputChange(currentExerciseIndex, index, 'reps', parseInt(e.target.value) || 0)}
-                          onClick={(e) => e.stopPropagation()}
-                          className="w-16 px-2 py-1 bg-gray-600/50 border border-gray-500 rounded text-center font-medium focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
-                          disabled={isCompleted}
-                        />
-                        <span className="text-gray-400 text-sm">reps</span>
-                      </div>
+                      {/* Inputs container */}
+                      <div className="flex items-center gap-2 flex-wrap">
+                        {/* Editable Reps Input */}
+                        <div className="flex items-center gap-1">
+                          <input
+                            type="number"
+                            value={inputValues.reps}
+                            onChange={(e) => handleSetInputChange(currentExerciseIndex, index, 'reps', parseInt(e.target.value) || 0)}
+                            onClick={(e) => e.stopPropagation()}
+                            className="w-14 sm:w-16 px-2 py-2 bg-gray-600/50 border border-gray-500 rounded text-center font-medium focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none text-sm"
+                            disabled={isCompleted}
+                          />
+                          <span className="text-gray-400 text-xs sm:text-sm">reps</span>
+                        </div>
 
-                      {/* @ symbol */}
-                      <span className="text-gray-400">@</span>
+                        {/* @ symbol */}
+                        <span className="text-gray-400 hidden sm:inline">@</span>
 
-                      {/* Editable Weight Input */}
-                      <div className="flex items-center gap-2">
-                        <input
-                          type="number"
-                          step="0.5"
-                          value={inputValues.weight}
-                          onChange={(e) => handleSetInputChange(currentExerciseIndex, index, 'weight', parseFloat(e.target.value) || 0)}
-                          onClick={(e) => e.stopPropagation()}
-                          className="w-16 px-2 py-1 bg-gray-600/50 border border-gray-500 rounded text-center font-medium focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
-                          disabled={isCompleted}
-                        />
-                        <span className="text-gray-400 text-sm">kg</span>
+                        {/* Editable Weight Input */}
+                        <div className="flex items-center gap-1">
+                          <input
+                            type="number"
+                            step="0.5"
+                            value={inputValues.weight}
+                            onChange={(e) => handleSetInputChange(currentExerciseIndex, index, 'weight', parseFloat(e.target.value) || 0)}
+                            onClick={(e) => e.stopPropagation()}
+                            className="w-14 sm:w-16 px-2 py-2 bg-gray-600/50 border border-gray-500 rounded text-center font-medium focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none text-sm"
+                            disabled={isCompleted}
+                          />
+                          <span className="text-gray-400 text-xs sm:text-sm">kg</span>
+                        </div>
                       </div>
                     </div>
                   </div>
