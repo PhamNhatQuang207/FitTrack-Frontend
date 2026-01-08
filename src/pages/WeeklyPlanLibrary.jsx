@@ -53,7 +53,7 @@ export default function WeeklyPlanLibrary() {
               className="flex items-center space-x-2 text-white hover:text-blue-400 transition-colors"
             >
               <ArrowLeft className="h-5 w-5" />
-              <span className="font-medium">Back</span>
+              <span className="font-medium">Back to Dashboard</span>
             </button>
             <h1 className="text-xl font-bold">Weekly Plans</h1>
             <button

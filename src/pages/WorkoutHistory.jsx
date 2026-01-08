@@ -122,9 +122,10 @@ export default function WorkoutHistory() {
           <div className="flex items-center justify-between">
             <button
               onClick={() => navigate('/dashboard')}
-              className="p-2 hover:bg-gray-800 rounded-lg transition-colors"
+              className="flex items-center space-x-2 p-2 text-white hover:text-blue-400 rounded-lg transition-colors"
             >
               <ArrowLeft className="w-6 h-6" />
+              <span className="font-medium">Back to Dashboard</span>
             </button>
             
             <div className="text-center flex-1">

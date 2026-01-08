@@ -152,7 +152,7 @@ export default function WeeklyCalendar() {
               className="flex items-center space-x-2 text-white hover:text-blue-400 transition-colors"
             >
               <ArrowLeft className="h-5 w-5" />
-              <span className="font-medium">Dashboard</span>
+              <span className="font-medium">Back to Dashboard</span>
             </button>
             <div className="text-center">
               <h1 className="text-xl font-bold">{currentSchedule.weeklyPlanName}</h1>
