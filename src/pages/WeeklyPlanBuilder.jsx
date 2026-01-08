@@ -334,7 +334,6 @@ export default function WeeklyPlanBuilder() {
             <div className="flex items-center gap-3">
               {isEditMode && (
                 <button
-                <button
                   onClick={handleDeletePlan}
                   disabled={loading}
                   className="flex items-center justify-center gap-2 px-3 md:px-4 h-9 md:h-10 bg-red-500 hover:bg-red-600 border border-transparent rounded-lg text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap text-white"
