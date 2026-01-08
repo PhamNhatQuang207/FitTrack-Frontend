@@ -5,7 +5,7 @@ import axiosClient from "../api/axiosClient";
 import dashboardBg from "../assets/icons/dashboard_background.jpg";
 
 export default function Profile() {
-  const { user, logout } = useAuth();
+  const { user, logout, updateUser } = useAuth();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [formData, setFormData] = useState({
@@ -118,6 +118,10 @@ export default function Profile() {
         // Reload data to reflect changes
         setTimeout(() => {
           getUserProgress();
+          // Update global user context if name changed
+          if (formData.name) {
+            updateUser({ name: formData.name });
+          }
         }, 1000);
       }
     } catch (error) {
