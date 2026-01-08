@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axiosClient from "../api/axiosClient";
-import { ArrowLeft, Play, CheckCircle2, Calendar as CalendarIcon, Edit2, RefreshCcw, X as XIcon } from "lucide-react";
+import { ArrowLeft, Play, CheckCircle2, Calendar as CalendarIcon, Edit2, RefreshCcw, X as XIcon, Search } from "lucide-react";
 import dashboardBg from "../assets/icons/dashboard_background.jpg";
 
 export default function WeeklyCalendar() {
@@ -13,6 +13,7 @@ export default function WeeklyCalendar() {
   const [showExerciseModal, setShowExerciseModal] = useState(false);
   const [editingDay, setEditingDay] = useState(null);
   const [availableExercises, setAvailableExercises] = useState([]);
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     fetchCurrentSchedule();
