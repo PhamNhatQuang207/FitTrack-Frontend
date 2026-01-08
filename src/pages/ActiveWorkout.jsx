@@ -319,53 +319,48 @@ export default function ActiveWorkout() {
                         : 'bg-gray-700/30 border-gray-600'
                     }`}
                   >
-                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                    <div className="flex items-center justify-between gap-2">
                       {/* Checkbox and Set Number */}
-                      <div className="flex items-center gap-3 min-w-[80px]">
+                      <div className="flex items-center gap-2 flex-shrink-0">
                         <button
                           onClick={() => handleToggleSet(currentExerciseIndex, index)}
                           className="focus:outline-none p-1"
                         >
                           {isCompleted ? (
-                            <CheckCircle2 className="w-6 h-6 text-green-400" />
+                            <CheckCircle2 className="w-5 h-5 text-green-400" />
                           ) : (
-                            <Circle className="w-6 h-6 text-gray-400 hover:text-gray-300" />
+                            <Circle className="w-5 h-5 text-gray-400 hover:text-gray-300" />
                           )}
                         </button>
-                        <span className="font-semibold">Set {index + 1}</span>
+                        <span className="font-semibold text-sm">Set {index + 1}</span>
                       </div>
 
-                      {/* Inputs container */}
-                      <div className="flex items-center gap-2 flex-wrap">
-                        {/* Editable Reps Input */}
-                        <div className="flex items-center gap-1">
-                          <input
-                            type="number"
-                            value={inputValues.reps}
-                            onChange={(e) => handleSetInputChange(currentExerciseIndex, index, 'reps', parseInt(e.target.value) || 0)}
-                            onClick={(e) => e.stopPropagation()}
-                            className="w-14 sm:w-16 px-2 py-2 bg-gray-600/50 border border-gray-500 rounded text-center font-medium focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none text-sm"
-                            disabled={isCompleted}
-                          />
-                          <span className="text-gray-400 text-xs sm:text-sm">reps</span>
-                        </div>
-
-                        {/* @ symbol */}
-                        <span className="text-gray-400 hidden sm:inline">@</span>
-
-                        {/* Editable Weight Input */}
-                        <div className="flex items-center gap-1">
-                          <input
-                            type="number"
-                            step="0.5"
-                            value={inputValues.weight}
-                            onChange={(e) => handleSetInputChange(currentExerciseIndex, index, 'weight', parseFloat(e.target.value) || 0)}
-                            onClick={(e) => e.stopPropagation()}
-                            className="w-14 sm:w-16 px-2 py-2 bg-gray-600/50 border border-gray-500 rounded text-center font-medium focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none text-sm"
-                            disabled={isCompleted}
-                          />
-                          <span className="text-gray-400 text-xs sm:text-sm">kg</span>
-                        </div>
+                      {/* Inputs - always on same line */}
+                      <div className="flex items-center gap-1.5 flex-shrink-0">
+                        {/* Reps Input */}
+                        <input
+                          type="number"
+                          value={inputValues.reps}
+                          onChange={(e) => handleSetInputChange(currentExerciseIndex, index, 'reps', parseInt(e.target.value) || 0)}
+                          onClick={(e) => e.stopPropagation()}
+                          className="w-12 px-1 py-1.5 bg-gray-600/50 border border-gray-500 rounded text-center font-medium focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none text-sm"
+                          disabled={isCompleted}
+                        />
+                        <span className="text-gray-400 text-xs">reps</span>
+                        
+                        <span className="text-gray-400 text-xs">@</span>
+                        
+                        {/* Weight Input */}
+                        <input
+                          type="number"
+                          step="0.5"
+                          value={inputValues.weight}
+                          onChange={(e) => handleSetInputChange(currentExerciseIndex, index, 'weight', parseFloat(e.target.value) || 0)}
+                          onClick={(e) => e.stopPropagation()}
+                          className="w-12 px-1 py-1.5 bg-gray-600/50 border border-gray-500 rounded text-center font-medium focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none text-sm"
+                          disabled={isCompleted}
+                        />
+                        <span className="text-gray-400 text-xs">kg</span>
                       </div>
                     </div>
                   </div>
