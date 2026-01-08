@@ -15,10 +15,43 @@ export default function ActiveWorkout() {
     weight: "",
     bodyFat: ""
   });
+  // Track editable inputs for each set of each exercise
+  // Format: { exerciseIndex: { setIndex: { reps, weight } } }
+  const [setInputs, setSetInputs] = useState({});
 
   useEffect(() => {
     fetchSession();
   }, [id]);
+
+  // Initialize set inputs when session loads
+  useEffect(() => {
+    if (session && session.exercises) {
+      const initialInputs = {};
+      session.exercises.forEach((exercise, exIndex) => {
+        initialInputs[exIndex] = {};
+        const numSets = exercise.sets ? exercise.sets.length : exercise.targetSets;
+        for (let setIndex = 0; setIndex < numSets; setIndex++) {
+          // Check if there's already an actual set logged
+          const actualSet = exercise.actualSets?.find(s => s.setNumber === setIndex + 1);
+          if (actualSet) {
+            initialInputs[exIndex][setIndex] = {
+              reps: actualSet.reps,
+              weight: actualSet.weight
+            };
+          } else {
+            // Use target values or per-set values
+            const targetReps = exercise.sets?.[setIndex]?.targetReps || exercise.targetReps || 0;
+            const targetWeight = exercise.sets?.[setIndex]?.targetWeight || exercise.targetWeight || 0;
+            initialInputs[exIndex][setIndex] = {
+              reps: targetReps,
+              weight: targetWeight
+            };
+          }
+        }
+      });
+      setSetInputs(initialInputs);
+    }
+  }, [session]);
 
   const fetchSession = async () => {
     try {
@@ -38,6 +71,19 @@ export default function ActiveWorkout() {
     }
   };
 
+  const handleSetInputChange = (exerciseIndex, setIndex, field, value) => {
+    setSetInputs(prev => ({
+      ...prev,
+      [exerciseIndex]: {
+        ...prev[exerciseIndex],
+        [setIndex]: {
+          ...prev[exerciseIndex]?.[setIndex],
+          [field]: value
+        }
+      }
+    }));
+  };
+
   const handleToggleSet = async (exerciseIndex, setIndex) => {
     const newSession = { ...session };
     const exercise = newSession.exercises[exerciseIndex];
@@ -54,23 +100,12 @@ export default function ActiveWorkout() {
       // Remove set if it exists (untick)
       exercise.actualSets.splice(existingSetIndex, 1);
     } else {
-      // Add set (tick) with target from sets array or fall back to old format
-      let targetReps, targetWeight;
-      
-      if (exercise.sets && exercise.sets[setIndex]) {
-        // New format: get from sets array
-        targetReps = exercise.sets[setIndex].targetReps;
-        targetWeight = exercise.sets[setIndex].targetWeight;
-      } else {
-        // Old format fallback
-        targetReps = exercise.targetReps || 10;
-        targetWeight = exercise.targetWeight || 0;
-      }
-      
+      // Add set with actual input values (tick)
+      const inputValues = setInputs[exerciseIndex]?.[setIndex];
       exercise.actualSets.push({
         setNumber: setIndex + 1,
-        reps: targetReps,
-        weight: targetWeight,
+        reps: inputValues?.reps || exercise.targetReps || 0,
+        weight: inputValues?.weight || exercise.targetWeight || 0,
         completed: true
       });
     }
@@ -273,32 +308,64 @@ export default function ActiveWorkout() {
             <div className="space-y-3">
               {Array.from({ length: currentExercise.sets ? currentExercise.sets.length : currentExercise.targetSets }).map((_, index) => {
                 const isCompleted = isSetCompleted(currentExercise, index);
+                const inputValues = setInputs[currentExerciseIndex]?.[index] || { reps: 0, weight: 0 };
+                
                 return (
-                  <button
+                  <div
                     key={index}
-                    onClick={() => handleToggleSet(currentExerciseIndex, index)}
                     className={`w-full p-4 rounded-xl border-2 transition-all ${
                       isCompleted
                         ? 'bg-green-500/20 border-green-500'
-                        : 'bg-gray-700/30 border-gray-600 hover:border-gray-500'
+                        : 'bg-gray-700/30 border-gray-600'
                     }`}
                   >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        {isCompleted ? (
-                          <CheckCircle2 className="w-6 h-6 text-green-400" />
-                        ) : (
-                          <Circle className="w-6 h-6 text-gray-400" />
-                        )}
+                    <div className="flex items-center justify-between gap-4">
+                      {/* Checkbox and Set Number */}
+                      <div className="flex items-center gap-3 min-w-[100px]">
+                        <button
+                          onClick={() => handleToggleSet(currentExerciseIndex, index)}
+                          className="focus:outline-none"
+                        >
+                          {isCompleted ? (
+                            <CheckCircle2 className="w-6 h-6 text-green-400" />
+                          ) : (
+                            <Circle className="w-6 h-6 text-gray-400 hover:text-gray-300" />
+                          )}
+                        </button>
                         <span className="font-semibold">Set {index + 1}</span>
                       </div>
-                      <span className="text-gray-400">
-                        {currentExercise.sets && currentExercise.sets[index]
-                          ? `${currentExercise.sets[index].targetReps} reps @ ${currentExercise.sets[index].targetWeight}kg`
-                          : `${currentExercise.targetReps || 0} reps @ ${currentExercise.targetWeight || 0}kg`}
-                      </span>
+
+                      {/* Editable Reps Input */}
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="number"
+                          value={inputValues.reps}
+                          onChange={(e) => handleSetInputChange(currentExerciseIndex, index, 'reps', parseInt(e.target.value) || 0)}
+                          onClick={(e) => e.stopPropagation()}
+                          className="w-16 px-2 py-1 bg-gray-600/50 border border-gray-500 rounded text-center font-medium focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
+                          disabled={isCompleted}
+                        />
+                        <span className="text-gray-400 text-sm">reps</span>
+                      </div>
+
+                      {/* @ symbol */}
+                      <span className="text-gray-400">@</span>
+
+                      {/* Editable Weight Input */}
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="number"
+                          step="0.5"
+                          value={inputValues.weight}
+                          onChange={(e) => handleSetInputChange(currentExerciseIndex, index, 'weight', parseFloat(e.target.value) || 0)}
+                          onClick={(e) => e.stopPropagation()}
+                          className="w-16 px-2 py-1 bg-gray-600/50 border border-gray-500 rounded text-center font-medium focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
+                          disabled={isCompleted}
+                        />
+                        <span className="text-gray-400 text-sm">kg</span>
+                      </div>
                     </div>
-                  </button>
+                  </div>
                 );
               })}
             </div>
