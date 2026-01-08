@@ -76,9 +76,11 @@ export default function WorkoutPlanning() {
         exerciseId: exercise.id,
         exerciseName: exercise.name,
         category: exercise.category,
-        targetSets: 3,
-        targetReps: 10,
-        targetWeight: 0
+        sets: [
+          { setNumber: 1, targetReps: 10, targetWeight: 0 },
+          { setNumber: 2, targetReps: 10, targetWeight: 0 },
+          { setNumber: 3, targetReps: 10, targetWeight: 0 }
+        ]
       }
     ]);
   };
@@ -89,10 +91,36 @@ export default function WorkoutPlanning() {
     setWorkoutExercises(newExercises);
   };
 
-  const handleExerciseChange = (index, field, value) => {
+  const handleSetChange = (exerciseIndex, setIndex, field, value) => {
     const newExercises = [...workoutExercises];
-    newExercises[index][field] = parseFloat(value) || 0;
+    newExercises[exerciseIndex].sets[setIndex][field] = parseFloat(value) || 0;
     setWorkoutExercises(newExercises);
+  };
+
+  const handleAddSet = (exerciseIndex) => {
+    const newExercises = [...workoutExercises];
+    const exercise = newExercises[exerciseIndex];
+    const newSetNumber = exercise.sets.length + 1;
+    const lastSet = exercise.sets[exercise.sets.length - 1] || { targetReps: 10, targetWeight: 0 };
+    
+    newExercises[exerciseIndex].sets.push({
+      setNumber: newSetNumber,
+      targetReps: lastSet.targetReps,
+      targetWeight: lastSet.targetWeight
+    });
+    setWorkoutExercises(newExercises);
+  };
+
+  const handleRemoveSet = (exerciseIndex, setIndex) => {
+    const newExercises = [...workoutExercises];
+    if (newExercises[exerciseIndex].sets.length > 1) {
+      newExercises[exerciseIndex].sets.splice(setIndex, 1);
+      // Renumber remaining sets
+      newExercises[exerciseIndex].sets.forEach((set, idx) => {
+        set.setNumber = idx + 1;
+      });
+      setWorkoutExercises(newExercises);
+    }
   };
 
   const handleNextToExercises = () => {
@@ -320,39 +348,59 @@ export default function WorkoutPlanning() {
                           </button>
                         </div>
                         
-                        <div className="grid grid-cols-3 gap-3">
-                          <div>
-                            <label className="block text-xs text-gray-400 mb-1">Sets</label>
-                            <input
-                              type="number"
-                              min="1"
-                              value={exercise.targetSets}
-                              onChange={(e) => handleExerciseChange(index, 'targetSets', e.target.value)}
-                              className="w-full px-3 py-2 bg-gray-700/50 border border-gray-600 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all outline-none text-sm"
-                            />
+                        {/* Sets Configuration */}
+                        <div className="mt-4 space-y-2">
+                          <div className="flex items-center justify-between">
+                            <label className="text-sm font-medium text-gray-300">Sets Configuration</label>
+                            <button
+                              onClick={() => handleAddSet(index)}
+                              className="text-xs px-3 py-1 bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 rounded-lg transition-colors flex items-center gap-1"
+                            >
+                              <Plus className="w-3 h-3" />
+                              Add Set
+                            </button>
                           </div>
-                          <div>
-                            <label className="block text-xs text-gray-400 mb-1">Reps</label>
-                            <input
-                              type="number"
-                              min="1"
-                              value={exercise.targetReps}
-                              onChange={(e) => handleExerciseChange(index, 'targetReps', e.target.value)}
-                              className="w-full px-3 py-2 bg-gray-700/50 border border-gray-600 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all outline-none text-sm"
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-xs text-gray-400 mb-1">Weight (kg)</label>
-                            <input
-                              type="number"
-                              min="0"
-                              step="0.5"
-                              value={exercise.targetWeight || ''}
-                              onChange={(e) => handleExerciseChange(index, 'targetWeight', e.target.value)}
-                              placeholder="0"
-                              className="w-full px-3 py-2 bg-gray-700/50 border border-gray-600 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all outline-none text-sm"
-                            />
-                          </div>
+                          
+                          {exercise.sets.map((set, setIdx) => (
+                            <div key={setIdx} className="flex items-center gap-2 bg-gray-700/30 p-2 rounded-lg">
+                              <span className="text-xs font-medium text-gray-400 w-12">Set {set.setNumber}</span>
+                              
+                              <div className="flex-1">
+                                <input
+                                  type="number"
+                                  min="1"
+                                  value={set.targetReps}
+                                  onChange={(e) => handleSetChange(index, setIdx, 'targetReps', e.target.value)}
+                                  placeholder="Reps"
+                                  className="w-full px-2 py-1.5 bg-gray-600/50 border border-gray-500 rounded text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500/20 outline-none"
+                                />
+                                <label className="text-[10px] text-gray-500">reps</label>
+                              </div>
+                              
+                              <div className="flex-1">
+                                <input
+                                  type="number"
+                                  min="0"
+                                  step="0.5"
+                                  value={set.targetWeight || ''}
+                                  onChange={(e) => handleSetChange(index, setIdx, 'targetWeight', e.target.value)}
+                                  placeholder="Weight"
+                                  className="w-full px-2 py-1.5 bg-gray-600/50 border border-gray-500 rounded text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500/20 outline-none"
+                                />
+                                <label className="text-[10px] text-gray-500">kg</label>
+                              </div>
+                              
+                              {exercise.sets.length > 1 && (
+                                <button
+                                  onClick={() => handleRemoveSet(index, setIdx)}
+                                  className="p-1.5 text-red-400 hover:bg-red-500/20 rounded transition-colors"
+                                  title="Remove set"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              )}
+                            </div>
+                          ))}
                         </div>
                       </div>
                     ))}
