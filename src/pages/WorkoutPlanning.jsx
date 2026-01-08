@@ -4,9 +4,16 @@ import axiosClient from "../api/axiosClient";
 import { ArrowLeft, Search, Save, Plus, Trash2, CheckCircle2 } from "lucide-react";
 import dashboardBg from "../assets/icons/dashboard_background.jpg";
 
-// Muscle group data with emoji icons and gradient colors
+// Custom Chest Icon Component
+const ChestIcon = () => (
+  <svg viewBox="0 0 512 512" fill="currentColor" height="1em" width="1em">
+    <path d="M256 0c-78.6 0-145.4 39.5-188.4 100.3-4.9-3.2-10.7-5-16.9-5-18.4 0-33.4 15-33.4 33.4 0 11.2 5.5 21.1 14 27.2C13.8 178 0 215.4 0 256c0 114.9 93.1 208 208 208 28.5 0 55.7-5.9 80.5-16.3-10.8-25.2-17.1-52.6-17.1-81.4 0-25.7 4.9-50.5 13.9-73.6-26.6-8.7-59.6-14-100-8.9-6.4.8-12.7 1.8-19 2.8-1.5-6.2-3.3-13-5.5-20.9 9.3-1.6 18.5-3 27.2-4.1 36.3-4.7 65.5-1.5 89.2 4.1 19.3 4.5 35 11.3 48.2 19.6C309.8 261 288 226.7 266 195.9 262.7 191.2 259.4 186.6 256 182.1c-3.4 4.5-6.7 9.1-10 13.8-22 30.8-43.8 65.1-59.4 89.6 13.2-8.3 28.9-15 48.2-19.6 23.7-5.6 52.9-8.8 89.2-4.1 8.8 1.1 17.9 2.5 27.2 4.1-2.2 7.8-4 14.7-5.5 20.9-6.2-1.1-12.6-2-19-2.8-40.4-5.1-73.4.2-100 8.9 9 23.1 13.9 47.9 13.9 73.6 0 28.8-6.3 56.2-17.1 81.4 24.8 10.4 52 16.3 80.5 16.3 114.9 0 208-93.1 208-208 0-40.6-13.8-78-36.7-109.1 8.5-6.1 14-16 14-27.2 0-18.4-15-33.4-33.4-33.4-6.2 0-12 1.8-16.9 5C401.4 39.5 334.6 0 256 0z" />
+  </svg>
+);
+
+// Muscle group data with icons and gradient colors
 const muscleGroupData = [
-  { id: 'chest', name: 'Chest', icon: '🫀', color: 'from-red-500 to-pink-500' },
+  { id: 'chest', name: 'Chest', icon: <ChestIcon />, color: 'from-red-500 to-pink-500' },
   { id: 'shoulders', name: 'Shoulders', icon: '🏋️', color: 'from-orange-500 to-amber-500' },
   { id: 'biceps', name: 'Biceps', icon: '💪', color: 'from-blue-500 to-cyan-500' },
   { id: 'triceps', name: 'Triceps', icon: '🔱', color: 'from-purple-500 to-pink-500' },
