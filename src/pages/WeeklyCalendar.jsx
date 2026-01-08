@@ -10,6 +10,9 @@ export default function WeeklyCalendar() {
   const [loading, setLoading] = useState(true);
   const [editMode, setEditMode] = useState(false);
   const [swapSourceDay, setSwapSourceDay] = useState(null);
+  const [showExerciseModal, setShowExerciseModal] = useState(false);
+  const [editingDay, setEditingDay] = useState(null);
+  const [availableExercises, setAvailableExercises] = useState([]);
 
   useEffect(() => {
     fetchCurrentSchedule();
@@ -142,6 +145,91 @@ export default function WeeklyCalendar() {
     } catch (error) {
       console.error("Error toggling rest day:", error);
       alert("Failed to toggle rest day");
+    }
+  };
+
+  const handleEditExercises = async (day) => {
+    setEditingDay(day);
+    
+    // Fetch available exercises
+    try {
+      const response = await axiosClient.get('/exercises');
+      setAvailableExercises(response.data);
+      setShowExerciseModal(true);
+    } catch (error) {
+      console.error("Error fetching exercises:", error);
+      alert("Failed to load exercises");
+    }
+  };
+
+  const handleAddExercise = (exercise) => {
+    if (!editingDay) return;
+    
+    const updatedExercises = [...(editingDay.workout?.exercises || [])];
+    
+    // Check if already added
+    if (updatedExercises.find(ex => ex.exerciseId === exercise._id)) {
+      alert("Exercise already added");
+      return;
+    }
+    
+    updatedExercises.push({
+      exerciseId: exercise._id,
+      exerciseName: exercise.name,
+      category: exercise.category,
+      sets: [
+        { setNumber: 1, targetReps: 10, targetWeight: 0 },
+        { setNumber: 2, targetReps: 10, targetWeight: 0 },
+        { setNumber: 3, targetReps: 10, targetWeight: 0 }
+      ]
+    });
+    
+    setEditingDay({
+      ...editingDay,
+      workout: {
+        ...editingDay.workout,
+        exercises: updatedExercises
+      }
+    });
+  };
+
+  const handleRemoveExercise = (exerciseId) => {
+    if (!editingDay) return;
+    
+    const updatedExercises = editingDay.workout.exercises.filter(
+      ex => ex.exerciseId !== exerciseId
+    );
+    
+    setEditingDay({
+      ...editingDay,
+      workout: {
+        ...editingDay.workout,
+        exercises: updatedExercises
+      }
+    });
+  };
+
+  const handleSaveExercises = async () => {
+    if (!editingDay) return;
+    
+    try {
+      await axiosClient.patch(`/weekly-schedules/${currentSchedule.id}/update-day`, {
+        action: 'assignWorkout',
+        dayOfWeek: editingDay.dayOfWeek,
+        workout: {
+          name: editingDay.workout.name || 'Workout',
+          exercises: editingDay.workout.exercises
+        }
+      });
+      
+      const response = await axiosClient.get('/weekly-schedules/current');
+      setCurrentSchedule(response.data);
+      setShowExerciseModal(false);
+      setEditingDay(null);
+      alert('Exercises updated successfully!');
+    } catch (error) {
+      console.error("Error saving exercises:", error);
+      alert("Failed to save exercises");
     }
   };
 
