@@ -331,12 +331,12 @@ export default function WeeklyPlanBuilder() {
               <span className="font-medium">Back to Dashboard</span>
             </button>
             <h1 className="text-xl font-bold">{isEditMode ? 'Edit Weekly Plan' : 'New Weekly Plan'}</h1>
-            <div className="flex gap-2">
+            <div className="flex items-center gap-3">
               {isEditMode && (
                 <button
                   onClick={handleDeletePlan}
                   disabled={loading}
-                  className="flex items-center gap-2 px-4 py-2 bg-red-500 hover:bg-red-600 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex items-center gap-2 px-4 h-10 bg-red-500 hover:bg-red-600 rounded-lg text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap text-white"
                 >
                   <Trash className="w-4 h-4" />
                   Delete
@@ -345,7 +345,7 @@ export default function WeeklyPlanBuilder() {
               <button
                 onClick={handleSavePlan}
                 disabled={loading}
-                className="flex items-center gap-2 px-4 py-2 bg-blue-500 hover:bg-blue-600 rounded-lg font-medium transition-colors disabled:opacity-50"
+                className="flex items-center gap-2 px-4 h-10 bg-blue-500 hover:bg-blue-600 rounded-lg text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap text-white"
               >
                 <Save className="w-4 h-4" />
                 {isEditMode ? 'Update Plan' : 'Save Plan'}
