@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate, Link, useSearchParams } from 'react-router-dom';
 import axiosClient from '../api/axiosClient';
 import { CheckCircle2, XCircle, Loader2, ArrowLeft } from 'lucide-react';
 import gymImage from '../assets/background.jpg';
 
 export default function ResetPassword() {
-  const { token } = useParams();
+  const { token: pathToken } = useParams();
+  const [searchParams] = useSearchParams();
+  const token = searchParams.get('token') || pathToken;
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
