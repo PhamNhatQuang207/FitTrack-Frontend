@@ -14,6 +14,7 @@ export default function WeeklyCalendar() {
   const [editingDay, setEditingDay] = useState(null);
   const [availableExercises, setAvailableExercises] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
+  const [editingWorkoutName, setEditingWorkoutName] = useState({});
 
   useEffect(() => {
     fetchCurrentSchedule();
@@ -237,6 +238,48 @@ export default function WeeklyCalendar() {
   const cancelEditMode = () => {
     setEditMode(false);
     setSwapSourceDay(null);
+    setEditingWorkoutName({});
+  };
+
+  const handleWorkoutNameChange = (dayOfWeek, newName) => {
+    setEditingWorkoutName(prev => ({
+      ...prev,
+      [dayOfWeek]: newName
+    }));
+  };
+
+  const handleSaveWorkoutName = async (day) => {
+    const newName = editingWorkoutName[day.dayOfWeek];
+    if (!newName || newName === day.workout?.name) {
+      // No change, just clear editing state
+      setEditingWorkoutName(prev => {
+        const updated = { ...prev };
+        delete updated[day.dayOfWeek];
+        return updated;
+      });
+      return;
+    }
+
+    try {
+      await axiosClient.patch(`/weekly-schedules/${currentSchedule._id}/update-day`, {
+        action: 'updateWorkoutName',
+        dayOfWeek: day.dayOfWeek,
+        workoutName: newName
+      });
+      
+      // Refresh schedule
+      await fetchCurrentSchedule();
+      
+      // Clear editing state
+      setEditingWorkoutName(prev => {
+        const updated = { ...prev };
+        delete updated[day.dayOfWeek];
+        return updated;
+      });
+    } catch (error) {
+      console.error('Error updating workout name:', error);
+      alert('Failed to update workout name');
+    }
   };
 
   if (loading) return <div className="p-8 text-white">Loading schedule...</div>;
