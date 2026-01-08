@@ -313,27 +313,13 @@ export default function WeeklyCalendar() {
                   <span className="hidden md:inline">Cancel Edit</span>
                 </button>
               ) : (
-                <>
-                  <button
-                    onClick={() => setEditMode(true)}
-                    className="flex items-center gap-2 px-3 h-10 bg-blue-500 hover:bg-blue-600 rounded-lg text-sm font-medium transition-colors border border-transparent"
-                  >
-                    <Edit2 className="w-4 h-4" />
-                    <span className="hidden md:inline">Edit Schedule</span>
-                  </button>
-                  <button
-                    onClick={handleDismissWeek}
-                    className="px-3 h-10 bg-gray-700 hover:bg-gray-600 rounded-lg text-sm font-medium transition-colors border border-transparent hidden md:flex items-center"
-                  >
-                    Dismiss
-                  </button>
-                  <button
-                    onClick={handleCompleteWeek}
-                    className="px-3 h-10 bg-green-500 hover:bg-green-600 rounded-lg text-sm font-medium transition-colors border border-transparent hidden md:flex items-center"
-                  >
-                    Complete Week
-                  </button>
-                </>
+                <button
+                  onClick={() => setEditMode(true)}
+                  className="flex items-center gap-2 px-3 h-10 bg-blue-500 hover:bg-blue-600 rounded-lg text-sm font-medium transition-colors border border-transparent"
+                >
+                  <Edit2 className="w-4 h-4" />
+                  <span className="hidden md:inline">Edit Schedule</span>
+                </button>
               )}
             </div>
           </div>
@@ -493,6 +479,26 @@ export default function WeeklyCalendar() {
             );
           })}
         </div>
+
+        {/* Week Action Buttons */}
+        {!editMode && (
+          <div className="mt-6 flex flex-col sm:flex-row gap-3 justify-center">
+            <button
+              onClick={handleDismissWeek}
+              className="px-6 py-3 bg-gray-700 hover:bg-gray-600 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2"
+            >
+              <XIcon className="w-4 h-4" />
+              Dismiss Week
+            </button>
+            <button
+              onClick={handleCompleteWeek}
+              className="px-6 py-3 bg-green-500 hover:bg-green-600 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2"
+            >
+              <CheckCircle2 className="w-4 h-4" />
+              Complete Week
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Exercise Edit Modal */}
