@@ -1,11 +1,14 @@
+```javascript
 import React, { useState, useEffect, useRef } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams, Link } from 'react-router-dom';
 import axiosClient from '../api/axiosClient';
 import { CheckCircle2, XCircle, Loader2 } from 'lucide-react';
 import gymImage from '../assets/background.jpg';
 
 export default function VerifyEmail() {
-  const { token } = useParams();
+  const { token: pathToken } = useParams(); // From /verify-email/:token
+  const [searchParams] = useSearchParams(); // From /verify-email?token=...
+  const token = searchParams.get('token') || pathToken; // Support both formats
   const navigate = useNavigate();
   const [status, setStatus] = useState('loading'); // loading, success, error
   const [message, setMessage] = useState('');
