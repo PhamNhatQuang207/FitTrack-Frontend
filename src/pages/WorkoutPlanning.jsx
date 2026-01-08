@@ -265,7 +265,7 @@ export default function WorkoutPlanning() {
                         <img 
                           src={group.icon} 
                           alt={group.name} 
-                          className={`w-16 h-16 object-contain mb-3 drop-shadow-md brightness-0 invert`}
+                          className={`w-16 h-16 object-contain mb-3 drop-shadow-md`}
                         />
                         <h3 className={`font-bold text-lg text-center ${
                           isSelected ? 'text-white drop-shadow-lg' : 'text-gray-300'
