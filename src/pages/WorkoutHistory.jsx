@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axiosClient from '../api/axiosClient';
-import { ArrowLeft, Calendar, Dumbbell, TrendingUp, Filter, ChevronDown, ChevronUp } from 'lucide-react';
+import { ArrowLeft, Calendar, Dumbbell, TrendingUp, Filter, ChevronDown, ChevronUp, Edit, CheckCircle, Trash2, Play } from 'lucide-react';
 import dashboardBg from '../assets/icons/dashboard_background.jpg';
 
 export default function WorkoutHistory() {
@@ -41,6 +41,36 @@ export default function WorkoutHistory() {
 
   const toggleExpand = (sessionId) => {
     setExpandedSession(expandedSession === sessionId ? null : sessionId);
+  };
+
+  const handleStartWorkout = (sessionId) => {
+    navigate(`/active-workout/${sessionId}`);
+  };
+
+  const handleCompleteWorkout = async (sessionId) => {
+    if (!window.confirm('Mark this workout as completed?')) return;
+    
+    try {
+      await axiosClient.post(`/workout-sessions/${sessionId}/complete`);
+      // Refresh the list
+      fetchWorkoutHistory();
+    } catch (error) {
+      console.error('Error completing workout:', error);
+      alert('Failed to complete workout');
+    }
+  };
+
+  const handleDeleteWorkout = async (sessionId) => {
+    if (!window.confirm('Are you sure you want to delete this workout? This action cannot be undone.')) return;
+    
+    try {
+      await axiosClient.delete(`/workout-sessions/${sessionId}`);
+      // Refresh the list
+      fetchWorkoutHistory();
+    } catch (error) {
+      console.error('Error deleting workout:', error);
+      alert('Failed to delete workout');
+    }
   };
 
   const getStatusColor = (status) => {
@@ -196,6 +226,58 @@ export default function WorkoutHistory() {
                         )}
                       </div>
                     </div>
+                    
+                    {/* Action Buttons for non-completed workouts */}
+                    {session.status !== 'completed' && (
+                      <div className="ml-4 flex gap-2">
+                        {session.status === 'in-progress' && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleStartWorkout(session.id);
+                            }}
+                            className="px-4 py-2 bg-blue-500 hover:bg-blue-600 rounded-lg text-white font-medium transition-colors flex items-center gap-2"
+                            title="Continue Workout"
+                          >
+                            <Play className="w-4 h-4" />
+                            Continue
+                          </button>
+                        )}
+                        {session.status === 'planned' && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleStartWorkout(session.id);
+                            }}
+                            className="px-4 py-2 bg-green-500 hover:bg-green-600 rounded-lg text-white font-medium transition-colors flex items-center gap-2"
+                            title="Start Workout"
+                          >
+                            <Play className="w-4 h-4" />
+                            Start
+                          </button>
+                        )}
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleCompleteWorkout(session.id);
+                          }}
+                          className="px-4 py-2 bg-emerald-500 hover:bg-emerald-600 rounded-lg text-white font-medium transition-colors flex items-center gap-2"
+                          title="Mark as Complete"
+                        >
+                          <CheckCircle className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteWorkout(session.id);
+                          }}
+                          className="px-4 py-2 bg-red-500 hover:bg-red-600 rounded-lg text-white font-medium transition-colors flex items-center gap-2"
+                          title="Delete Workout"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    )}
                     
                     <div className="ml-4">
                       {expandedSession === session.id ? (
