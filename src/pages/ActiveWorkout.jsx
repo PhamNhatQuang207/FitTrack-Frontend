@@ -34,7 +34,8 @@ export default function ActiveWorkout() {
       const initialInputs = {};
       session.exercises.forEach((exercise, exIndex) => {
         initialInputs[exIndex] = {};
-        const numSets = exercise.sets ? exercise.sets.length : exercise.targetSets;
+        // Use targetSets as the primary source, fallback to sets.length or default to 3
+        const numSets = exercise.targetSets || (exercise.sets ? exercise.sets.length : 3);
         for (let setIndex = 0; setIndex < numSets; setIndex++) {
           // Check if there's already an actual set logged
           const actualSet = exercise.actualSets?.find(s => s.setNumber === setIndex + 1);
@@ -240,35 +241,22 @@ export default function ActiveWorkout() {
     setSession({ ...session, exercises: updatedExercises });
   };
 
+  const handleUpdateSets = (exerciseIndex, change) => {
+    const updatedExercises = [...session.exercises];
+    const currentSets = updatedExercises[exerciseIndex].targetSets || 3;
+    const newSets = Math.max(1, currentSets + change); // Minimum 1 set
+    updatedExercises[exerciseIndex].targetSets = newSets;
+    setSession({ ...session, exercises: updatedExercises });
+  };
+
   const handleSaveExercises = async () => {
     try {
       await axiosClient.put(`/workout-sessions/${id}`, {
         exercises: session.exercises
       });
       
-      // Re-initialize setInputs for new exercises
-      const initialInputs = {};
-      session.exercises.forEach((exercise, exIndex) => {
-        initialInputs[exIndex] = {};
-        const numSets = exercise.sets ? exercise.sets.length : exercise.targetSets;
-        for (let setIndex = 0; setIndex < numSets; setIndex++) {
-          const actualSet = exercise.actualSets?.find(s => s.setNumber === setIndex + 1);
-          if (actualSet) {
-            initialInputs[exIndex][setIndex] = {
-              reps: actualSet.reps,
-              weight: actualSet.weight
-            };
-          } else {
-            const targetReps = exercise.sets?.[setIndex]?.targetReps || exercise.targetReps || 0;
-            const targetWeight = exercise.sets?.[setIndex]?.targetWeight || exercise.targetWeight || 0;
-            initialInputs[exIndex][setIndex] = {
-              reps: targetReps,
-              weight: targetWeight
-            };
-          }
-        }
-      });
-      setSetInputs(initialInputs);
+      // Refetch the session to get updated data
+      await fetchSession();
       
       setShowExerciseModal(false);
       setSearchQuery('');
@@ -399,7 +387,7 @@ export default function ActiveWorkout() {
 
             {/* Sets Checklist */}
             <div className="space-y-3">
-              {Array.from({ length: currentExercise.sets ? currentExercise.sets.length : currentExercise.targetSets }).map((_, index) => {
+              {Array.from({ length: currentExercise.targetSets || (currentExercise.sets ? currentExercise.sets.length : 3) }).map((_, index) => {
                 const isCompleted = isSetCompleted(currentExercise, index);
                 const inputValues = setInputs[currentExerciseIndex]?.[index] || { reps: 0, weight: 0 };
                 
@@ -625,9 +613,9 @@ export default function ActiveWorkout() {
                         exercise.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                         exercise.category.toLowerCase().includes(searchQuery.toLowerCase())
                       )
-                      .map(exercise => (
+                      .map((exercise, idx) => (
                       <div
-                        key={exercise._id}
+                        key={exercise._id || `exercise-${idx}`}
                         className="p-3 bg-gray-700/50 rounded-lg hover:bg-gray-700 transition-colors flex items-center justify-between"
                       >
                         <div>
@@ -655,18 +643,40 @@ export default function ActiveWorkout() {
                       session.exercises.map((exercise, index) => (
                         <div
                           key={index}
-                          className="p-3 bg-gray-700/50 rounded-lg hover:bg-gray-700 transition-colors flex items-center justify-between"
+                          className="p-3 bg-gray-700/50 rounded-lg hover:bg-gray-700 transition-colors"
                         >
-                          <div>
-                            <p className="font-medium">{exercise.exerciseName}</p>
-                            <p className="text-xs text-gray-400">{exercise.targetSets || 3} sets</p>
+                          <div className="flex items-center justify-between mb-2">
+                            <div>
+                              <p className="font-medium">{exercise.exerciseName}</p>
+                              <p className="text-xs text-gray-400">{exercise.category}</p>
+                            </div>
+                            <button
+                              onClick={() => handleRemoveExercise(index)}
+                              className="px-3 py-1 bg-red-500 hover:bg-red-600 rounded text-sm font-medium transition-colors"
+                            >
+                              Remove
+                            </button>
                           </div>
-                          <button
-                            onClick={() => handleRemoveExercise(index)}
-                            className="px-3 py-1 bg-red-500 hover:bg-red-600 rounded text-sm font-medium transition-colors"
-                          >
-                            Remove
-                          </button>
+                          
+                          {/* Set Controls */}
+                          <div className="flex items-center justify-between mt-2 p-2 bg-gray-600/30 rounded">
+                            <span className="text-sm text-gray-300">Sets:</span>
+                            <div className="flex items-center gap-2">
+                              <button
+                                onClick={() => handleUpdateSets(index, -1)}
+                                className="w-7 h-7 flex items-center justify-center bg-gray-600 hover:bg-gray-500 rounded text-lg font-bold transition-colors"
+                              >
+                                −
+                              </button>
+                              <span className="w-8 text-center font-semibold">{exercise.targetSets || 3}</span>
+                              <button
+                                onClick={() => handleUpdateSets(index, 1)}
+                                className="w-7 h-7 flex items-center justify-center bg-gray-600 hover:bg-gray-500 rounded text-lg font-bold transition-colors"
+                              >
+                                +
+                              </button>
+                            </div>
+                          </div>
                         </div>
                       ))
                     ) : (
