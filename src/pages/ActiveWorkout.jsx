@@ -238,21 +238,36 @@ export default function ActiveWorkout() {
               </div>
             </div>
 
-            {/* Target Info */}
-            <div className="grid grid-cols-3 gap-4 mb-6 p-4 bg-gray-700/30 rounded-xl">
-              <div className="text-center">
-                <p className="text-gray-400 text-sm mb-1">Sets</p>
-                <p className="text-2xl font-bold">{currentExercise.targetSets}</p>
+
+            {/* Target Info - Show per-set if available */}
+            {currentExercise.sets && currentExercise.sets.length > 0 ? (
+              <div className="mb-6">
+                <p className="text-gray-400 text-sm mb-3 text-center">Set Targets</p>
+                <div className="space-y-2">
+                  {currentExercise.sets.map((set, idx) => (
+                    <div key={idx} className="flex justify-between p-3 bg-gray-700/30 rounded-lg text-sm">
+                      <span className="text-gray-300">Set {set.setNumber}</span>
+                      <span className="text-white font-medium">{set.targetReps} reps @ {set.targetWeight}kg</span>
+                    </div>
+                  ))}
+                </div>
               </div>
-              <div className="text-center">
-                <p className="text-gray-400 text-sm mb-1">Reps</p>
-                <p className="text-2xl font-bold">{currentExercise.targetReps}</p>
+            ) : (
+              <div className="grid grid-cols-3 gap-4 mb-6 p-4 bg-gray-700/30 rounded-xl">
+                <div className="text-center">
+                  <p className="text-gray-400 text-sm mb-1">Sets</p>
+                  <p className="text-2xl font-bold">{currentExercise.targetSets || 0}</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-gray-400 text-sm mb-1">Reps</p>
+                  <p className="text-2xl font-bold">{currentExercise.targetReps || 0}</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-gray-400 text-sm mb-1">Weight</p>
+                  <p className="text-2xl font-bold">{currentExercise.targetWeight || 0}kg</p>
+                </div>
               </div>
-              <div className="text-center">
-                <p className="text-gray-400 text-sm mb-1">Weight</p>
-                <p className="text-2xl font-bold">{currentExercise.targetWeight}kg</p>
-              </div>
-            </div>
+            )}
 
             {/* Sets Checklist */}
             <div className="space-y-3">
