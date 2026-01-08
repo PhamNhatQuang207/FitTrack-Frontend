@@ -94,20 +94,22 @@ export default function ProgressTracking() {
       {/* Header */}
       <div className="sticky top-0 z-10 bg-gray-900/80 backdrop-blur-md border-b border-gray-700/50">
         <div className="container mx-auto px-4 md:px-6 py-4">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between relative">
             <button
               onClick={() => navigate("/dashboard")}
-              className="flex items-center space-x-2 text-white hover:text-blue-400 transition-colors group"
+              className="flex items-center space-x-2 text-white hover:text-blue-400 transition-colors group z-10"
             >
               <ArrowLeft className="h-5 w-5 group-hover:-translate-x-1 transition-transform" />
-              <span className="font-medium hidden md:inline">Back to Dashboard</span>
+              <span className="font-medium hidden md:inline">Back</span>
             </button>
             
-            <h1 className="text-lg md:text-2xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
-              Progress Tracking
-            </h1>
+            <div className="absolute left-0 right-0 text-center pointer-events-none">
+              <h1 className="text-lg md:text-2xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent inline-block">
+                Progress Tracking
+              </h1>
+            </div>
 
-            <div className="w-20 md:w-32"></div>
+            <div className="w-8 md:w-auto invisible">Back</div>
           </div>
         </div>
       </div>
@@ -117,51 +119,51 @@ export default function ProgressTracking() {
           
           {/* Stats Cards */}
           {stats && (
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-              <div className="bg-gradient-to-br from-blue-500/20 to-blue-600/20 backdrop-blur-sm p-6 rounded-xl border border-blue-500/30">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-8">
+              <div className="bg-gradient-to-br from-blue-500/20 to-blue-600/20 backdrop-blur-sm p-4 md:p-6 rounded-xl border border-blue-500/30">
                 <div className="flex items-center justify-between mb-2">
-                  <Dumbbell className="w-8 h-8 text-blue-400" />
-                  <span className="text-3xl font-bold">{stats.totalCompleted}</span>
+                  <Dumbbell className="w-6 h-6 md:w-8 md:h-8 text-blue-400" />
+                  <span className="text-2xl md:text-3xl font-bold">{stats.totalCompleted}</span>
                 </div>
-                <p className="text-sm text-gray-300">Total Workouts</p>
+                <p className="text-xs md:text-sm text-gray-300">Total Workouts</p>
               </div>
 
-              <div className="bg-gradient-to-br from-purple-500/20 to-pink-600/20 backdrop-blur-sm p-6 rounded-xl border border-purple-500/30">
+              <div className="bg-gradient-to-br from-purple-500/20 to-pink-600/20 backdrop-blur-sm p-4 md:p-6 rounded-xl border border-purple-500/30">
                 <div className="flex items-center justify-between mb-2">
-                  <TrendingUp className="w-8 h-8 text-purple-400" />
-                  <span className="text-3xl font-bold">{stats.totalVolume.toLocaleString()}</span>
+                  <TrendingUp className="w-6 h-6 md:w-8 md:h-8 text-purple-400" />
+                  <span className="text-xl md:text-3xl font-bold truncate" title={stats.totalVolume.toLocaleString()}>{stats.totalVolume >= 1000 ? `${(stats.totalVolume/1000).toFixed(1)}k` : stats.totalVolume}</span>
                 </div>
-                <p className="text-sm text-gray-300">Total Volume (kg)</p>
+                <p className="text-xs md:text-sm text-gray-300">Volume (kg)</p>
               </div>
 
-              <div className="bg-gradient-to-br from-green-500/20 to-emerald-600/20 backdrop-blur-sm p-6 rounded-xl border border-green-500/30">
+              <div className="bg-gradient-to-br from-green-500/20 to-emerald-600/20 backdrop-blur-sm p-4 md:p-6 rounded-xl border border-green-500/30">
                 <div className="flex items-center justify-between mb-2">
-                  <Activity className="w-8 h-8 text-green-400" />
-                  <span className="text-3xl font-bold">{stats.averageExercisesPerWorkout}</span>
+                  <Activity className="w-6 h-6 md:w-8 md:h-8 text-green-400" />
+                  <span className="text-2xl md:text-3xl font-bold">{stats.averageExercisesPerWorkout}</span>
                 </div>
-                <p className="text-sm text-gray-300">Avg Exercises/Workout</p>
+                <p className="text-xs md:text-sm text-gray-300">Avg Exercises</p>
               </div>
 
-              <div className="bg-gradient-to-br from-amber-500/20 to-orange-600/20 backdrop-blur-sm p-6 rounded-xl border border-amber-500/30">
+              <div className="bg-gradient-to-br from-amber-500/20 to-orange-600/20 backdrop-blur-sm p-4 md:p-6 rounded-xl border border-amber-500/30">
                 <div className="flex items-center justify-between mb-2">
-                  <Calendar className="w-8 h-8 text-amber-400" />
-                  <span className="text-3xl font-bold">{getLatestWeight() || '--'}</span>
+                  <Calendar className="w-6 h-6 md:w-8 md:h-8 text-amber-400" />
+                  <span className="text-2xl md:text-3xl font-bold">{getLatestWeight() || '--'}</span>
                 </div>
-                <p className="text-sm text-gray-300">Current Weight (kg)</p>
+                <p className="text-xs md:text-sm text-gray-300">Weight (kg)</p>
               </div>
             </div>
           )}
 
           {/* Strength Progression Chart */}
-          <div className="bg-gray-800/60 backdrop-blur-sm rounded-2xl p-6 border border-gray-700 mb-6">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold">Strength Progression</h2>
+          <div className="bg-gray-800/60 backdrop-blur-sm rounded-2xl p-4 md:p-6 border border-gray-700 mb-6">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+              <h2 className="text-xl md:text-2xl font-bold">Strength Progression</h2>
               
               {/* Exercise Selector */}
               <select
                 value={selectedExercise}
                 onChange={(e) => setSelectedExercise(e.target.value)}
-                className="px-4 py-2 bg-gray-700/50 border border-gray-600 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all outline-none text-white"
+                className="w-full md:w-auto px-4 py-2 bg-gray-700/50 border border-gray-600 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all outline-none text-white text-sm md:text-base"
               >
                 {exercises.map(exercise => (
                   <option key={exercise} value={exercise}>{exercise}</option>
@@ -171,54 +173,57 @@ export default function ProgressTracking() {
 
             {progressionData.length > 0 ? (
               <>
-                <ResponsiveContainer width="100%" height={400}>
-                  <LineChart data={progressionData}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-                    <XAxis 
-                      dataKey="date" 
-                      stroke="#9CA3AF"
-                      tick={{ fill: '#9CA3AF' }}
-                    />
-                    <YAxis 
-                      stroke="#9CA3AF"
-                      tick={{ fill: '#9CA3AF' }}
-                      label={{ value: 'Weight (kg)', angle: -90, position: 'insideLeft', fill: '#9CA3AF' }}
-                    />
-                    <Tooltip 
-                      contentStyle={{ 
-                        backgroundColor: '#1F2937', 
-                        border: '1px solid #374151',
-                        borderRadius: '8px'
-                      }}
-                      labelStyle={{ color: '#E5E7EB' }}
-                    />
-                    <Legend />
-                    <Line 
-                      type="monotone" 
-                      dataKey="weight" 
-                      stroke="#3B82F6" 
-                      strokeWidth={3}
-                      dot={{ fill: '#3B82F6', r: 5 }}
-                      activeDot={{ r: 8 }}
-                      name="Max Weight (kg)"
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
+                <div className="h-[300px] md:h-[400px] w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={progressionData}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                      <XAxis 
+                        dataKey="date" 
+                        stroke="#9CA3AF"
+                        tick={{ fill: '#9CA3AF', fontSize: 12 }}
+                      />
+                      <YAxis 
+                        stroke="#9CA3AF"
+                        tick={{ fill: '#9CA3AF', fontSize: 12 }}
+                        width={40}
+                      />
+                      <Tooltip 
+                        contentStyle={{ 
+                          backgroundColor: '#1F2937', 
+                          border: '1px solid #374151',
+                          borderRadius: '8px',
+                          fontSize: '14px'
+                        }}
+                        labelStyle={{ color: '#E5E7EB' }}
+                      />
+                      <Legend wrapperStyle={{ fontSize: '14px' }} />
+                      <Line 
+                        type="monotone" 
+                        dataKey="weight" 
+                        stroke="#3B82F6" 
+                        strokeWidth={3}
+                        dot={{ fill: '#3B82F6', r: 4 }}
+                        activeDot={{ r: 6 }}
+                        name="Weight"
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
 
                 {/* Progression Stats */}
-                <div className="mt-6 grid grid-cols-3 gap-4">
-                  <div className="bg-gray-700/30 p-4 rounded-lg text-center">
-                    <p className="text-gray-400 text-sm mb-1">Starting Weight</p>
-                    <p className="text-2xl font-bold">{progressionData[0]?.weight}kg</p>
+                <div className="mt-6 grid grid-cols-3 gap-2 md:gap-4">
+                  <div className="bg-gray-700/30 p-2 md:p-4 rounded-lg text-center">
+                    <p className="text-gray-400 text-xs md:text-sm mb-1">Start</p>
+                    <p className="text-lg md:text-2xl font-bold">{progressionData[0]?.weight}kg</p>
                   </div>
-                  <div className="bg-gray-700/30 p-4 rounded-lg text-center">
-                    <p className="text-gray-400 text-sm mb-1">Current Weight</p>
-                    <p className="text-2xl font-bold">{progressionData[progressionData.length - 1]?.weight}kg</p>
+                  <div className="bg-gray-700/30 p-2 md:p-4 rounded-lg text-center">
+                    <p className="text-gray-400 text-xs md:text-sm mb-1">Current</p>
+                    <p className="text-lg md:text-2xl font-bold">{progressionData[progressionData.length - 1]?.weight}kg</p>
                   </div>
-                  <div className="bg-gray-700/30 p-4 rounded-lg text-center">
-                    <p className="text-gray-400 text-sm mb-1">Total Gain</p>
-                    <p className="text-2xl font-bold text-green-400">
-                      +{(progressionData[progressionData.length - 1]?.weight - progressionData[0]?.weight).toFixed(1)}kg
+                  <div className="bg-gray-700/30 p-2 md:p-4 rounded-lg text-center">
+                    <p className="text-gray-400 text-xs md:text-sm mb-1">Gain</p>
+                    <p className="text-lg md:text-2xl font-bold text-green-400">
+                      +{(progressionData[progressionData.length - 1]?.weight - progressionData[0]?.weight).toFixed(1)}
                     </p>
                   </div>
                 </div>
