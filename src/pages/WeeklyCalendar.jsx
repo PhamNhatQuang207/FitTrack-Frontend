@@ -145,17 +145,17 @@ export default function WeeklyCalendar() {
     >
       {/* Header */}
       <div className="sticky top-0 z-10 bg-gray-900/90 backdrop-blur-md border-b border-gray-700/50">
-        <div className="container mx-auto px-6 py-4">
+        <div className="container mx-auto px-4 md:px-6 py-4">
           <div className="flex items-center justify-between">
             <button
               onClick={() => navigate("/dashboard")}
               className="flex items-center space-x-2 text-white hover:text-blue-400 transition-colors"
             >
               <ArrowLeft className="h-5 w-5" />
-              <span className="font-medium">Back to Dashboard</span>
+              <span className="font-medium hidden md:inline">Back to Dashboard</span>
             </button>
             <div className="text-center">
-              <h1 className="text-xl font-bold">{currentSchedule.weeklyPlanName}</h1>
+              <h1 className="text-lg md:text-xl font-bold">{currentSchedule.weeklyPlanName}</h1>
               <p className="text-xs text-gray-400 uppercase tracking-wider">Week {currentSchedule.weekNumber}</p>
             </div>
             <div className="flex gap-2">

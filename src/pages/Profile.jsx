@@ -154,27 +154,29 @@ export default function Profile() {
       }}
     >
       {/* Header */}
-      <div className="absolute top-6 left-6 flex items-center space-x-4">
-        <button
-          onClick={() => navigate("/dashboard")}
-          className="flex items-center space-x-2 text-white hover:text-blue-300 transition"
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="h-6 w-6"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
+      <div className="sticky top-0 z-10 bg-gray-900/90 backdrop-blur-md border-b border-gray-700/50">
+        <div className="container mx-auto px-4 md:px-6 py-4">
+          <button
+            onClick={() => navigate("/dashboard")}
+            className="flex items-center space-x-2 text-white hover:text-blue-300 transition"
           >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M10 19l-7-7m0 0l7-7m-7 7h18"
-            />
-          </svg>
-          <span>Back to Dashboard</span>
-        </button>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-5 w-5"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M10 19l-7-7m0 0l7-7m-7 7h18"
+              />
+            </svg>
+            <span className="font-medium hidden md:inline">Back to Dashboard</span>
+          </button>
+        </div>
       </div>
 
       {/* Profile Form */}

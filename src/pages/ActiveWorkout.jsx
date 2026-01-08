@@ -237,22 +237,22 @@ export default function ActiveWorkout() {
     >
       {/* Header */}
       <div className="sticky top-0 z-10 bg-gray-900/90 backdrop-blur-md border-b border-gray-700/50">
-        <div className="container mx-auto px-6 py-4">
+        <div className="container mx-auto px-4 md:px-6 py-4">
           <div className="flex items-center justify-between">
             <button
               onClick={() => navigate("/dashboard")}
               className="flex items-center space-x-2 text-white hover:text-blue-400 transition-colors group"
             >
               <ArrowLeft className="h-5 w-5 group-hover:-translate-x-1 transition-transform" />
-              <span className="font-medium">Back to Dashboard</span>
+              <span className="font-medium hidden md:inline">Back to Dashboard</span>
             </button>
             
             <div className="text-center">
-              <h1 className="text-xl font-bold">{session.name}</h1>
-              <p className="text-sm text-gray-400">{completedExercises} / {totalExercises} exercises completed</p>
+              <h1 className="text-base md:text-xl font-bold">{session.name}</h1>
+              <p className="text-xs md:text-sm text-gray-400">{completedExercises} / {totalExercises} exercises</p>
             </div>
 
-            <div className="w-32"></div>
+            <div className="w-20 md:w-32"></div>
           </div>
         </div>
       </div>

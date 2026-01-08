@@ -46,22 +46,22 @@ export default function WeeklyPlanLibrary() {
       }}
     >
       <div className="sticky top-0 z-10 bg-gray-900/90 backdrop-blur-md border-b border-gray-700/50">
-        <div className="container mx-auto px-6 py-4">
+        <div className="container mx-auto px-4 md:px-6 py-4">
           <div className="flex items-center justify-between">
             <button
               onClick={() => navigate("/dashboard")}
               className="flex items-center space-x-2 text-white hover:text-blue-400 transition-colors"
             >
               <ArrowLeft className="h-5 w-5" />
-              <span className="font-medium">Back to Dashboard</span>
+              <span className="font-medium hidden md:inline">Back to Dashboard</span>
             </button>
-            <h1 className="text-xl font-bold">Weekly Plans</h1>
+            <h1 className="text-lg md:text-xl font-bold">Weekly Plans</h1>
             <button
               onClick={() => navigate('/weekly-planning')}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-500 hover:bg-blue-600 rounded-lg font-medium transition-colors"
+              className="flex items-center gap-2 px-3 md:px-4 h-9 md:h-10 bg-blue-500 hover:bg-blue-600 rounded-lg text-sm font-medium transition-colors border border-transparent"
             >
               <Plus className="w-4 h-4" />
-              New Plan
+              <span className="hidden md:inline">New Plan</span>
             </button>
           </div>
         </div>
