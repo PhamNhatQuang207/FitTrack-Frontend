@@ -57,6 +57,7 @@ export default function WeeklyPlanBuilder() {
   const [availableExercises, setAvailableExercises] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedMuscleGroup, setSelectedMuscleGroup] = useState("all");
+  const [showMuscleGroupDropdown, setShowMuscleGroupDropdown] = useState(false);
 
   // Load existing plan if editing
   useEffect(() => {
@@ -496,17 +497,47 @@ export default function WeeklyPlanBuilder() {
                       />
                     </div>
                     <div className="relative">
-                      <select
-                        value={selectedMuscleGroup}
-                        onChange={(e) => setSelectedMuscleGroup(e.target.value)}
-                        className="w-full pl-4 pr-10 py-2 bg-gray-700/50 border border-gray-600 rounded-lg focus:border-blue-500 outline-none appearance-none cursor-pointer"
+                      <button
+                        onClick={() => setShowMuscleGroupDropdown(!showMuscleGroupDropdown)}
+                        className="w-full pl-4 pr-10 py-2 bg-gray-700/50 border border-gray-600 rounded-lg focus:border-blue-500 outline-none appearance-none cursor-pointer text-left flex items-center justify-between"
                       >
-                        <option value="all">All Muscle Groups</option>
-                        {MUSCLE_GROUPS.map(group => (
-                          <option key={group.id} value={group.id}>{group.name}</option>
-                        ))}
-                      </select>
-                      <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                        <span className="truncate">
+                          {selectedMuscleGroup === 'all' 
+                            ? 'All Muscle Groups' 
+                            : MUSCLE_GROUPS.find(g => g.id === selectedMuscleGroup)?.name || 'Select Muscle Group'}
+                        </span>
+                        <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${showMuscleGroupDropdown ? 'rotate-180' : ''}`} />
+                      </button>
+                      
+                      {showMuscleGroupDropdown && (
+                        <div className="absolute z-50 w-full mt-1 bg-gray-700 border border-gray-600 rounded-lg shadow-xl max-h-60 overflow-y-auto">
+                          <button
+                            onClick={() => {
+                              setSelectedMuscleGroup('all');
+                              setShowMuscleGroupDropdown(false);
+                            }}
+                            className={`w-full px-4 py-2 text-left hover:bg-gray-600/50 transition-colors ${
+                              selectedMuscleGroup === 'all' ? 'bg-blue-500/20 text-blue-400' : 'text-gray-300'
+                            }`}
+                          >
+                            All Muscle Groups
+                          </button>
+                          {MUSCLE_GROUPS.map(group => (
+                            <button
+                              key={group.id}
+                              onClick={() => {
+                                setSelectedMuscleGroup(group.id);
+                                setShowMuscleGroupDropdown(false);
+                              }}
+                              className={`w-full px-4 py-2 text-left hover:bg-gray-600/50 transition-colors ${
+                                selectedMuscleGroup === group.id ? 'bg-blue-500/20 text-blue-400' : 'text-gray-300'
+                              }`}
+                            >
+                              {group.name}
+                            </button>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   </div>
 
