@@ -1,13 +1,15 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axiosClient from "../api/axiosClient";
-import { ArrowLeft, Play, CheckCircle2, Calendar as CalendarIcon } from "lucide-react";
+import { ArrowLeft, Play, CheckCircle2, Calendar as CalendarIcon, Edit2, RefreshCcw, X as XIcon } from "lucide-react";
 import dashboardBg from "../assets/icons/dashboard_background.jpg";
 
 export default function WeeklyCalendar() {
   const navigate = useNavigate();
   const [currentSchedule, setCurrentSchedule] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [editMode, setEditMode] = useState(false);
+  const [swapSourceDay, setSwapSourceDay] = useState(null);
 
   useEffect(() => {
     fetchCurrentSchedule();
@@ -96,6 +98,58 @@ export default function WeeklyCalendar() {
     }
   };
 
+  const handleSwapDays = async (day) => {
+    if (!swapSourceDay) {
+      setSwapSourceDay(day);
+    } else {
+      try {
+        await axiosClient.patch(`/weekly-schedules/${currentSchedule.id}/update-day`, {
+          action: 'swap',
+          dayOfWeek: swapSourceDay.dayOfWeek,
+          targetDayOfWeek: day.dayOfWeek
+        });
+        
+        const response = await axiosClient.get('/weekly-schedules/current');
+        setCurrentSchedule(response.data);
+        setSwapSourceDay(null);
+        alert('Days swapped successfully!');
+      } catch (error) {
+        console.error("Error swapping days:", error);
+        alert("Failed to swap days");
+        setSwapSourceDay(null);
+      }
+    }
+  };
+
+  const handleToggleRestDay = async (day) => {
+    const action = day.isRestDay ? 
+      'Converting to workout day' : 
+      'Converting to rest day';
+    
+    if (!window.confirm(`${action}? This will update your weekly schedule.`)) {
+      return;
+    }
+
+    try {
+      await axiosClient.patch(`/weekly-schedules/${currentSchedule.id}/update-day`, {
+        action: 'toggleRest',
+        dayOfWeek: day.dayOfWeek
+      });
+      
+      const response = await axiosClient.get('/weekly-schedules/current');
+      setCurrentSchedule(response.data);
+      alert('Day updated successfully!');
+    } catch (error) {
+      console.error("Error toggling rest day:", error);
+      alert("Failed to toggle rest day");
+    }
+  };
+
+  const cancelEditMode = () => {
+    setEditMode(false);
+    setSwapSourceDay(null);
+  };
+
   if (loading) return <div className="p-8 text-white">Loading schedule...</div>;
 
   if (!currentSchedule) {
@@ -159,18 +213,37 @@ export default function WeeklyCalendar() {
               <p className="text-xs text-gray-400 uppercase tracking-wider">Week {currentSchedule.weekNumber}</p>
             </div>
             <div className="flex gap-2">
-              <button
-                onClick={handleDismissWeek}
-                className="px-3 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-sm font-medium transition-colors"
-              >
-                Dismiss
-              </button>
-              <button
-                onClick={handleCompleteWeek}
-                className="px-3 py-2 bg-green-500 hover:bg-green-600 rounded-lg text-sm font-medium transition-colors"
-              >
-                Complete Week
-              </button>
+              {editMode ? (
+                <button
+                  onClick={cancelEditMode}
+                  className="flex items-center gap-2 px-3 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-sm font-medium transition-colors"
+                >
+                  <XIcon className="w-4 h-4" />
+                  <span className="hidden md:inline">Cancel Edit</span>
+                </button>
+              ) : (
+                <>
+                  <button
+                    onClick={() => setEditMode(true)}
+                    className="flex items-center gap-2 px-3 py-2 bg-blue-500 hover:bg-blue-600 rounded-lg text-sm font-medium transition-colors"
+                  >
+                    <Edit2 className="w-4 h-4" />
+                    <span className="hidden md:inline">Edit Schedule</span>
+                  </button>
+                  <button
+                    onClick={handleDismissWeek}
+                    className="px-3 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-sm font-medium transition-colors"
+                  >
+                    Dismiss
+                  </button>
+                  <button
+                    onClick={handleCompleteWeek}
+                    className="px-3 py-2 bg-green-500 hover:bg-green-600 rounded-lg text-sm font-medium transition-colors"
+                  >
+                    Complete Week
+                  </button>
+                </>
+              )}
             </div>
           </div>
         </div>
