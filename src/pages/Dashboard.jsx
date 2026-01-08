@@ -101,7 +101,7 @@ export default function Dashboard() {
       }}
     >
       {/* Header Section */}
-      <header className="w-full px-8 py-6 flex justify-between items-center">
+      <header className="w-full px-4 md:px-8 py-6 flex justify-between items-center">
         <div
           className="flex items-center space-x-3 cursor-pointer group flex-1"
           onClick={handleProfileClick}
@@ -109,7 +109,7 @@ export default function Dashboard() {
           <div className="w-12 h-12 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center group-hover:scale-110 transition-transform">
             <User className="w-6 h-6 text-white" />
           </div>
-          <div>
+          <div className="hidden md:block">
             <p className="text-sm text-gray-400">Welcome back</p>
             <p className="font-semibold text-lg">{user?.name || 'User'}</p>
           </div>
