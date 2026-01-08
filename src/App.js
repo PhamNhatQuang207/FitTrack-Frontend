@@ -16,6 +16,7 @@ import WeeklyPlanLibrary from './pages/WeeklyPlanLibrary';
 import WeeklyCalendar from './pages/WeeklyCalendar';
 import ProgressTracking from './pages/ProgressTracking';
 import ActiveWorkout from './pages/ActiveWorkout';
+import WorkoutHistory from './pages/WorkoutHistory';
 
 export default function App() {
   return (
@@ -68,6 +69,14 @@ export default function App() {
             element={
               <ProtectedRoute>
                 <WeeklyPlanLibrary />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/workout-history"
+            element={
+              <ProtectedRoute>
+                <WorkoutHistory />
               </ProtectedRoute>
             }
           />

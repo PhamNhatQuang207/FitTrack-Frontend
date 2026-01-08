@@ -215,6 +215,32 @@ export default function Dashboard() {
                   {stats.plannedSessions} session{stats.plannedSessions !== 1 ? 's' : ''} planned
                 </p>
               )}
+             </div>
+          </div>
+
+          {/* Workout History Card */}
+          <div
+            className="group relative bg-gradient-to-br from-gray-800/80 to-gray-900/80 backdrop-blur-md p-8 rounded-2xl cursor-pointer 
+                     hover:from-gray-700/80 hover:to-gray-800/80 transition-all duration-300 transform hover:-translate-y-2 
+                     shadow-xl hover:shadow-2xl border border-gray-700/50 hover:border-orange-500/50 overflow-hidden"
+            onClick={() => navigate('/workout-history')}
+          >
+            <div className="absolute top-0 right-0 w-32 h-32 bg-orange-500/10 rounded-full -mr-16 -mt-16 group-hover:scale-150 transition-transform duration-500"></div>
+            <div className="relative z-10">
+              <div className="w-20 h-20 bg-gradient-to-br from-orange-500 to-amber-600 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                <Calendar className="w-10 h-10 text-white" />
+              </div>
+              <h2 className="text-2xl font-bold mb-3 bg-gradient-to-r from-orange-400 to-amber-400 bg-clip-text text-transparent">
+                Workout History
+              </h2>
+              <p className="text-gray-400 mb-4">
+                View your past workout sessions and track progress
+              </p>
+              {stats.totalWorkouts > 0 && (
+                <p className="text-sm text-orange-400">
+                  {stats.totalWorkouts} workout{stats.totalWorkouts !== 1 ? 's' : ''} logged
+                </p>
+              )}
             </div>
           </div>
         </div>
