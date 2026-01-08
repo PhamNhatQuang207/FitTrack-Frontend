@@ -54,11 +54,23 @@ export default function ActiveWorkout() {
       // Remove set if it exists (untick)
       exercise.actualSets.splice(existingSetIndex, 1);
     } else {
-      // Add set (tick)
+      // Add set (tick) with target from sets array or fall back to old format
+      let targetReps, targetWeight;
+      
+      if (exercise.sets && exercise.sets[setIndex]) {
+        // New format: get from sets array
+        targetReps = exercise.sets[setIndex].targetReps;
+        targetWeight = exercise.sets[setIndex].targetWeight;
+      } else {
+        // Old format fallback
+        targetReps = exercise.targetReps || 10;
+        targetWeight = exercise.targetWeight || 0;
+      }
+      
       exercise.actualSets.push({
         setNumber: setIndex + 1,
-        reps: exercise.targetReps,
-        weight: exercise.targetWeight,
+        reps: targetReps,
+        weight: targetWeight,
         completed: true
       });
     }
@@ -155,11 +167,13 @@ export default function ActiveWorkout() {
 
   const getExerciseProgress = (exercise) => {
     const completedSets = exercise.actualSets?.length || 0;
-    return `${completedSets}/${exercise.targetSets}`;
+    const totalSets = exercise.sets ? exercise.sets.length : (exercise.targetSets || 0);
+    return `${completedSets}/${totalSets}`;
   };
 
   const isExerciseComplete = (exercise) => {
-    return (exercise.actualSets?.length || 0) >= exercise.targetSets;
+    const totalSets = exercise.sets ? exercise.sets.length : (exercise.targetSets || 0);
+    return (exercise.actualSets?.length || 0) >= totalSets;
   };
 
   if (loading) {
