@@ -157,9 +157,11 @@ export default function WeeklyPlanBuilder() {
       exerciseId: exercise.id,
       exerciseName: exercise.name,
       category: exercise.category,
-      targetSets: 3,
-      targetReps: 10,
-      targetWeight: 0
+      sets: [
+        { setNumber: 1, targetReps: 10, targetWeight: 0 },
+        { setNumber: 2, targetReps: 10, targetWeight: 0 },
+        { setNumber: 3, targetReps: 10, targetWeight: 0 }
+      ]
     });
     
     setSchedule(newSchedule);
@@ -172,13 +174,42 @@ export default function WeeklyPlanBuilder() {
     setSchedule(newSchedule);
   };
 
-  const handleUpdateExercise = (exerciseId, field, value) => {
+  const handleSetChange = (exerciseId, setIndex, field, value) => {
     const newSchedule = [...schedule];
     const exercise = newSchedule[activeDayIndex].workout.exercises.find(ex => ex.exerciseId === exerciseId);
-    if (exercise) {
-      exercise[field] = parseInt(value) || 0;
+    if (exercise && exercise.sets) {
+      exercise.sets[setIndex][field] = parseFloat(value) || 0;
+      setSchedule(newSchedule);
     }
-    setSchedule(newSchedule);
+  };
+
+  const handleAddSet = (exerciseId) => {
+    const newSchedule = [...schedule];
+    const exercise = newSchedule[activeDayIndex].workout.exercises.find(ex => ex.exerciseId === exerciseId);
+    if (exercise && exercise.sets) {
+      const newSetNumber = exercise.sets.length + 1;
+      const lastSet = exercise.sets[exercise.sets.length - 1] || { targetReps: 10, targetWeight: 0 };
+      
+      exercise.sets.push({
+        setNumber: newSetNumber,
+        targetReps: lastSet.targetReps,
+        targetWeight: lastSet.targetWeight
+      });
+      setSchedule(newSchedule);
+    }
+  };
+
+  const handleRemoveSet = (exerciseId, setIndex) => {
+    const newSchedule = [...schedule];
+    const exercise = newSchedule[activeDayIndex].workout.exercises.find(ex => ex.exerciseId === exerciseId);
+    if (exercise && exercise.sets && exercise.sets.length > 1) {
+      exercise.sets.splice(setIndex, 1);
+      // Renumber remaining sets
+      exercise.sets.forEach((set, idx) => {
+        set.setNumber = idx + 1;
+      });
+      setSchedule(newSchedule);
+    }
   };
 
   const handleSavePlan = async () => {
@@ -490,39 +521,59 @@ export default function WeeklyPlanBuilder() {
                             </button>
                           </div>
                           
-                          <div className="grid grid-cols-3 gap-3">
-                            <div>
-                              <label className="text-xs text-gray-400 block mb-1">Sets</label>
-                              <input
-                                type="number"
-                                min="1"
-                                value={exercise.targetSets}
-                                onChange={(e) => handleUpdateExercise(exercise.exerciseId, 'targetSets', e.target.value)}
-                                className="w-full px-3 py-2 bg-gray-600/50 border border-gray-600 rounded-lg focus:border-blue-500 outline-none text-center"
-                              />
+                          {/* Sets Configuration */}
+                          <div className="mt-4 space-y-2">
+                            <div className="flex items-center justify-between">
+                              <label className="text-sm font-medium text-gray-300">Sets Configuration</label>
+                              <button
+                                onClick={() => handleAddSet(exercise.exerciseId)}
+                                className="text-xs px-3 py-1 bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 rounded-lg transition-colors flex items-center gap-1"
+                              >
+                                <Plus className="w-3 h-3" />
+                                Add Set
+                              </button>
                             </div>
-                            <div>
-                              <label className="text-xs text-gray-400 block mb-1">Reps</label>
-                              <input
-                                type="number"
-                                min="1"
-                                value={exercise.targetReps}
-                                onChange={(e) => handleUpdateExercise(exercise.exerciseId, 'targetReps', e.target.value)}
-                                className="w-full px-3 py-2 bg-gray-600/50 border border-gray-600 rounded-lg focus:border-blue-500 outline-none text-center"
-                              />
-                            </div>
-                            <div>
-                              <label className="text-xs text-gray-400 block mb-1">Weight (kg)</label>
-                              <input
-                                type="number"
-                                min="0"
-                                step="0.5"
-                                value={exercise.targetWeight || ''}
-                                onChange={(e) => handleUpdateExercise(exercise.exerciseId, 'targetWeight', e.target.value)}
-                                placeholder="0"
-                                className="w-full px-3 py-2 bg-gray-600/50 border border-gray-600 rounded-lg focus:border-blue-500 outline-none text-center"
-                              />
-                            </div>
+                            
+                            {exercise.sets && exercise.sets.map((set, setIdx) => (
+                              <div key={setIdx} className="flex items-center gap-2 bg-gray-600/30 p-2 rounded-lg">
+                                <span className="text-xs font-medium text-gray-400 w-12">Set {set.setNumber}</span>
+                                
+                                <div className="flex-1">
+                                  <input
+                                    type="number"
+                                    min="1"
+                                    value={set.targetReps}
+                                    onChange={(e) => handleSetChange(exercise.exerciseId, setIdx, 'targetReps', e.target.value)}
+                                    placeholder="Reps"
+                                    className="w-full px-2 py-1.5 bg-gray-700/50 border border-gray-500 rounded text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500/20 outline-none"
+                                  />
+                                  <label className="text-[10px] text-gray-500">reps</label>
+                                </div>
+                                
+                                <div className="flex-1">
+                                  <input
+                                    type="number"
+                                    min="0"
+                                    step="0.5"
+                                    value={set.targetWeight || ''}
+                                    onChange={(e) => handleSetChange(exercise.exerciseId, setIdx, 'targetWeight', e.target.value)}
+                                    placeholder="Weight"
+                                    className="w-full px-2 py-1.5 bg-gray-700/50 border border-gray-500 rounded text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500/20 outline-none"
+                                  />
+                                  <label className="text-[10px] text-gray-500">kg</label>
+                                </div>
+                                
+                                {exercise.sets.length > 1 && (
+                                  <button
+                                    onClick={() => handleRemoveSet(exercise.exerciseId, setIdx)}
+                                    className="p-1.5 text-red-400 hover:bg-red-500/20 rounded transition-colors"
+                                    title="Remove set"
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </button>
+                                )}
+                              </div>
+                            ))}
                           </div>
                         </div>
                       ))}
