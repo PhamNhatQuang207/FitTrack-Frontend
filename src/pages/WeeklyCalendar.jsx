@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axiosClient from "../api/axiosClient";
-import { ArrowLeft, Play, CheckCircle2, Calendar as CalendarIcon, Edit2, RefreshCcw, X as XIcon, Search } from "lucide-react";
+import { ArrowLeft, Play, CheckCircle2, Calendar as CalendarIcon, Edit2, RefreshCcw, X as XIcon, Search, Save } from "lucide-react";
 import dashboardBg from "../assets/icons/dashboard_background.jpg";
 
 export default function WeeklyCalendar() {
@@ -241,6 +241,32 @@ export default function WeeklyCalendar() {
     setEditingWorkoutName({});
   };
 
+  const saveAllChanges = async () => {
+    const changesCount = Object.keys(editingWorkoutName).length;
+    if (changesCount === 0) {
+      setEditMode(false);
+      return;
+    }
+
+    try {
+      // Save all workout name changes
+      for (const dayOfWeek in editingWorkoutName) {
+        const day = currentSchedule.days.find(d => d.dayOfWeek === parseInt(dayOfWeek));
+        if (day && !day.isRestDay) {
+          await handleSaveWorkoutName(day);
+        }
+      }
+      
+      setEditMode(false);
+      setEditingWorkoutName({});
+      alert(`${changesCount} workout name${changesCount > 1 ? 's' : ''} updated successfully!`);
+    } catch (error) {
+      console.error('Error saving changes:', error);
+      alert('Failed to save some changes');
+    }
+  };
+
+
   const handleWorkoutNameChange = (dayOfWeek, newName) => {
     setEditingWorkoutName(prev => ({
       ...prev,
@@ -261,7 +287,7 @@ export default function WeeklyCalendar() {
     }
 
     try {
-      await axiosClient.patch(`/weekly-schedules/${currentSchedule._id}/update-day`, {
+      await axiosClient.patch(`/weekly-schedules/${currentSchedule.id}/update-day`, {
         action: 'updateWorkoutName',
         dayOfWeek: day.dayOfWeek,
         workoutName: newName
@@ -348,13 +374,25 @@ export default function WeeklyCalendar() {
             </div>
             <div className="flex-1 flex justify-end gap-2">
               {editMode ? (
-                <button
-                  onClick={cancelEditMode}
-                  className="flex items-center gap-2 px-3 h-10 bg-gray-700 hover:bg-gray-600 rounded-lg text-sm font-medium transition-colors border border-transparent"
-                >
-                  <XIcon className="w-4 h-4" />
-                  <span className="hidden md:inline">Cancel Edit</span>
-                </button>
+                <>
+                  {Object.keys(editingWorkoutName).length > 0 ? (
+                    <button
+                      onClick={saveAllChanges}
+                      className="flex items-center gap-2 px-3 h-10 bg-green-500 hover:bg-green-600 rounded-lg text-sm font-medium transition-colors border border-transparent"
+                    >
+                      <Save className="w-4 h-4" />
+                      <span className="hidden md:inline">Save Changes</span>
+                    </button>
+                  ) : (
+                    <button
+                      onClick={cancelEditMode}
+                      className="flex items-center gap-2 px-3 h-10 bg-gray-700 hover:bg-gray-600 rounded-lg text-sm font-medium transition-colors border border-transparent"
+                    >
+                      <XIcon className="w-4 h-4" />
+                      <span className="hidden md:inline">Cancel Edit</span>
+                    </button>
+                  )}
+                </>
               ) : (
                 <button
                   onClick={() => setEditMode(true)}
@@ -448,7 +486,19 @@ export default function WeeklyCalendar() {
                     </>
                   ) : (
                     <>
-                      <h3 className="text-xl font-bold mb-1 text-white">{day.workout.name}</h3>
+                      {editMode ? (
+                        <input
+                          type="text"
+                          value={editingWorkoutName[day.dayOfWeek] ?? day.workout.name}
+                          onChange={(e) => handleWorkoutNameChange(day.dayOfWeek, e.target.value)}
+                          onBlur={() => handleSaveWorkoutName(day)}
+                          onKeyDown={(e) => { if (e.key === 'Enter') e.target.blur(); }}
+                          className="w-full px-3 py-2 mb-1 bg-gray-700 border border-gray-600 rounded-lg text-white font-bold text-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          placeholder="Workout name"
+                        />
+                      ) : (
+                        <h3 className="text-xl font-bold mb-1 text-white">{day.workout.name}</h3>
+                      )}
                       <p className="text-sm text-gray-400 mb-4">{day.workout.exercises?.length || 0} Exercises</p>
                       
                       <div className="mt-auto">
