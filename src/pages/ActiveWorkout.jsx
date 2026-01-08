@@ -256,7 +256,7 @@ export default function ActiveWorkout() {
 
             {/* Sets Checklist */}
             <div className="space-y-3">
-              {Array.from({ length: currentExercise.targetSets }).map((_, index) => {
+              {Array.from({ length: currentExercise.sets ? currentExercise.sets.length : currentExercise.targetSets }).map((_, index) => {
                 const isCompleted = isSetCompleted(currentExercise, index);
                 return (
                   <button
