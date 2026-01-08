@@ -200,23 +200,25 @@ export default function WeeklyCalendar() {
       {/* Header */}
       <div className="sticky top-0 z-10 bg-gray-900/90 backdrop-blur-md border-b border-gray-700/50">
         <div className="container mx-auto px-4 md:px-6 py-4">
-          <div className="flex items-center justify-between">
-            <button
-              onClick={() => navigate("/dashboard")}
-              className="flex items-center space-x-2 text-white hover:text-blue-400 transition-colors"
-            >
-              <ArrowLeft className="h-5 w-5" />
-              <span className="font-medium hidden md:inline">Back to Dashboard</span>
-            </button>
-            <div className="text-center">
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex-1 flex justify-start">
+              <button
+                onClick={() => navigate("/dashboard")}
+                className="flex items-center space-x-2 text-white hover:text-blue-400 transition-colors"
+              >
+                <ArrowLeft className="h-5 w-5" />
+                <span className="font-medium hidden md:inline">Back to Dashboard</span>
+              </button>
+            </div>
+            <div className="flex-1 text-center">
               <h1 className="text-lg md:text-xl font-bold">{currentSchedule.weeklyPlanName}</h1>
               <p className="text-xs text-gray-400 uppercase tracking-wider">Week {currentSchedule.weekNumber}</p>
             </div>
-            <div className="flex gap-2">
+            <div className="flex-1 flex justify-end gap-2">
               {editMode ? (
                 <button
                   onClick={cancelEditMode}
-                  className="flex items-center gap-2 px-3 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-sm font-medium transition-colors"
+                  className="flex items-center gap-2 px-3 h-10 bg-gray-700 hover:bg-gray-600 rounded-lg text-sm font-medium transition-colors border border-transparent"
                 >
                   <XIcon className="w-4 h-4" />
                   <span className="hidden md:inline">Cancel Edit</span>
@@ -225,20 +227,20 @@ export default function WeeklyCalendar() {
                 <>
                   <button
                     onClick={() => setEditMode(true)}
-                    className="flex items-center gap-2 px-3 py-2 bg-blue-500 hover:bg-blue-600 rounded-lg text-sm font-medium transition-colors"
+                    className="flex items-center gap-2 px-3 h-10 bg-blue-500 hover:bg-blue-600 rounded-lg text-sm font-medium transition-colors border border-transparent"
                   >
                     <Edit2 className="w-4 h-4" />
                     <span className="hidden md:inline">Edit Schedule</span>
                   </button>
                   <button
                     onClick={handleDismissWeek}
-                    className="px-3 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-sm font-medium transition-colors"
+                    className="px-3 h-10 bg-gray-700 hover:bg-gray-600 rounded-lg text-sm font-medium transition-colors border border-transparent hidden md:flex items-center"
                   >
                     Dismiss
                   </button>
                   <button
                     onClick={handleCompleteWeek}
-                    className="px-3 py-2 bg-green-500 hover:bg-green-600 rounded-lg text-sm font-medium transition-colors"
+                    className="px-3 h-10 bg-green-500 hover:bg-green-600 rounded-lg text-sm font-medium transition-colors border border-transparent hidden md:flex items-center"
                   >
                     Complete Week
                   </button>
@@ -299,47 +301,94 @@ export default function WeeklyCalendar() {
                 {/* Day Content */}
                 <div className="p-4 flex-1 flex flex-col">
                   {isRest ? (
-                    <div className="flex-1 flex flex-col items-center justify-center text-gray-500 py-6">
-                      <span className="text-xl">🛌</span>
-                      <span className="mt-2 font-medium">Rest Day</span>
-                    </div>
+                    <>
+                      <div className="flex-1 flex flex-col items-center justify-center text-gray-500 py-6">
+                        <span className="text-xl">🛌</span>
+                        <span className="mt-2 font-medium">Rest Day</span>
+                      </div>
+                      {editMode && (
+                        <div className="mt-4 space-y-2">
+                          <button
+                            onClick={() => handleSwapDays(day)}
+                            className={`flex items-center justify-center gap-2 w-full py-2 rounded-lg text-sm font-medium transition-colors ${
+                              swapSourceDay?.dayOfWeek === day.dayOfWeek
+                                ? 'bg-yellow-500 hover:bg-yellow-600'
+                                : 'bg-blue-500 hover:bg-blue-600'
+                            }`}
+                          >
+                            <RefreshCcw className="w-4 h-4" />
+                            {swapSourceDay?.dayOfWeek === day.dayOfWeek ? 'Selected' : swapSourceDay ? 'Swap Here' : 'Swap Day'}
+                          </button>
+                          <button
+                            onClick={() => handleToggleRestDay(day)}
+                            className="w-full py-2 bg-purple-500 hover:bg-purple-600 rounded-lg text-sm font-medium transition-colors"
+                          >
+                            Make Workout Day
+                          </button>
+                        </div>
+                      )}
+                    </>
                   ) : (
                     <>
                       <h3 className="text-xl font-bold mb-1 text-white">{day.workout.name}</h3>
                       <p className="text-sm text-gray-400 mb-4">{day.workout.exercises?.length || 0} Exercises</p>
                       
                       <div className="mt-auto">
-                        {isCompleted ? (
-                           <div className="flex items-center justify-center gap-2 w-full py-3 bg-green-500/20 text-green-400 rounded-lg font-medium border border-green-500/20 cursor-default">
-                             <CheckCircle2 className="w-5 h-5" />
-                             Completed
-                           </div>
+                        {editMode ? (
+                          <div className="space-y-2">
+                            <button
+                              onClick={() => handleSwapDays(day)}
+                              className={`flex items-center justify-center gap-2 w-full py-2 rounded-lg text-sm font-medium transition-colors ${
+                                swapSourceDay?.dayOfWeek === day.dayOfWeek
+                                  ? 'bg-yellow-500 hover:bg-yellow-600'
+                                  : 'bg-blue-500 hover:bg-blue-600'
+                              }`}
+                            >
+                              <RefreshCcw className="w-4 h-4" />
+                              {swapSourceDay?.dayOfWeek === day.dayOfWeek ? 'Selected' : swapSourceDay ? 'Swap Here' : 'Swap Day'}
+                            </button>
+                            <button
+                              onClick={() => handleToggleRestDay(day)}
+                              className="w-full py-2 bg-purple-500 hover:bg-purple-600 rounded-lg text-sm font-medium transition-colors"
+                            >
+                              Make Rest Day
+                            </button>
+                          </div>
                         ) : (
-                          day.workout.exercises?.length > 0 ? (
-                            <button
-                              onClick={() => handleStartWorkout(day)}
-                              className={`flex items-center justify-center gap-2 w-full py-3 rounded-lg font-medium transition-all ${
-                                  isTodayDay
-                                  ? 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 shadow-lg shadow-blue-500/20'
-                                  : 'bg-gray-700 hover:bg-gray-600'
-                              }`}
-                            >
-                              <Play className="w-4 h-4" />
-                              Start Workout
-                            </button>
-                          ) : (
-                            <button
-                              onClick={() => handleMarkComplete(day)}
-                              className={`flex items-center justify-center gap-2 w-full py-3 rounded-lg font-medium transition-all ${
-                                  isTodayDay
-                                  ? 'bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 shadow-lg shadow-green-500/20'
-                                  : 'bg-green-700 hover:bg-green-600'
-                              }`}
-                            >
-                              <CheckCircle2 className="w-4 h-4" />
-                              Mark as Complete
-                            </button>
-                          )
+                          <>
+                            {isCompleted ? (
+                               <div className="flex items-center justify-center gap-2 w-full py-3 bg-green-500/20 text-green-400 rounded-lg font-medium border border-green-500/20 cursor-default">
+                                 <CheckCircle2 className="w-5 h-5" />
+                                 Completed
+                               </div>
+                            ) : (
+                              day.workout.exercises?.length > 0 ? (
+                                <button
+                                  onClick={() => handleStartWorkout(day)}
+                                  className={`flex items-center justify-center gap-2 w-full py-3 rounded-lg font-medium transition-all ${
+                                      isTodayDay
+                                      ? 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 shadow-lg shadow-blue-500/20'
+                                      : 'bg-gray-700 hover:bg-gray-600'
+                                  }`}
+                                >
+                                  <Play className="w-4 h-4" />
+                                  Start Workout
+                                </button>
+                              ) : (
+                                <button
+                                  onClick={() => handleMarkComplete(day)}
+                                  className={`flex items-center justify-center gap-2 w-full py-3 rounded-lg font-medium transition-colors ${
+                                      isTodayDay
+                                      ? 'bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 shadow-lg shadow-green-500/20'
+                                      : 'bg-green-700 hover:bg-green-600'
+                                  }`}
+                                >
+                                  <CheckCircle2 className="w-4 h-4" />
+                                  Mark as Complete
+                                </button>
+                              )
+                            )}
+                          </>
                         )}
                       </div>
                     </>
