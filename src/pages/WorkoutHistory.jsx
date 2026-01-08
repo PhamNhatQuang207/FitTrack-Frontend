@@ -315,17 +315,33 @@ export default function WorkoutHistory() {
                             
                             {/* Target vs Actual */}
                             <div className="text-sm text-gray-400">
-                              <div className="flex justify-between">
-                                <span>Target:</span>
-                                <span>{exercise.targetSets} sets × {exercise.targetReps} reps @ {exercise.targetWeight}kg</span>
-                              </div>
+                              {/* Display targets - handle both old and new format */}
+                              {exercise.sets && exercise.sets.length > 0 ? (
+                                <div>
+                                  <span className="font-medium text-gray-300">Target:</span>
+                                  <div className="mt-1 space-y-1">
+                                    {exercise.sets.map((set, setIdx) => (
+                                      <div key={setIdx} className="flex justify-between text-xs bg-gray-700/30 px-2 py-1 rounded">
+                                        <span>Set {set.setNumber}:</span>
+                                        <span>{set.targetReps} reps @ {set.targetWeight}kg</span>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              ) : (
+                                // Old format fallback
+                                <div className="flex justify-between">
+                                  <span>Target:</span>
+                                  <span>{exercise.targetSets} sets × {exercise.targetReps} reps @ {exercise.targetWeight}kg</span>
+                                </div>
+                              )}
                               
                               {exercise.actualSets && exercise.actualSets.length > 0 && (
                                 <div className="mt-2">
                                   <span className="text-green-400 font-medium">Actual:</span>
                                   <div className="mt-1 space-y-1">
                                     {exercise.actualSets.map((set, setIdx) => (
-                                      <div key={setIdx} className="flex justify-between text-xs bg-gray-700/30 px-2 py-1 rounded">
+                                      <div key={setIdx} className="flex justify-between text-xs bg-green-900/20 px-2 py-1 rounded border border-green-500/20">
                                         <span>Set {setIdx + 1}:</span>
                                         <span>{set.reps} reps @ {set.weight}kg</span>
                                       </div>
