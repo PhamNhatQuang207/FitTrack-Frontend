@@ -119,23 +119,25 @@ export default function WorkoutHistory() {
       {/* Header */}
       <div className="bg-gray-900/80 backdrop-blur-sm border-b border-gray-800 sticky top-0 z-10">
         <div className="container mx-auto px-4 md:px-6 py-4">
-          <div className="flex items-center justify-between">
-            <button
-              onClick={() => navigate('/dashboard')}
-              className="flex items-center space-x-2 text-white hover:text-blue-400 rounded-lg transition-colors"
-            >
-              <ArrowLeft className="w-5 h-5" />
-              <span className="font-medium hidden md:inline">Back to Dashboard</span>
-            </button>
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex-1 flex justify-start">
+              <button
+                onClick={() => navigate('/dashboard')}
+                className="flex items-center space-x-2 text-white hover:text-blue-400 rounded-lg transition-colors"
+              >
+                <ArrowLeft className="w-5 h-5" />
+                <span className="font-medium hidden md:inline">Back to Dashboard</span>
+              </button>
+            </div>
             
-            <div className="text-center flex-1">
+            <div className="flex-1 text-center">
               <h1 className="text-xl md:text-3xl font-bold bg-gradient-to-r from-orange-400 to-amber-400 bg-clip-text text-transparent">
                 Workout History
               </h1>
               <p className="text-gray-400 mt-1 text-sm hidden md:block">View and manage your workout sessions</p>
             </div>
 
-            <div className="w-10 md:w-20"></div>
+            <div className="flex-1"></div>
           </div>
         </div>
       </div>
