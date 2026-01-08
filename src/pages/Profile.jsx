@@ -102,6 +102,7 @@ export default function Profile() {
       const updateData = {};
       
       // Profile fields that overwrite
+      if (formData.name) updateData.name = formData.name;
       if (formData.height) updateData.height = parseFloat(formData.height);
       if (formData.age) updateData.age = parseInt(formData.age);
       if (formData.sex) updateData.sex = formData.sex;
