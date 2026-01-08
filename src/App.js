@@ -18,7 +18,21 @@ import ProgressTracking from './pages/ProgressTracking';
 import ActiveWorkout from './pages/ActiveWorkout';
 import WorkoutHistory from './pages/WorkoutHistory';
 
+import axiosClient from './api/axiosClient';
+
 export default function App() {
+  // Wake up Render server on initial load
+  React.useEffect(() => {
+    const wakeUpServer = async () => {
+      try {
+        await axiosClient.get('/health');
+        console.log('Server is awake 🟢');
+      } catch (error) {
+        console.log('Server wake-up failed (it might be sleeping) 🔴', error);
+      }
+    };
+    wakeUpServer();
+  }, []);
   return (
     <AuthProvider>
       <Router>
