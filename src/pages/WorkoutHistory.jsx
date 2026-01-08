@@ -1,59 +1,59 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axiosClient from '../api/axiosClient';
-import { ArrowLeft, Calendar, Dumbbell, TrendingUp, Filter, ChevronDown, ChevronUp, Edit, CheckCircle, Trash2, Play } from 'lucide-react';
+import { 
+  ArrowLeft, 
+  Calendar, 
+  Dumbbell, 
+  TrendingUp, 
+  Play, 
+  CheckCircle, 
+  Trash2, 
+  ChevronDown,
+  Filter
+} from 'lucide-react';
 import dashboardBg from '../assets/icons/dashboard_background.jpg';
 
 export default function WorkoutHistory() {
   const navigate = useNavigate();
   const [sessions, setSessions] = useState([]);
-  const [filteredSessions, setFilteredSessions] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [expandedSessions, setExpandedSessions] = useState([]);
   const [filterStatus, setFilterStatus] = useState('all');
-  const [expandedSession, setExpandedSession] = useState(null);
 
   useEffect(() => {
-    fetchWorkoutHistory();
+    fetchSessions();
   }, []);
 
-  useEffect(() => {
-    filterSessions();
-  }, [sessions, filterStatus]);
-
-  const fetchWorkoutHistory = async () => {
+  const fetchSessions = async () => {
     try {
       const response = await axiosClient.get('/workout-sessions');
       setSessions(response.data);
     } catch (error) {
-      console.error('Error fetching workout history:', error);
+      console.error('Error fetching sessions:', error);
     } finally {
       setLoading(false);
     }
   };
 
-  const filterSessions = () => {
-    if (filterStatus === 'all') {
-      setFilteredSessions(sessions);
-    } else {
-      setFilteredSessions(sessions.filter(s => s.status === filterStatus));
-    }
-  };
-
   const toggleExpand = (sessionId) => {
-    setExpandedSession(expandedSession === sessionId ? null : sessionId);
+    setExpandedSessions(prev =>
+      prev.includes(sessionId)
+        ? prev.filter(id => id !== sessionId)
+        : [...prev, sessionId]
+    );
   };
 
   const handleStartWorkout = (sessionId) => {
-    navigate(`/workout/${sessionId}`);
+    navigate(`/active-workout/${sessionId}`);
   };
 
   const handleCompleteWorkout = async (sessionId) => {
-    if (!window.confirm('Mark this workout as completed?')) return;
+    if (!window.confirm('Mark this workout as complete?')) return;
     
     try {
-      await axiosClient.post(`/workout-sessions/${sessionId}/complete`);
-      // Refresh the list
-      fetchWorkoutHistory();
+      await axiosClient.patch(`/workout-sessions/${sessionId}/complete`);
+      fetchSessions();
     } catch (error) {
       console.error('Error completing workout:', error);
       alert('Failed to complete workout');
@@ -61,12 +61,11 @@ export default function WorkoutHistory() {
   };
 
   const handleDeleteWorkout = async (sessionId) => {
-    if (!window.confirm('Are you sure you want to delete this workout? This action cannot be undone.')) return;
+    if (!window.confirm('Delete this workout? This action cannot be undone.')) return;
     
     try {
       await axiosClient.delete(`/workout-sessions/${sessionId}`);
-      // Refresh the list
-      fetchWorkoutHistory();
+      fetchSessions();
     } catch (error) {
       console.error('Error deleting workout:', error);
       alert('Failed to delete workout');
@@ -75,48 +74,54 @@ export default function WorkoutHistory() {
 
   const getStatusColor = (status) => {
     switch (status) {
-      case 'completed': return 'bg-green-500/20 text-green-400 border-green-500/50';
-      case 'in-progress': return 'bg-blue-500/20 text-blue-400 border-blue-500/50';
-      case 'planned': return 'bg-gray-500/20 text-gray-400 border-gray-500/50';
-      default: return 'bg-gray-500/20 text-gray-400 border-gray-500/50';
+      case 'completed':
+        return 'bg-green-500/20 border-green-500 text-green-400';
+      case 'in-progress':
+        return 'bg-blue-500/20 border-blue-500 text-blue-400';
+      case 'planned':
+        return 'bg-gray-500/20 border-gray-500 text-gray-400';
+      default:
+        return 'bg-gray-500/20 border-gray-500 text-gray-400';
     }
   };
 
   const formatDate = (dateString) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', { 
-      year: 'numeric', 
-      month: 'short', 
-      day: 'numeric' 
+    return new Date(dateString).toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric'
     });
   };
 
   const formatTime = (dateString) => {
-    const date = new Date(dateString);
-    return date.toLocaleTimeString('en-US', { 
-      hour: '2-digit', 
-      minute: '2-digit' 
+    return new Date(dateString).toLocaleTimeString('en-US', {
+      hour: '2-digit',
+      minute: '2-digit'
     });
   };
 
   const calculateTotalVolume = (session) => {
-    let totalVolume = 0;
-    session.exercises?.forEach(exercise => {
-      exercise.actualSets?.forEach(set => {
-        totalVolume += (set.weight || 0) * (set.reps || 0);
-      });
-    });
-    return totalVolume;
+    if (!session.exercises) return 0;
+    return session.exercises.reduce((total, exercise) => {
+      const exerciseVolume = (exercise.actualSets || []).reduce((sum, set) => {
+        return sum + (set.weight * set.reps);
+      }, 0);
+      return total + exerciseVolume;
+    }, 0);
   };
 
+  const filteredSessions = sessions.filter(session => {
+    if (filterStatus === 'all') return true;
+    return session.status === filterStatus;
+  });
+
   return (
-    <div 
+    <div
       className="min-h-screen bg-cover bg-center bg-fixed"
       style={{
         backgroundImage: `linear-gradient(to bottom, rgba(17, 24, 39, 0.95), rgba(31, 41, 55, 0.95)), url(${dashboardBg})`,
       }}
     >
-      {/* Header */}
       <div className="bg-gray-900/80 backdrop-blur-sm border-b border-gray-800 sticky top-0 z-10">
         <div className="container mx-auto px-4 md:px-6 py-4">
           <div className="flex items-center justify-between gap-4">
@@ -136,7 +141,7 @@ export default function WorkoutHistory() {
               </h1>
               <p className="text-gray-400 mt-1 text-sm hidden md:block">View and manage your workout sessions</p>
             </div>
-
+            
             <div className="flex-1"></div>
           </div>
         </div>
@@ -198,163 +203,110 @@ export default function WorkoutHistory() {
                 key={session.id}
                 className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-xl overflow-hidden hover:border-gray-600 transition-all"
               >
-                {/* Session Header */}
-                <div 
-                  className="p-6 cursor-pointer"
-                  onClick={() => toggleExpand(session.id)}
-                >
-                  <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+                {/* Session Card */}
+                <div className="p-4 md:p-6">
+                  {/* Header Row */}
+                  <div className="flex items-start justify-between gap-4 mb-3">
                     <div className="flex-1">
-                      <div className="flex flex-wrap items-center gap-2 md:gap-3">
+                      <div className="flex flex-wrap items-center gap-2 mb-2">
                         <h3 className="text-lg md:text-xl font-bold text-white">{session.name}</h3>
                         <span className={`px-2 md:px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(session.status)}`}>
                           {session.status}
                         </span>
                       </div>
                       
-                      <div className="flex flex-wrap items-center gap-3 md:gap-6 mt-3 text-xs md:text-sm text-gray-400">
-                        <div className="flex items-center gap-2">
-                          <Calendar className="w-4 h-4" />
-                          {formatDate(session.date)}
-                          {session.completedAt && ` at ${formatTime(session.completedAt)}`}
+                      {/* Info Row */}
+                      <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs md:text-sm text-gray-400">
+                        <div className="flex items-center gap-1.5">
+                          <Calendar className="w-4 h-4 flex-shrink-0" />
+                          <span>{formatDate(session.date)}</span>
+                          {session.completedAt && <span className="text-gray-500">• {formatTime(session.completedAt)}</span>}
                         </div>
-                        <div className="flex items-center gap-2">
-                          <Dumbbell className="w-4 h-4" />
-                          {session.exercises?.length || 0} exercises
+                        <div className="flex items-center gap-1.5">
+                          <Dumbbell className="w-4 h-4 flex-shrink-0" />
+                          <span>{session.exercises?.length || 0} exercises</span>
                         </div>
                         {session.status === 'completed' && (
-                          <div className="flex items-center gap-2">
-                            <TrendingUp className="w-4 h-4" />
-                            {calculateTotalVolume(session).toLocaleString()} kg
+                          <div className="flex items-center gap-1.5">
+                            <TrendingUp className="w-4 h-4 flex-shrink-0" />
+                            <span>{calculateTotalVolume(session).toLocaleString()} kg</span>
                           </div>
                         )}
                       </div>
                     </div>
                     
-                    {/* Action Buttons for non-completed workouts */}
-                    {session.status !== 'completed' && (
-                      <div className="ml-4 flex gap-2">
-                        {session.status === 'in-progress' && (
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleStartWorkout(session.id);
-                            }}
-                            className="px-4 py-2 bg-blue-500 hover:bg-blue-600 rounded-lg text-white font-medium transition-colors flex items-center gap-2"
-                            title="Continue Workout"
-                          >
-                            <Play className="w-4 h-4" />
-                            Continue
-                          </button>
-                        )}
-                        {session.status === 'planned' && (
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleStartWorkout(session.id);
-                            }}
-                            className="px-4 py-2 bg-green-500 hover:bg-green-600 rounded-lg text-white font-medium transition-colors flex items-center gap-2"
-                            title="Start Workout"
-                          >
-                            <Play className="w-4 h-4" />
-                            Start
-                          </button>
-                        )}
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleCompleteWorkout(session.id);
-                          }}
-                          className="px-4 py-2 bg-emerald-500 hover:bg-emerald-600 rounded-lg text-white font-medium transition-colors flex items-center gap-2"
-                          title="Mark as Complete"
-                        >
-                          <CheckCircle className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDeleteWorkout(session.id);
-                          }}
-                          className="px-4 py-2 bg-red-500 hover:bg-red-600 rounded-lg text-white font-medium transition-colors flex items-center gap-2"
-                          title="Delete Workout"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                    )}
-                    
-                    <div className="ml-4">
-                      {expandedSession === session.id ? (
-                        <ChevronUp className="w-6 h-6 text-gray-400" />
-                      ) : (
-                        <ChevronDown className="w-6 h-6 text-gray-400" />
-                      )}
-                    </div>
+                    {/* Expand Button */}
+                    <button
+                      onClick={() => toggleExpand(session.id)}
+                      className="p-2 hover:bg-gray-700 rounded-lg transition-colors flex-shrink-0"
+                    >
+                      <ChevronDown className={`w-5 h-5 transition-transform ${expandedSessions.includes(session.id) ? 'rotate-180' : ''}`} />
+                    </button>
                   </div>
+                  
+                  {/* Action Buttons */}
+                  {session.status !== 'completed' && (
+                    <div className="flex flex-wrap gap-2 pt-3 mt-3 border-t border-gray-700/50">
+                      {session.status === 'in-progress' && (
+                        <button
+                          onClick={() => handleStartWorkout(session.id)}
+                          className="flex items-center gap-2 px-4 py-2 bg-blue-500 hover:bg-blue-600 rounded-lg text-white text-sm font-medium transition-colors"
+                        >
+                          <Play className="w-4 h-4" />
+                          Continue
+                        </button>
+                      )}
+                      {session.status === 'planned' && (
+                        <button
+                          onClick={() => handleStartWorkout(session.id)}
+                          className="flex items-center gap-2 px-4 py-2 bg-green-500 hover:bg-green-600 rounded-lg text-white text-sm font-medium transition-colors"
+                        >
+                          <Play className="w-4 h-4" />
+                          Start Workout
+                        </button>
+                      )}
+                      <button
+                        onClick={() => handleCompleteWorkout(session.id)}
+                        className="flex items-center gap-2 px-4 py-2 bg-emerald-500 hover:bg-emerald-600 rounded-lg text-white text-sm font-medium transition-colors"
+                      >
+                        <CheckCircle className="w-4 h-4" />
+                        <span className="hidden sm:inline">Complete</span>
+                      </button>
+                      <button
+                        onClick={() => handleDeleteWorkout(session.id)}
+                        className="flex items-center gap-2 px-4 py-2 bg-red-500 hover:bg-red-600 rounded-lg text-white text-sm font-medium transition-colors ml-auto"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                        <span className="hidden sm:inline">Delete</span>
+                      </button>
+                    </div>
+                  )}
                 </div>
 
-                {/* Expanded Session Details */}
-                {expandedSession === session.id && (
-                  <div className="border-t border-gray-700 p-6 bg-gray-900/30">
-                    {session.notes && (
-                      <div className="mb-4">
-                        <p className="text-sm font-medium text-gray-300 mb-2">Notes:</p>
-                        <p className="text-gray-400 text-sm">{session.notes}</p>
-                      </div>
-                    )}
-                    
-                    <div>
-                      <p className="text-sm font-medium text-gray-300 mb-3">Exercises:</p>
-                      <div className="space-y-3">
-                        {session.exercises?.map((exercise, idx) => (
-                          <div key={idx} className="bg-gray-800/50 rounded-lg p-4">
-                            <div className="flex items-center justify-between mb-2">
-                              <h4 className="font-semibold text-white">{exercise.exerciseName}</h4>
-                              <span className="text-xs text-gray-500 bg-gray-700 px-2 py-1 rounded">
-                                {exercise.category}
-                              </span>
-                            </div>
-                            
-                            {/* Target vs Actual */}
-                            <div className="text-sm text-gray-400">
-                              {/* Display targets - handle both old and new format */}
-                              {exercise.sets && exercise.sets.length > 0 ? (
-                                <div>
-                                  <span className="font-medium text-gray-300">Target:</span>
-                                  <div className="mt-1 space-y-1">
-                                    {exercise.sets.map((set, setIdx) => (
-                                      <div key={setIdx} className="flex justify-between text-xs bg-gray-700/30 px-2 py-1 rounded">
-                                        <span>Set {set.setNumber}:</span>
-                                        <span>{set.targetReps} reps @ {set.targetWeight}kg</span>
-                                      </div>
-                                    ))}
-                                  </div>
-                                </div>
-                              ) : (
-                                // Old format fallback
-                                <div className="flex justify-between">
-                                  <span>Target:</span>
-                                  <span>{exercise.targetSets} sets × {exercise.targetReps} reps @ {exercise.targetWeight}kg</span>
-                                </div>
-                              )}
-                              
+                {/* Expanded Details */}
+                {expandedSessions.includes(session.id) && (
+                  <div className="px-4 md:px-6 pb-4 md:pb-6 border-t border-gray-700/50">
+                    <div className="pt-4">
+                      <h4 className="text-sm font-semibold text-gray-300 mb-3">Exercises</h4>
+                      {session.exercises && session.exercises.length > 0 ? (
+                        <div className="space-y-2">
+                          {session.exercises.map((exercise, idx) => (
+                            <div key={idx} className="bg-gray-700/30 rounded-lg p-3">
+                              <div className="flex items-center justify-between">
+                                <span className="font-medium text-white">{exercise.exerciseName}</span>
+                                <span className="text-xs text-gray-400">{exercise.category}</span>
+                              </div>
                               {exercise.actualSets && exercise.actualSets.length > 0 && (
-                                <div className="mt-2">
-                                  <span className="text-green-400 font-medium">Actual:</span>
-                                  <div className="mt-1 space-y-1">
-                                    {exercise.actualSets.map((set, setIdx) => (
-                                      <div key={setIdx} className="flex justify-between text-xs bg-green-900/20 px-2 py-1 rounded border border-green-500/20">
-                                        <span>Set {setIdx + 1}:</span>
-                                        <span>{set.reps} reps @ {set.weight}kg</span>
-                                      </div>
-                                    ))}
-                                  </div>
+                                <div className="mt-2 text-xs text-gray-400">
+                                  {exercise.actualSets.length} sets completed
                                 </div>
                               )}
                             </div>
-                          </div>
-                        ))}
-                      </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-gray-500 text-sm">No exercises logged</p>
+                      )}
                     </div>
                   </div>
                 )}
