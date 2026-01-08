@@ -436,6 +436,12 @@ export default function WeeklyCalendar() {
                               {swapSourceDay?.dayOfWeek === day.dayOfWeek ? 'Selected' : swapSourceDay ? 'Swap Here' : 'Swap Day'}
                             </button>
                             <button
+                              onClick={() => handleEditExercises(day)}
+                              className="w-full py-2 bg-indigo-500 hover:bg-indigo-600 rounded-lg text-sm font-medium transition-colors"
+                            >
+                              Edit Exercises
+                            </button>
+                            <button
                               onClick={() => handleToggleRestDay(day)}
                               className="w-full py-2 bg-purple-500 hover:bg-purple-600 rounded-lg text-sm font-medium transition-colors"
                             >
@@ -487,6 +493,104 @@ export default function WeeklyCalendar() {
           })}
         </div>
       </div>
+
+      {/* Exercise Edit Modal */}
+      {showExerciseModal && editingDay && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-gray-800 rounded-xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col border border-gray-700">
+            {/* Modal Header */}
+            <div className="p-6 border-b border-gray-700">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-2xl font-bold">Edit Exercises</h2>
+                  <p className="text-gray-400 text-sm mt-1">{editingDay.dayName} - {editingDay.workout?.name || 'Workout'}</p>
+                </div>
+                <button
+                  onClick={() => setShowExerciseModal(false)}
+                  className="p-2 hover:bg-gray-700 rounded-lg transition-colors"
+                >
+                  <XIcon className="w-6 h-6" />
+                </button>
+              </div>
+            </div>
+
+            {/* Modal Body */}
+            <div className="flex-1 overflow-y-auto p-6">
+              <div className="grid md:grid-cols-2 gap-6">
+                {/* Available Exercises */}
+                <div>
+                  <h3 className="text-lg font-semibold mb-4">Available Exercises</h3>
+                  <div className="space-y-2 max-h-96 overflow-y-auto">
+                    {availableExercises.map(exercise => (
+                      <div
+                        key={exercise._id}
+                        className="p-3 bg-gray-700/50 rounded-lg hover:bg-gray-700 transition-colors flex items-center justify-between"
+                      >
+                        <div>
+                          <p className="font-medium">{exercise.name}</p>
+                          <p className="text-xs text-gray-400">{exercise.category}</p>
+                        </div>
+                        <button
+                          onClick={() => handleAddExercise(exercise)}
+                          className="px-3 py-1 bg-blue-500 hover:bg-blue-600 rounded text-sm font-medium transition-colors"
+                        >
+                          Add
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Selected Exercises */}
+                <div>
+                  <h3 className="text-lg font-semibold mb-4">
+                    Selected Exercises ({editingDay.workout?.exercises?.length || 0})
+                  </h3>
+                  <div className="space-y-2 max-h-96 overflow-y-auto">
+                    {editingDay.workout?.exercises?.length > 0 ? (
+                      editingDay.workout.exercises.map(exercise => (
+                        <div
+                          key={exercise.exerciseId}
+                          className="p-3 bg-gray-700/50 rounded-lg hover:bg-gray-700 transition-colors flex items-center justify-between"
+                        >
+                          <div>
+                            <p className="font-medium">{exercise.exerciseName}</p>
+                            <p className="text-xs text-gray-400">{exercise.sets?.length || 3} sets</p>
+                          </div>
+                          <button
+                            onClick={() => handleRemoveExercise(exercise.exerciseId)}
+                            className="px-3 py-1 bg-red-500 hover:bg-red-600 rounded text-sm font-medium transition-colors"
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      ))
+                    ) : (
+                      <p className="text-gray-500 text-center py-8">No exercises selected</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="p-6 border-t border-gray-700 flex justify-end gap-3">
+              <button
+                onClick={() => setShowExerciseModal(false)}
+                className="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg font-medium transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSaveExercises}
+                className="px-4 py-2 bg-blue-500 hover:bg-blue-600 rounded-lg font-medium transition-colors"
+              >
+                Save Changes
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
