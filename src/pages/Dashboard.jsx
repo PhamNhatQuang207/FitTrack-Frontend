@@ -243,10 +243,9 @@ export default function Dashboard() {
               )}
             </div>
           </div>
-        </div>
+          </div>
 
-        {/* Progress Tracking Card - Full Width */}
-        <div className="max-w-5xl mx-auto mb-8">
+          {/* Progress Tracking Card */}
           <div
             className="group relative bg-gradient-to-br from-gray-800/80 to-gray-900/80 backdrop-blur-md p-8 rounded-2xl cursor-pointer 
                      hover:from-gray-700/80 hover:to-gray-800/80 transition-all duration-300 transform hover:-translate-y-2 
@@ -255,24 +254,20 @@ export default function Dashboard() {
           >
             <div className="absolute top-0 right-0 w-32 h-32 bg-purple-500/10 rounded-full -mr-16 -mt-16 group-hover:scale-150 transition-transform duration-500"></div>
             <div className="relative z-10">
-              <div className="flex items-center gap-6">
-                <div className="w-20 h-20 bg-gradient-to-br from-purple-500 to-pink-600 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
-                  <TrendingUp className="w-10 h-10 text-white" />
-                </div>
-                <div className="flex-1">
-                  <h2 className="text-2xl font-bold mb-2 bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
-                    Progress Tracking
-                  </h2>
-                  <p className="text-gray-400">
-                    Monitor your fitness journey with metrics, measurements, and workout history
-                  </p>
-                  {stats.totalWorkouts > 0 && (
-                    <p className="text-sm text-purple-400 mt-2">
-                      {stats.totalWorkouts} workout{stats.totalWorkouts !== 1 ? 's' : ''} completed
-                    </p>
-                  )}
-                </div>
+              <div className="w-20 h-20 bg-gradient-to-br from-purple-500 to-pink-600 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                <TrendingUp className="w-10 h-10 text-white" />
               </div>
+              <h2 className="text-2xl font-bold mb-3 bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
+                Progress Tracking
+              </h2>
+              <p className="text-gray-400 mb-4">
+                Monitor your fitness journey and track measurements
+              </p>
+              {stats.totalWorkouts > 0 && (
+                <p className="text-sm text-purple-400">
+                  {stats.totalWorkouts} workout{stats.totalWorkouts !== 1 ? 's' : ''} completed
+                </p>
+              )}
             </div>
           </div>
         </div>

@@ -44,7 +44,7 @@ export default function WorkoutHistory() {
   };
 
   const handleStartWorkout = (sessionId) => {
-    navigate(`/active-workout/${sessionId}`);
+    navigate(`/workout/${sessionId}`);
   };
 
   const handleCompleteWorkout = async (sessionId) => {
@@ -120,20 +120,21 @@ export default function WorkoutHistory() {
       <div className="bg-gray-900/80 backdrop-blur-sm border-b border-gray-800 sticky top-0 z-10">
         <div className="container mx-auto px-4 py-6">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <button
-                onClick={() => navigate('/dashboard')}
-                className="p-2 hover:bg-gray-800 rounded-lg transition-colors"
-              >
-                <ArrowLeft className="w-6 h-6" />
-              </button>
-              <div>
-                <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">
-                  Workout History
-                </h1>
-                <p className="text-gray-400 mt-1">View your past workout sessions</p>
-              </div>
+            <button
+              onClick={() => navigate('/dashboard')}
+              className="p-2 hover:bg-gray-800 rounded-lg transition-colors"
+            >
+              <ArrowLeft className="w-6 h-6" />
+            </button>
+            
+            <div className="text-center flex-1">
+              <h1 className="text-3xl font-bold bg-gradient-to-r from-orange-400 to-amber-400 bg-clip-text text-transparent">
+                Workout History
+              </h1>
+              <p className="text-gray-400 mt-1">View and manage your workout sessions</p>
             </div>
+
+            <div className="w-10"></div>
           </div>
         </div>
       </div>
