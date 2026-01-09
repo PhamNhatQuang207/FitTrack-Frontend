@@ -8,7 +8,6 @@ import VerifyEmail from './pages/VerifyEmail';
 import Dashboard from './pages/Dashboard';
 import Profile from './pages/Profile';
 import ResetPassword from './pages/ResetPassword';
-import ChangePassword from './pages/ChangePassword';
 import ProtectedRoute from './components/ProtectedRoute';
 import WorkoutPlanning from './pages/WorkoutPlanning';
 import WeeklyPlanBuilder from './pages/WeeklyPlanBuilder';
@@ -44,8 +43,6 @@ export default function App() {
           <Route path="/verify-email/:token" element={<VerifyEmail />} />
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/reset-password/:token" element={<ResetPassword />} />
-          <Route path="/change-password" element={<ChangePassword />} />
-
           {/* Protected Routes */}
           <Route
             path="/dashboard"
