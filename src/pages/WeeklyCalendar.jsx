@@ -8,6 +8,7 @@ export default function WeeklyCalendar() {
   const navigate = useNavigate();
   const [currentSchedule, setCurrentSchedule] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [activeSessions, setActiveSessions] = useState([]);
   const [editMode, setEditMode] = useState(false);
   const [swapSourceDay, setSwapSourceDay] = useState(null);
   const [editingWorkoutName, setEditingWorkoutName] = useState({});
@@ -18,8 +19,24 @@ export default function WeeklyCalendar() {
 
   const fetchCurrentSchedule = async () => {
     try {
-      const response = await axiosClient.get('/weekly-schedules/current');
-      setCurrentSchedule(response.data);
+      setLoading(true);
+      const scheduleRes = await axiosClient.get('/weekly-schedules/current');
+      setCurrentSchedule(scheduleRes.data);
+
+      // Fetch active sessions to overlay
+      if (scheduleRes.data && scheduleRes.data.id) {
+        try {
+          const sessionsRes = await axiosClient.get('/workout-sessions');
+          // Filter for active sessions relevant to this schedule
+          const active = sessionsRes.data.filter(s => 
+            s.weeklyScheduleId === scheduleRes.data.id && 
+            ['planned', 'in-progress', 'in_progress', 'paused'].includes(s.status)
+          );
+          setActiveSessions(active);
+        } catch (err) {
+          console.error("Error fetching sessions:", err);
+        }
+      }
     } catch (error) {
       console.error("Error fetching schedule:", error);
       setCurrentSchedule(null);
@@ -32,9 +49,9 @@ export default function WeeklyCalendar() {
     try {
       // Create a workout session with schedule metadata
       const response = await axiosClient.post('/workout-sessions', {
-        name: day.workout.name,
+        name: day.workout.name || `${day.dayName} Workout`,
         date: day.date,
-        exercises: day.workout.exercises,
+        exercises: day.workout.exercises || [],
         status: 'planned',
         weeklyScheduleId: currentSchedule.id,
         dayOfWeek: day.dayOfWeek
@@ -345,6 +362,11 @@ export default function WeeklyCalendar() {
             const isTodayDay = isToday(day.date);
             const isCompleted = day.workout?.isCompleted;
             const isRest = day.isRestDay;
+            
+            // Find active session for this day
+            const activeSession = activeSessions.find(s => String(s.dayOfWeek) === String(day.dayOfWeek));
+            // Use session exercise count if available, otherwise schedule count
+            const exerciseCount = activeSession ? (activeSession.exercises?.length || 0) : (day.workout?.exercises?.length || 0);
 
             return (
               <div 
@@ -411,7 +433,7 @@ export default function WeeklyCalendar() {
                       ) : (
                         <h3 className="text-xl font-bold mb-1 text-white">{day.workout.name}</h3>
                       )}
-                      <p className="text-sm text-gray-400 mb-4">{day.workout.exercises?.length || 0} Exercises</p>
+                      <p className="text-sm text-gray-400 mb-4">{exerciseCount} Exercises</p>
                       
                       <div className="mt-auto">
                         {editMode ? (
@@ -442,7 +464,19 @@ export default function WeeklyCalendar() {
                                  Completed
                                </div>
                             ) : (
-                              day.workout.exercises?.length > 0 ? (
+                              activeSession ? (
+                                <button
+                                  onClick={() => navigate(`/workout/${activeSession._id || activeSession.id}`)}
+                                  className={`flex items-center justify-center gap-2 w-full py-3 rounded-lg font-medium transition-all ${
+                                      isTodayDay
+                                      ? 'bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700 shadow-lg shadow-orange-500/20'
+                                      : 'bg-orange-600 hover:bg-orange-500'
+                                  }`}
+                                >
+                                  <Play className="w-4 h-4 fill-current" />
+                                  Resume {activeSession.status === 'paused' ? 'Paused ' : ''}Workout
+                                </button>
+                              ) : day.workout.exercises?.length > 0 ? (
                                 <button
                                   onClick={() => handleStartWorkout(day)}
                                   className={`flex items-center justify-center gap-2 w-full py-3 rounded-lg font-medium transition-all ${
@@ -455,17 +489,26 @@ export default function WeeklyCalendar() {
                                   Start Workout
                                 </button>
                               ) : (
-                                <button
-                                  onClick={() => handleMarkComplete(day)}
-                                  className={`flex items-center justify-center gap-2 w-full py-3 rounded-lg font-medium transition-colors ${
-                                      isTodayDay
-                                      ? 'bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 shadow-lg shadow-green-500/20'
-                                      : 'bg-green-700 hover:bg-green-600'
-                                  }`}
-                                >
-                                  <CheckCircle2 className="w-4 h-4" />
-                                  Mark as Complete
-                                </button>
+                                <div className="space-y-2">
+                                  <button
+                                    onClick={() => handleStartWorkout(day)}
+                                    className={`flex items-center justify-center gap-2 w-full py-3 rounded-lg font-medium transition-all ${
+                                        isTodayDay
+                                        ? 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 shadow-lg shadow-blue-500/20'
+                                        : 'bg-blue-600 hover:bg-blue-500'
+                                    }`}
+                                  >
+                                    <Play className="w-4 h-4" />
+                                    Start & Add Exercises
+                                  </button>
+                                  <button
+                                    onClick={() => handleMarkComplete(day)}
+                                    className="flex items-center justify-center gap-2 w-full py-2 bg-transparent hover:bg-gray-700/50 text-gray-400 rounded-lg font-medium transition-colors border border-gray-600/50 border-dashed text-sm"
+                                  >
+                                    <CheckCircle2 className="w-3 h-3" />
+                                    Mark Empty as Complete
+                                  </button>
+                                </div>
                               )
                             )}
                           </>
