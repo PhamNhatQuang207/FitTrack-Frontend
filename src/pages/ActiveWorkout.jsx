@@ -217,7 +217,19 @@ export default function ActiveWorkout() {
     const updatedExercises = [...session.exercises];
     
     // Check if already added
-    if (updatedExercises.find(ex => ex.exerciseId?.toString() === exercise._id || ex.exerciseName === exercise.name)) {
+    const existing = updatedExercises.find(ex => {
+        // Safe check for ID match (ensure both sides are valid)
+        if (ex.exerciseId && exercise._id && ex.exerciseId.toString() === exercise._id) {
+            return true;
+        }
+        // Fallback to name match (case insensitive safe)
+        if (ex.exerciseName === exercise.name) {
+            return true;
+        }
+        return false;
+    });
+
+    if (existing) {
       alert("Exercise already added");
       return;
     }
@@ -423,6 +435,7 @@ export default function ActiveWorkout() {
                           type="number"
                           value={inputValues.reps}
                           onChange={(e) => handleSetInputChange(currentExerciseIndex, index, 'reps', parseInt(e.target.value) || 0)}
+                          onFocus={(e) => e.target.select()}
                           onClick={(e) => e.stopPropagation()}
                           className="w-12 px-1 py-1.5 bg-gray-600/50 border border-gray-500 rounded text-center font-medium focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none text-sm"
                           disabled={isCompleted}
@@ -437,6 +450,7 @@ export default function ActiveWorkout() {
                           step="0.5"
                           value={inputValues.weight}
                           onChange={(e) => handleSetInputChange(currentExerciseIndex, index, 'weight', parseFloat(e.target.value) || 0)}
+                          onFocus={(e) => e.target.select()}
                           onClick={(e) => e.stopPropagation()}
                           className="w-12 px-1 py-1.5 bg-gray-600/50 border border-gray-500 rounded text-center font-medium focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none text-sm"
                           disabled={isCompleted}
