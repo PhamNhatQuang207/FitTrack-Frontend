@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import axiosClient from "../api/axiosClient";
@@ -21,11 +21,7 @@ export default function Profile() {
   const [message, setMessage] = useState("");
   const navigate = useNavigate();
 
-  useEffect(() => {
-    getUserProgress();
-  }, []);
-
-  const getUserProgress = async () => {
+  const getUserProgress = useCallback(async () => {
     try {
       if (!user) {
         navigate("/login");
@@ -57,7 +53,11 @@ export default function Profile() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user, navigate]);
+
+  useEffect(() => {
+    getUserProgress();
+  }, [getUserProgress]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;

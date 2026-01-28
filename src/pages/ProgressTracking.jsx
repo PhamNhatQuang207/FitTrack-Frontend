@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import axiosClient from "../api/axiosClient";
 import { ArrowLeft, TrendingUp, Dumbbell, Activity, Calendar } from "lucide-react";
@@ -19,11 +19,20 @@ export default function ProgressTracking() {
     fetchInitialData();
   }, []);
 
+  const fetchProgressionData = useCallback(async () => {
+    try {
+      const response = await axiosClient.get(`/analytics/strength-progression/${encodeURIComponent(selectedExercise)}`);
+      setProgressionData(response.data);
+    } catch (error) {
+      console.error("Error fetching progression data:", error);
+    }
+  }, [selectedExercise]);
+
   useEffect(() => {
     if (selectedExercise) {
       fetchProgressionData();
     }
-  }, [selectedExercise]);
+  }, [selectedExercise, fetchProgressionData]);
 
   const fetchInitialData = async () => {
     try {
@@ -51,15 +60,6 @@ export default function ProgressTracking() {
       console.error("Error fetching data:", error);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const fetchProgressionData = async () => {
-    try {
-      const response = await axiosClient.get(`/analytics/strength-progression/${encodeURIComponent(selectedExercise)}`);
-      setProgressionData(response.data);
-    } catch (error) {
-      console.error("Error fetching progression data:", error);
     }
   };
 
