@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import axiosClient from "../api/axiosClient";
 import { ArrowLeft, Search, Save, Plus, Trash2, CheckCircle2 } from "lucide-react";
@@ -48,13 +48,7 @@ export default function WorkoutPlanning() {
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    if (step === 2 && selectedMuscleGroups.length > 0) {
-      fetchExercisesForSelectedGroups();
-    }
-  }, [step, selectedMuscleGroups]);
-
-  const fetchExercisesForSelectedGroups = async () => {
+  const fetchExercisesForSelectedGroups = useCallback(async () => {
     setLoading(true);
     try {
       // Fetch exercises for all selected muscle groups
@@ -69,7 +63,13 @@ export default function WorkoutPlanning() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [selectedMuscleGroups]);
+
+  useEffect(() => {
+    if (step === 2 && selectedMuscleGroups.length > 0) {
+      fetchExercisesForSelectedGroups();
+    }
+  }, [step, fetchExercisesForSelectedGroups]);
 
   const handleMuscleGroupToggle = (group) => {
     const isSelected = selectedMuscleGroups.find(g => g.id === group.id);

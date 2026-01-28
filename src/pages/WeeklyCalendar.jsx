@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axiosClient from "../api/axiosClient";
-import { ArrowLeft, Play, CheckCircle2, Calendar as CalendarIcon, Edit2, RefreshCcw, X as XIcon, Search, Save } from "lucide-react";
+import { ArrowLeft, Play, CheckCircle2, Calendar as CalendarIcon, Edit2, RefreshCcw, X as XIcon, Save } from "lucide-react";
 import dashboardBg from "../assets/icons/dashboard_background.jpg";
 
 export default function WeeklyCalendar() {

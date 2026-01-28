@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { useParams, useNavigate, useSearchParams, Link } from 'react-router-dom';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useParams, useSearchParams, Link } from 'react-router-dom';
 import axiosClient from '../api/axiosClient';
 import { CheckCircle2, XCircle, Loader2 } from 'lucide-react';
 import gymImage from '../assets/background.jpg';
@@ -8,19 +8,11 @@ export default function VerifyEmail() {
   const { token: pathToken } = useParams(); // From /verify-email/:token
   const [searchParams] = useSearchParams(); // From /verify-email?token=...
   const token = searchParams.get('token') || pathToken; // Support both formats
-  const navigate = useNavigate();
   const [status, setStatus] = useState('loading'); // loading, success, error
   const [message, setMessage] = useState('');
   const hasVerified = useRef(false); // Prevent double verification in StrictMode
 
-  useEffect(() => {
-    if (!hasVerified.current) {
-      hasVerified.current = true;
-      verifyEmail();
-    }
-  }, [token]);
-
-  const verifyEmail = async () => {
+  const verifyEmail = useCallback(async () => {
     try {
       const response = await axiosClient.get(`/auth/verify-email/${token}`);
       setStatus('success');
@@ -29,7 +21,14 @@ export default function VerifyEmail() {
       setStatus('error');
       setMessage(error.response?.data?.message || 'Verification failed. Please try again.');
     }
-  };
+  }, [token]);
+
+  useEffect(() => {
+    if (!hasVerified.current) {
+      hasVerified.current = true;
+      verifyEmail();
+    }
+  }, [verifyEmail]);
 
   return (
     <div

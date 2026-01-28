@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import axiosClient from "../api/axiosClient";
-import { ArrowLeft, Save, Plus, Trash2, X, Check, Search, ChevronRight, Trash, ChevronDown } from "lucide-react";
+import { ArrowLeft, Save, Plus, Trash2, X, Check, Search, Trash, ChevronDown } from "lucide-react";
 import dashboardBg from "../assets/icons/dashboard_background.jpg";
 
 const DAYS = [
@@ -60,13 +60,7 @@ export default function WeeklyPlanBuilder() {
   const [showMuscleGroupDropdown, setShowMuscleGroupDropdown] = useState(false);
 
   // Load existing plan if editing
-  useEffect(() => {
-    if (id) {
-      loadPlan(id);
-    }
-  }, [id]);
-
-  const loadPlan = async (planId) => {
+  const loadPlan = useCallback(async (planId) => {
     setLoading(true);
     try {
       const response = await axiosClient.get(`/weekly-plans/${planId}`);
@@ -133,15 +127,15 @@ export default function WeeklyPlanBuilder() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [navigate]);
 
   useEffect(() => {
-    if (showExerciseModal) {
-      fetchExercises();
+    if (id) {
+      loadPlan(id);
     }
-  }, [showExerciseModal, selectedMuscleGroup]);
+  }, [id, loadPlan]);
 
-  const fetchExercises = async () => {
+  const fetchExercises = useCallback(async () => {
     try {
       const url = selectedMuscleGroup === 'all' 
         ? '/exercises' 
@@ -150,8 +144,16 @@ export default function WeeklyPlanBuilder() {
       setAvailableExercises(response.data);
     } catch (error) {
       console.error("Error fetching exercises:", error);
+    } finally {
+      setLoading(false);
     }
-  };
+  }, [selectedMuscleGroup]);
+
+  useEffect(() => {
+    if (showExerciseModal) {
+      fetchExercises();
+    }
+  }, [showExerciseModal, fetchExercises]);
 
   const handleDayUpdate = (index, field, value) => {
     const newSchedule = [...schedule];
