@@ -181,6 +181,7 @@ export default function WorkoutPlanning() {
 
   return (
     <div
+      translate="no"
       className="min-h-screen w-full text-white bg-cover bg-center bg-no-repeat"
       style={{
         backgroundImage: `linear-gradient(to bottom, rgba(17, 24, 39, 0.9), rgba(31, 41, 55, 0.9)), url(${dashboardBg})`,
@@ -240,6 +241,7 @@ export default function WorkoutPlanning() {
                   placeholder="e.g., Push Day A, Full Body Strength, Leg Day..."
                   value={workoutName}
                   onChange={(e) => setWorkoutName(e.target.value)}
+                  translate="no"
                   className="w-full px-4 py-3 bg-gray-700/50 border border-gray-600 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all outline-none text-white placeholder-gray-500"
                 />
               </div>
@@ -318,6 +320,7 @@ export default function WorkoutPlanning() {
                       placeholder="Search exercises..."
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
+                      translate="no"
                       className="w-full pl-10 pr-4 py-3 bg-gray-800/50 border border-gray-700 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all outline-none text-white placeholder-gray-500"
                     />
                   </div>
@@ -396,6 +399,7 @@ export default function WorkoutPlanning() {
                                   value={set.targetReps}
                                   onChange={(e) => handleSetChange(index, setIdx, 'targetReps', e.target.value)}
                                   placeholder="Reps"
+                                  translate="no"
                                   className="w-full px-2 py-1.5 bg-gray-600/50 border border-gray-500 rounded text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500/20 outline-none"
                                 />
                                 <label className="text-[10px] text-gray-500">reps</label>
@@ -409,6 +413,7 @@ export default function WorkoutPlanning() {
                                   value={set.targetWeight || ''}
                                   onChange={(e) => handleSetChange(index, setIdx, 'targetWeight', e.target.value)}
                                   placeholder="Weight"
+                                  translate="no"
                                   className="w-full px-2 py-1.5 bg-gray-600/50 border border-gray-500 rounded text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500/20 outline-none"
                                 />
                                 <label className="text-[10px] text-gray-500">kg</label>
