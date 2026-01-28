@@ -3,6 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import axiosClient from "../api/axiosClient";
 import { ArrowLeft, Save, Plus, Trash2, X, Check, Search, Trash, ChevronDown } from "lucide-react";
 import dashboardBg from "../assets/icons/dashboard_background.jpg";
+import ErrorBoundary from "../components/ErrorBoundary";
 
 const DAYS = [
   { id: 0, name: 'Monday' },
@@ -31,7 +32,7 @@ const MUSCLE_GROUPS = [
   { id: 'triceps', name: 'Triceps' }
 ];
 
-export default function WeeklyPlanBuilder() {
+function WeeklyPlanBuilderContent() {
   const navigate = useNavigate();
   const { id } = useParams(); // Get plan ID from URL if editing
   const [loading, setLoading] = useState(false);
@@ -332,7 +333,9 @@ export default function WeeklyPlanBuilder() {
               <ArrowLeft className="h-5 w-5" />
               <span className="font-medium hidden md:inline">Back to Dashboard</span>
             </button>
-            <h1 className="text-lg md:text-xl font-bold">{isEditMode ? 'Edit Plan' : 'New Plan'}</h1>
+              <h1 className="text-lg md:text-xl font-bold">
+                {isEditMode ? <span>Edit Plan</span> : <span>New Plan</span>}
+              </h1>
             <div className="flex items-center gap-3">
               {isEditMode && (
                 <button
@@ -341,7 +344,7 @@ export default function WeeklyPlanBuilder() {
                   className="flex items-center justify-center gap-2 px-3 md:px-4 h-9 md:h-10 bg-red-500 hover:bg-red-600 border border-transparent rounded-lg text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap text-white"
                 >
                   <Trash className="w-4 h-4" />
-                  <span className="hidden md:inline">Delete</span>
+                  <span className="hidden md:inline"><span>Delete</span></span>
                 </button>
               )}
               <button
@@ -350,7 +353,9 @@ export default function WeeklyPlanBuilder() {
                 className="flex items-center justify-center gap-2 px-3 md:px-4 h-9 md:h-10 bg-blue-500 hover:bg-blue-600 border border-transparent rounded-lg text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap text-white"
               >
                 <Save className="w-4 h-4" />
-                <span className="hidden md:inline">{isEditMode ? 'Update Plan' : 'Save Plan'}</span>
+                <span className="hidden md:inline">
+                  {isEditMode ? <span>Update Plan</span> : <span>Save Plan</span>}
+                </span>
               </button>
             </div>
           </div>
@@ -362,7 +367,9 @@ export default function WeeklyPlanBuilder() {
         <div className="bg-gray-800/50 backdrop-blur-sm p-6 rounded-xl border border-gray-700 mb-8">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <label className="block text-sm font-semibold mb-2">Plan Name</label>
+              <label className="block text-sm font-semibold mb-2">
+                <span>Plan Name</span>
+              </label>
               <input
                 type="text"
                 placeholder="e.g., PPL Split - Week 1"
@@ -372,7 +379,9 @@ export default function WeeklyPlanBuilder() {
               />
             </div>
             <div>
-              <label className="block text-sm font-semibold mb-2">Description (Optional)</label>
+              <label className="block text-sm font-semibold mb-2">
+                <span>Description (Optional)</span>
+              </label>
               <input
                 type="text"
                 placeholder="Goal: Hypertrophy, Strength..."
@@ -386,7 +395,9 @@ export default function WeeklyPlanBuilder() {
 
         {/* Weekly Schedule */}
         <div className="space-y-4">
-          <h2 className="text-2xl font-bold mb-4">Weekly Schedule</h2>
+          <h2 className="text-2xl font-bold mb-4">
+            <span>Weekly Schedule</span>
+          </h2>
           {schedule.map((day, index) => (
             <div 
               key={day.id}
@@ -402,7 +413,9 @@ export default function WeeklyPlanBuilder() {
                     <div className="w-10 h-10 rounded-full bg-gray-700 flex items-center justify-center font-bold text-gray-300">
                       {day.name.substring(0, 3)}
                     </div>
-                    <h3 className="text-lg font-semibold">{day.name}</h3>
+                    <h3 className="text-lg font-semibold">
+                      <span>{day.name}</span>
+                    </h3>
                   </div>
 
                   <label className="flex items-center gap-2 cursor-pointer select-none">
@@ -417,7 +430,9 @@ export default function WeeklyPlanBuilder() {
                       checked={day.isRestDay}
                       onChange={(e) => handleDayUpdate(index, 'isRestDay', e.target.checked)}
                     />
-                    <span className="text-sm text-gray-300">Rest Day</span>
+                    <span className="text-sm text-gray-300">
+                      <span>Rest Day</span>
+                    </span>
                   </label>
                 </div>
 
@@ -433,14 +448,16 @@ export default function WeeklyPlanBuilder() {
 
                     <div className="flex items-center justify-between">
                       <span className="text-sm text-gray-400">
-                        {day.workout.exercises.length} exercise{day.workout.exercises.length !== 1 ? 's' : ''}
+                        <span>{day.workout.exercises.length}</span>
+                        <span> exercise</span>
+                        <span>{day.workout.exercises.length !== 1 ? 's' : ''}</span>
                       </span>
                       <button
                         onClick={() => handleConfigureDay(index)}
                         className="px-4 py-2 bg-blue-500 hover:bg-blue-600 rounded-lg text-sm font-medium flex items-center gap-2"
                       >
                         <Plus className="w-4 h-4" />
-                        Configure Exercises
+                        <span>Configure Exercises</span>
                       </button>
                     </div>
 
@@ -448,7 +465,7 @@ export default function WeeklyPlanBuilder() {
                       <div className="flex flex-wrap gap-2 mt-2">
                         {day.workout.exercises.map((ex, idx) => (
                           <span key={idx} className="px-3 py-1 bg-gray-700/50 rounded-full text-xs">
-                            {ex.exerciseName}
+                            <span>{ex.exerciseName}</span>
                           </span>
                         ))}
                       </div>
@@ -469,7 +486,9 @@ export default function WeeklyPlanBuilder() {
             <div className="p-6 border-b border-gray-700 flex items-center justify-between">
               <div>
                 <h2 className="text-2xl font-bold">{activeDay.name} - {activeDay.workout.name || 'Workout'}</h2>
-                <p className="text-sm text-gray-400">Add and configure exercises</p>
+                <p className="text-sm text-gray-400">
+                  <span>Add and configure exercises</span>
+                </p>
               </div>
               <button
                 onClick={() => setShowExerciseModal(false)}
@@ -484,7 +503,9 @@ export default function WeeklyPlanBuilder() {
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Left: Available Exercises */}
                 <div>
-                  <h3 className="text-lg font-semibold mb-4">Available Exercises</h3>
+                  <h3 className="text-lg font-semibold mb-4">
+                    <span>Available Exercises</span>
+                  </h3>
                   
                   {/* Filters */}
                   <div className="space-y-3 mb-4">
@@ -522,7 +543,7 @@ export default function WeeklyPlanBuilder() {
                               selectedMuscleGroup === 'all' ? 'bg-blue-500/20 text-blue-400' : 'text-gray-300'
                             }`}
                           >
-                            All Muscle Groups
+                            <span>All Muscle Groups</span>
                           </button>
                           {MUSCLE_GROUPS.map(group => (
                             <button
@@ -535,7 +556,7 @@ export default function WeeklyPlanBuilder() {
                                 selectedMuscleGroup === group.id ? 'bg-blue-500/20 text-blue-400' : 'text-gray-300'
                               }`}
                             >
-                              {group.name}
+                              <span>{group.name}</span>
                             </button>
                           ))}
                         </div>
@@ -552,8 +573,12 @@ export default function WeeklyPlanBuilder() {
                         className="w-full p-3 bg-gray-700/30 hover:bg-gray-700/50 rounded-lg text-left transition-colors flex items-center justify-between group"
                       >
                         <div>
-                          <p className="font-medium">{exercise.name}</p>
-                          <p className="text-xs text-gray-400">{exercise.category}</p>
+                          <p className="font-medium">
+                            <span>{exercise.name}</span>
+                          </p>
+                          <p className="text-xs text-gray-400">
+                            <span>{exercise.category}</span>
+                          </p>
                         </div>
                         <Plus className="w-5 h-5 text-gray-400 group-hover:text-blue-400" />
                       </button>
@@ -564,13 +589,19 @@ export default function WeeklyPlanBuilder() {
                 {/* Right: Selected Exercises */}
                 <div>
                   <h3 className="text-lg font-semibold mb-4">
-                    Your Exercises ({activeDay.workout.exercises.length})
+                    <span>Your Exercises (</span>
+                    <span>{activeDay.workout.exercises.length}</span>
+                    <span>)</span>
                   </h3>
                   
                   {activeDay.workout.exercises.length === 0 ? (
                     <div className="text-center py-12 text-gray-400">
-                      <p>No exercises added yet</p>
-                      <p className="text-sm mt-2">Click exercises from the left to add them</p>
+                      <p>
+                        <span>No exercises added yet</span>
+                      </p>
+                      <p className="text-sm mt-2">
+                        <span>Click exercises from the left to add them</span>
+                      </p>
                     </div>
                   ) : (
                     <div className="space-y-3">
@@ -578,8 +609,12 @@ export default function WeeklyPlanBuilder() {
                         <div key={exercise.exerciseId} className="p-4 bg-gray-700/30 rounded-lg">
                           <div className="flex items-center justify-between mb-3">
                             <div>
-                              <p className="font-medium">{exercise.exerciseName}</p>
-                              <p className="text-xs text-gray-400">{exercise.category}</p>
+                              <p className="font-medium">
+                                <span>{exercise.exerciseName}</span>
+                              </p>
+                              <p className="text-xs text-gray-400">
+                                <span>{exercise.category}</span>
+                              </p>
                             </div>
                             <button
                               onClick={() => handleRemoveExercise(exercise.exerciseId)}
@@ -592,19 +627,24 @@ export default function WeeklyPlanBuilder() {
                           {/* Sets Configuration */}
                           <div className="mt-4 space-y-2">
                             <div className="flex items-center justify-between">
-                              <label className="text-sm font-medium text-gray-300">Sets Configuration</label>
+                              <label className="text-sm font-medium text-gray-300">
+                                <span>Sets Configuration</span>
+                              </label>
                               <button
                                 onClick={() => handleAddSet(exercise.exerciseId)}
                                 className="text-xs px-3 py-1 bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 rounded-lg transition-colors flex items-center gap-1"
                               >
                                 <Plus className="w-3 h-3" />
-                                Add Set
+                                <span>Add Set</span>
                               </button>
                             </div>
                             
                             {exercise.sets && exercise.sets.map((set, setIdx) => (
                               <div key={setIdx} className="flex items-center gap-2 bg-gray-600/30 p-2 rounded-lg">
-                                <span className="text-xs font-medium text-gray-400 w-12">Set {set.setNumber}</span>
+                                <span className="text-xs font-medium text-gray-400 w-12">
+                                  <span>Set </span>
+                                  <span>{set.setNumber}</span>
+                                </span>
                                 
                                 <div className="flex-1">
                                   <input
@@ -615,7 +655,9 @@ export default function WeeklyPlanBuilder() {
                                     placeholder="Reps"
                                     className="w-full px-2 py-1.5 bg-gray-700/50 border border-gray-500 rounded text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500/20 outline-none"
                                   />
-                                  <label className="text-[10px] text-gray-500">reps</label>
+                                  <label className="text-[10px] text-gray-500">
+                                    <span>reps</span>
+                                  </label>
                                 </div>
                                 
                                 <div className="flex-1">
@@ -628,7 +670,9 @@ export default function WeeklyPlanBuilder() {
                                     placeholder="Weight"
                                     className="w-full px-2 py-1.5 bg-gray-700/50 border border-gray-500 rounded text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500/20 outline-none"
                                   />
-                                  <label className="text-[10px] text-gray-500">kg</label>
+                                  <label className="text-[10px] text-gray-500">
+                                    <span>kg</span>
+                                  </label>
                                 </div>
                                 
                                 {exercise.sets.length > 1 && (
@@ -657,12 +701,21 @@ export default function WeeklyPlanBuilder() {
                 onClick={() => setShowExerciseModal(false)}
                 className="px-6 py-2 bg-blue-500 hover:bg-blue-600 rounded-lg font-medium transition-colors"
               >
-                Done
+                <span>Done</span>
               </button>
             </div>
           </div>
         </div>
       )}
     </div>
+  );
+}
+
+// Export wrapped component with Error Boundary
+export default function WeeklyPlanBuilder() {
+  return (
+    <ErrorBoundary>
+      <WeeklyPlanBuilderContent />
+    </ErrorBoundary>
   );
 }

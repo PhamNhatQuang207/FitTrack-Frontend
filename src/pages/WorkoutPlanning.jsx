@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import axiosClient from "../api/axiosClient";
 import { ArrowLeft, Search, Save, Plus, Trash2, CheckCircle2 } from "lucide-react";
 import dashboardBg from "../assets/icons/dashboard_background.jpg";
+import ErrorBoundary from "../components/ErrorBoundary";
 
 // Import muscle group icons
 import chestIcon from "../assets/icons/muscle/chest.png";
@@ -38,7 +39,7 @@ const muscleGroupData = [
   { id: 'forearms', name: 'Forearms', icon: forearmsIcon, color: 'from-gray-500 to-slate-500' }
 ];
 
-export default function WorkoutPlanning() {
+function WorkoutPlanningContent() {
   const navigate = useNavigate();
   const [step, setStep] = useState(1);
   const [workoutName, setWorkoutName] = useState("");
@@ -203,7 +204,9 @@ export default function WorkoutPlanning() {
                 className="flex items-center space-x-2 text-white hover:text-blue-400 transition-colors group"
               >
                 <ArrowLeft className="h-5 w-5 group-hover:-translate-x-1 transition-transform" />
-                <span className="font-medium hidden md:inline">{step === 1 ? 'Back to Dashboard' : 'Back'}</span>
+                <span className="font-medium hidden md:inline">
+                  {step === 1 ? <span>Back to Dashboard</span> : <span>Back</span>}
+                </span>
               </button>
             </div>
             
@@ -228,13 +231,17 @@ export default function WorkoutPlanning() {
           {step === 1 && (
             <div>
               <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">
-                Create Workout Plan
+                <span>Create Workout Plan</span>
               </h1>
-              <p className="text-gray-400 mb-8">Name your workout and select target muscle groups</p>
+              <p className="text-gray-400 mb-8">
+                <span>Name your workout and select target muscle groups</span>
+              </p>
               
               {/* Workout Name */}
               <div className="bg-gray-800/50 backdrop-blur-sm p-6 rounded-xl border border-gray-700 mb-8">
-                <label className="block text-lg font-semibold mb-3">Workout Name</label>
+                <label className="block text-lg font-semibold mb-3">
+                  <span>Workout Name</span>
+                </label>
                 <input
                   type="text"
                   placeholder="e.g., Push Day A, Full Body Strength, Leg Day..."
@@ -246,13 +253,18 @@ export default function WorkoutPlanning() {
 
               {/* Muscle Group Selection */}
               <div className="mb-6">
-                <h2 className="text-2xl font-bold mb-4">Select Muscle Groups</h2>
+                <h2 className="text-2xl font-bold mb-4">
+                  <span>Select Muscle Groups</span>
+                </h2>
                 <p className="text-gray-400 mb-6">
-                  {selectedMuscleGroups.length} muscle group{selectedMuscleGroups.length !== 1 ? 's' : ''} selected
+                  <span>{selectedMuscleGroups.length}</span>
+                  <span> muscle group</span>
+                  <span>{selectedMuscleGroups.length !== 1 ? 's' : ''}</span>
+                  <span> selected</span>
                 </p>
               </div>
 
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 mb-8" translate="no">
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 mb-8" >
                 {muscleGroupData.map((group) => {
                   const isSelected = selectedMuscleGroups.find(g => g.id === group.id);
                   return (
@@ -273,7 +285,9 @@ export default function WorkoutPlanning() {
                         />
                         <h3 className={`font-bold text-lg text-center ${
                           isSelected ? 'text-white drop-shadow-lg' : 'text-gray-300'
-                        }`}>{group.name}</h3>
+                        }`}>
+                          <span>{group.name}</span>
+                        </h3>
                       </div>
                       {isSelected && (
                         <div className="absolute top-3 right-3 bg-white rounded-full p-1.5">
@@ -290,7 +304,7 @@ export default function WorkoutPlanning() {
                 disabled={!workoutName.trim() || selectedMuscleGroups.length === 0}
                 className="w-full py-4 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 rounded-xl font-semibold text-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Next: Add Exercises
+                <span>Next: Add Exercises</span>
               </button>
             </div>
           )}
@@ -302,13 +316,16 @@ export default function WorkoutPlanning() {
                 {workoutName}
               </h1>
               <p className="text-gray-400 mb-6">
-                Add exercises from: {selectedMuscleGroups.map(g => g.name).join(', ')}
+                <span>Add exercises from: </span>
+                <span>{selectedMuscleGroups.map(g => g.name).join(', ')}</span>
               </p>
 
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Available Exercises */}
                 <div>
-                  <h2 className="text-xl font-bold mb-4">Available Exercises</h2>
+                  <h2 className="text-xl font-bold mb-4">
+                    <span>Available Exercises</span>
+                  </h2>
                   
                   {/* Search */}
                   <div className="relative mb-4">
@@ -322,7 +339,7 @@ export default function WorkoutPlanning() {
                     />
                   </div>
 
-                  <div className="space-y-2 max-h-[600px] overflow-y-auto pr-2" translate="no">
+                  <div className="space-y-2 max-h-[600px] overflow-y-auto pr-2" >
                     {filteredExercises.map((exercise) => {
                       const isAdded = workoutExercises.find(ex => ex.exerciseId === exercise.id);
                       return (
@@ -338,8 +355,14 @@ export default function WorkoutPlanning() {
                         >
                           <div className="flex items-center justify-between">
                             <div>
-                              <p className="font-semibold">{exercise.name}</p>
-                              <p className="text-sm text-gray-400">{exercise.category} • {exercise.equipment}</p>
+                              <p className="font-semibold">
+                                <span>{exercise.name}</span>
+                              </p>
+                              <p className="text-sm text-gray-400">
+                                <span>{exercise.category}</span>
+                                <span> • </span>
+                                <span>{exercise.equipment}</span>
+                              </p>
                             </div>
                             {!isAdded && <Plus className="w-5 h-5 text-blue-400" />}
                             {isAdded && <CheckCircle2 className="w-5 h-5 text-green-400" />}
@@ -353,16 +376,22 @@ export default function WorkoutPlanning() {
                 {/* Selected Exercises with Configuration */}
                 <div>
                   <h2 className="text-xl font-bold mb-4">
-                    Your Exercises ({workoutExercises.length})
+                    <span>Your Exercises (</span>
+                    <span>{workoutExercises.length}</span>
+                    <span>)</span>
                   </h2>
 
                   <div className="space-y-4 max-h-[600px] overflow-y-auto pr-2" translate="no">
                     {workoutExercises.map((exercise, index) => (
-                      <div key={index} className="bg-gray-800/50 p-4 rounded-xl border border-gray-700">
+                      <div key={`exercise-${exercise.exerciseId}-${index}`} className="bg-gray-800/50 p-4 rounded-xl border border-gray-700">
                         <div className="flex items-center justify-between mb-3">
                           <div>
-                            <h3 className="font-semibold">{exercise.exerciseName}</h3>
-                            <p className="text-sm text-gray-400">{exercise.category}</p>
+                            <h3 className="font-semibold">
+                              <span>{exercise.exerciseName}</span>
+                            </h3>
+                            <p className="text-sm text-gray-400">
+                              <span>{exercise.category}</span>
+                            </p>
                           </div>
                           <button
                             onClick={() => handleRemoveExercise(index)}
@@ -375,19 +404,24 @@ export default function WorkoutPlanning() {
                         {/* Sets Configuration */}
                         <div className="mt-4 space-y-2">
                           <div className="flex items-center justify-between">
-                            <label className="text-sm font-medium text-gray-300">Sets Configuration</label>
+                            <label className="text-sm font-medium text-gray-300">
+                              <span>Sets Configuration</span>
+                            </label>
                             <button
                               onClick={() => handleAddSet(index)}
                               className="text-xs px-3 py-1 bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 rounded-lg transition-colors flex items-center gap-1"
                             >
                               <Plus className="w-3 h-3" />
-                              Add Set
+                              <span>Add Set</span>
                             </button>
                           </div>
                           
                           {exercise.sets.map((set, setIdx) => (
                             <div key={setIdx} className="flex items-center gap-2 bg-gray-700/30 p-2 rounded-lg">
-                              <span className="text-xs font-medium text-gray-400 w-12">Set {set.setNumber}</span>
+                              <span className="text-xs font-medium text-gray-400 w-12">
+                                <span>Set </span>
+                                <span>{set.setNumber}</span>
+                              </span>
                               
                               <div className="flex-1">
                                 <input
@@ -398,7 +432,9 @@ export default function WorkoutPlanning() {
                                   placeholder="Reps"
                                   className="w-full px-2 py-1.5 bg-gray-600/50 border border-gray-500 rounded text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500/20 outline-none"
                                 />
-                                <label className="text-[10px] text-gray-500">reps</label>
+                                <label className="text-[10px] text-gray-500">
+                                  <span>reps</span>
+                                </label>
                               </div>
                               
                               <div className="flex-1">
@@ -411,7 +447,9 @@ export default function WorkoutPlanning() {
                                   placeholder="Weight"
                                   className="w-full px-2 py-1.5 bg-gray-600/50 border border-gray-500 rounded text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500/20 outline-none"
                                 />
-                                <label className="text-[10px] text-gray-500">kg</label>
+                                <label className="text-[10px] text-gray-500">
+                                  <span>kg</span>
+                                </label>
                               </div>
                               
                               {exercise.sets.length > 1 && (
@@ -431,8 +469,12 @@ export default function WorkoutPlanning() {
 
                     {workoutExercises.length === 0 && (
                       <div className="text-center py-12 text-gray-400">
-                        <p>No exercises added yet</p>
-                        <p className="text-sm mt-2">Select exercises from the left to add them</p>
+                        <p>
+                          <span>No exercises added yet</span>
+                        </p>
+                        <p className="text-sm mt-2">
+                          <span>Select exercises from the left to add them</span>
+                        </p>
                       </div>
                     )}
                   </div>
@@ -444,7 +486,7 @@ export default function WorkoutPlanning() {
                       className="w-full mt-4 py-4 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 rounded-xl font-semibold text-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                     >
                       <Save className="w-5 h-5" />
-                      {loading ? 'Saving...' : 'Save Workout Plan'}
+                      <span>{loading ? <span>Saving...</span> : <span>Save Workout Plan</span>}</span>
                     </button>
                   )}
                 </div>
@@ -454,5 +496,14 @@ export default function WorkoutPlanning() {
         </div>
       </div>
     </div>
+  );
+}
+
+// Export wrapped component with Error Boundary
+export default function WorkoutPlanning() {
+  return (
+    <ErrorBoundary>
+      <WorkoutPlanningContent />
+    </ErrorBoundary>
   );
 }
