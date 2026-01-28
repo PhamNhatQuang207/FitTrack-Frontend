@@ -354,33 +354,17 @@ export default function ActiveWorkout() {
         <div className="max-w-4xl mx-auto">
           
           {/* Current Exercise View */}
-          {!currentExercise ? (
-             <div className="flex flex-col items-center justify-center py-16 px-4 bg-gray-800/40 backdrop-blur-sm rounded-2xl border-2 border-dashed border-gray-700 text-center">
-               <div className="w-16 h-16 bg-gray-700/50 rounded-full flex items-center justify-center mb-4">
-                 <Edit3 className="w-8 h-8 text-gray-400" />
-               </div>
-               <h2 className="text-xl md:text-2xl font-bold mb-2">No Exercises Added</h2>
-               <p className="text-gray-400 mb-6 max-w-sm">This workout session is currently empty. Add some exercises to get started!</p>
-               <button
-                 onClick={handleManageExercises}
-                 className="px-6 py-3 bg-blue-600 hover:bg-blue-500 rounded-lg font-bold transition-colors flex items-center gap-2"
-               >
-                 <Play className="w-4 h-4 fill-current" />
-                 Start Adding Exercises
-               </button>
-             </div>
-          ) : (
-            <div className="bg-gray-800/60 backdrop-blur-sm rounded-2xl p-4 md:p-8 border border-gray-700 mb-6">
-              <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6 gap-4">
-                <div>
-                  <h2 className="text-2xl md:text-3xl font-bold mb-2">{currentExercise.exerciseName}</h2>
-                  <p className="text-gray-400 text-sm md:text-base">{currentExercise.category}</p>
-                </div>
-                <div className="text-left md:text-right">
-                  <p className="text-3xl md:text-4xl font-bold text-blue-400">{getExerciseProgress(currentExercise)}</p>
-                  <p className="text-xs md:text-sm text-gray-400">sets completed</p>
-                </div>
+          <div className="bg-gray-800/60 backdrop-blur-sm rounded-2xl p-4 md:p-8 border border-gray-700 mb-6">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6 gap-4">
+              <div>
+                <h2 className="text-2xl md:text-3xl font-bold mb-2">{currentExercise.exerciseName}</h2>
+                <p className="text-gray-400 text-sm md:text-base">{currentExercise.category}</p>
               </div>
+              <div className="text-left md:text-right">
+                <p className="text-3xl md:text-4xl font-bold text-blue-400">{getExerciseProgress(currentExercise)}</p>
+                <p className="text-xs md:text-sm text-gray-400">sets completed</p>
+              </div>
+            </div>
 
 
             {/* Target Info - Show per-set if available */}
@@ -496,8 +480,7 @@ export default function ActiveWorkout() {
                 Next Exercise
               </button>
             </div>
-            </div>
-          )}
+          </div>
 
           {/* All Exercises Overview */}
           <div className="bg-gray-800/60 backdrop-blur-sm rounded-2xl p-6 border border-gray-700 mb-6">
