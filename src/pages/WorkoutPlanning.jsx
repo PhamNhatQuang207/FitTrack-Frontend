@@ -181,6 +181,7 @@ export default function WorkoutPlanning() {
 
   return (
     <div
+      translate="no"
       className="min-h-screen w-full text-white bg-cover bg-center bg-no-repeat"
       style={{
         backgroundImage: `linear-gradient(to bottom, rgba(17, 24, 39, 0.9), rgba(31, 41, 55, 0.9)), url(${dashboardBg})`,
