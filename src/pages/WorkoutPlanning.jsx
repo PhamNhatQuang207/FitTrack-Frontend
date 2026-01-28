@@ -253,7 +253,7 @@ export default function WorkoutPlanning() {
                 </p>
               </div>
 
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 mb-8">
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 mb-8" translate="no">
                 {muscleGroupData.map((group) => {
                   const isSelected = selectedMuscleGroups.find(g => g.id === group.id);
                   return (
@@ -324,7 +324,7 @@ export default function WorkoutPlanning() {
                     />
                   </div>
 
-                  <div className="space-y-2 max-h-[600px] overflow-y-auto pr-2">
+                  <div className="space-y-2 max-h-[600px] overflow-y-auto pr-2" translate="no">
                     {filteredExercises.map((exercise) => {
                       const isAdded = workoutExercises.find(ex => ex.exerciseId === exercise.id);
                       return (
@@ -358,7 +358,7 @@ export default function WorkoutPlanning() {
                     Your Exercises ({workoutExercises.length})
                   </h2>
 
-                  <div className="space-y-4 max-h-[600px] overflow-y-auto pr-2">
+                  <div className="space-y-4 max-h-[600px] overflow-y-auto pr-2" translate="no">
                     {workoutExercises.map((exercise, index) => (
                       <div key={index} className="bg-gray-800/50 p-4 rounded-xl border border-gray-700">
                         <div className="flex items-center justify-between mb-3">
