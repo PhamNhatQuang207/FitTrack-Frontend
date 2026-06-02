@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
-import { useParams, useNavigate, Link, useSearchParams } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import axiosClient from '../api/axiosClient';
 import { CheckCircle2, Loader2, ArrowLeft } from 'lucide-react';
-import gymImage from '../assets/background.jpg';
 
 export default function ResetPassword() {
   const { token: pathToken } = useParams();
@@ -16,16 +15,11 @@ export default function ResetPassword() {
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
 
-  // If no token, show request reset form
-  // If token exists, show reset password form
   const isResetMode = !!token;
 
   const handleRequestReset = async (e) => {
     e.preventDefault();
-    setError('');
-    setMessage('');
-    setLoading(true);
-
+    setError(''); setMessage(''); setLoading(true);
     try {
       const response = await axiosClient.post('/auth/request-password-reset', { email });
       setMessage(response.data.message);
@@ -39,29 +33,14 @@ export default function ResetPassword() {
 
   const handleResetPassword = async (e) => {
     e.preventDefault();
-    setError('');
-    setMessage('');
-
-    if (password.length < 6) {
-      setError('Password must be at least 6 characters.');
-      return;
-    }
-
-    if (password !== confirmPassword) {
-      setError('Passwords do not match.');
-      return;
-    }
-
+    setError(''); setMessage('');
+    if (password.length < 6) { setError('Password must be at least 6 characters.'); return; }
+    if (password !== confirmPassword) { setError('Passwords do not match.'); return; }
     setLoading(true);
-
     try {
       const response = await axiosClient.post(`/auth/reset-password/${token}`, { password });
       setMessage(response.data.message);
-      
-      // Redirect to login after 2 seconds
-      setTimeout(() => {
-        navigate('/login');
-      }, 2000);
+      setTimeout(() => navigate('/login'), 2000);
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to reset password.');
     } finally {
@@ -70,115 +49,115 @@ export default function ResetPassword() {
   };
 
   return (
-    <div
-      className="w-full h-screen flex items-center justify-center bg-cover bg-center relative"
-      style={{ backgroundImage: `url(${gymImage})` }}
-    >
-      <div className="absolute inset-0 bg-black/60 z-0"></div>
+    <div className="ft-page flex items-center justify-center min-h-screen px-4">
+      {/* Accent blobs */}
+      <div
+        className="absolute top-0 left-0 w-[400px] h-[400px] rounded-full opacity-8 pointer-events-none"
+        style={{ background: 'radial-gradient(circle, #CCFF00 0%, transparent 70%)', transform: 'translate(-40%, -40%)' }}
+      />
 
-      <form
-        onSubmit={isResetMode ? handleResetPassword : handleRequestReset}
-        className="relative z-10 bg-white/10 backdrop-blur-lg border border-white/10 shadow-lg w-[450px] rounded-xl px-8 py-10 text-white flex flex-col"
-      >
-        {/* Back to Login */}
-        <Link
-          to="/login"
-          className="flex items-center gap-2 text-gray-300 hover:text-white mb-4 transition-colors"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          Back to Login
-        </Link>
-
-        <h3 className="text-2xl font-bold text-center mb-2">
-          {isResetMode ? 'Set New Password' : 'Reset Password'}
-        </h3>
-        <p className="text-gray-300 text-sm text-center mb-6">
-          {isResetMode 
-            ? 'Enter your new password below.' 
-            : 'Enter your email and we\'ll send you a reset link.'}
-        </p>
-
-        {error && (
-          <div className="bg-red-500/20 border border-red-500/50 text-red-200 px-4 py-3 rounded-lg mb-4">
-            {error}
+      <div className="relative z-10 w-full max-w-[420px] animate-slide-up">
+        {/* Logo */}
+        <div className="mb-8 text-center">
+          <div className="inline-flex items-center gap-3 mb-2">
+            <svg width="30" height="30" viewBox="0 0 36 36" fill="none">
+              <rect width="36" height="36" rx="2" fill="#CCFF00" />
+              <text x="18" y="26" textAnchor="middle" fontFamily="Barlow Condensed, sans-serif" fontWeight="900" fontSize="22" fontStyle="italic" fill="#000">F</text>
+            </svg>
+            <span className="ft-title text-2xl tracking-widest text-neon-lime">FitTrack</span>
           </div>
-        )}
-        
-        {message && (
-          <div className="bg-green-500/20 border border-green-500/50 text-green-200 px-4 py-3 rounded-lg mb-4 flex items-center gap-2">
-            <CheckCircle2 className="w-5 h-5" />
-            {message}
-          </div>
-        )}
+        </div>
 
-        {!isResetMode ? (
-          // Request Reset Form
-          <>
-            <label className="text-sm font-medium mb-1">Email Address</label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="your@email.com"
-              className="bg-white/20 text-white px-4 py-3 rounded-lg placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              required
-            />
+        <div className="ft-card ft-corner-tl ft-corner-br p-8">
+          {/* Back link */}
+          <button
+            onClick={() => navigate('/login')}
+            className="flex items-center gap-2 mb-6 text-xs font-display font-bold uppercase tracking-widest transition-colors"
+            style={{ color: '#A0A0A0' }}
+            onMouseEnter={e => e.currentTarget.style.color = '#CCFF00'}
+            onMouseLeave={e => e.currentTarget.style.color = '#A0A0A0'}
+          >
+            <ArrowLeft size={14} /> Back to Login
+          </button>
+
+          <h1 className="ft-title text-2xl text-white mb-1">
+            {isResetMode ? 'Set New Password' : 'Reset Password'}
+          </h1>
+          <p className="text-sm mb-6" style={{ color: '#A0A0A0' }}>
+            {isResetMode
+              ? 'Enter your new password below.'
+              : "Enter your email and we'll send a reset link."}
+          </p>
+
+          {error && (
+            <div className="mb-4 px-3 py-2 text-[#FF5C00] text-sm border border-[rgba(255,92,0,0.3)] bg-[rgba(255,92,0,0.06)] rounded-sm font-medium">
+              {error}
+            </div>
+          )}
+          {message && (
+            <div className="mb-4 px-3 py-2 text-neon-lime text-sm border border-[rgba(204,255,0,0.3)] bg-[rgba(204,255,0,0.06)] rounded-sm font-medium flex items-center gap-2">
+              <CheckCircle2 size={14} /> {message}
+            </div>
+          )}
+
+          <form onSubmit={isResetMode ? handleResetPassword : handleRequestReset} className="flex flex-col gap-4">
+            {!isResetMode ? (
+              <div>
+                <label className="ft-label">Email Address</label>
+                <input
+                  id="reset-email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="your@email.com"
+                  className="ft-input"
+                  required
+                />
+              </div>
+            ) : (
+              <>
+                <div>
+                  <label className="ft-label">New Password</label>
+                  <input
+                    id="new-password"
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Min. 6 characters"
+                    className="ft-input"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="ft-label">Confirm Password</label>
+                  <input
+                    id="confirm-password"
+                    type="password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="Re-enter password"
+                    className="ft-input"
+                    required
+                  />
+                </div>
+              </>
+            )}
 
             <button
+              id="reset-submit"
               type="submit"
               disabled={loading}
-              className="mt-6 bg-blue-500 hover:bg-blue-600 text-white py-3 rounded-lg font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              className="ft-btn-primary w-full py-3 mt-2 flex items-center justify-center gap-2"
             >
               {loading ? (
-                <>
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                  Sending...
-                </>
+                <><Loader2 size={16} className="animate-spin" /> {isResetMode ? 'Resetting...' : 'Sending...'}</>
               ) : (
-                'Send Reset Link'
+                isResetMode ? 'Reset Password' : 'Send Reset Link'
               )}
             </button>
-          </>
-        ) : (
-          // Reset Password Form
-          <>
-            <label className="text-sm font-medium mb-1">New Password</label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Enter new password (min 6 characters)"
-              className="bg-white/20 text-white px-4 py-3 rounded-lg mb-4 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              required
-            />
-
-            <label className="text-sm font-medium mb-1">Confirm Password</label>
-            <input
-              type="password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              placeholder="Confirm new password"
-              className="bg-white/20 text-white px-4 py-3 rounded-lg placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              required
-            />
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="mt-6 bg-blue-500 hover:bg-blue-600 text-white py-3 rounded-lg font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-            >
-              {loading ? (
-                <>
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                  Resetting...
-                </>
-              ) : (
-                'Reset Password'
-              )}
-            </button>
-          </>
-        )}
-      </form>
+          </form>
+        </div>
+      </div>
     </div>
   );
 }

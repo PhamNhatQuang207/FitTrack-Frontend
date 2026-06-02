@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
-import gymImage from '../assets/background.jpg';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -21,11 +20,7 @@ export default function Login() {
     try {
       await login({ email, password });
       setMessage('Logged in successfully!');
-      
-      // Redirect to dashboard after successful login
-      setTimeout(() => {
-        navigate('/dashboard');
-      }, 1000);
+      setTimeout(() => navigate('/dashboard'), 900);
     } catch (err) {
       setError(err.response?.data?.message || 'Invalid email or password.');
     } finally {
@@ -33,76 +28,116 @@ export default function Login() {
     }
   };
 
-
-
   return (
-    <div
-      className="w-full h-screen flex items-center justify-center bg-cover bg-center relative"
-      style={{ backgroundImage: `url(${gymImage})` }}
-    >
-      <div className="absolute inset-0 bg-black/60 z-0"></div>
+    <div className="ft-page flex items-center justify-center min-h-screen px-4">
+      {/* Background accent blobs */}
+      <div
+        className="absolute top-0 left-0 w-[500px] h-[500px] rounded-full opacity-10 pointer-events-none"
+        style={{ background: 'radial-gradient(circle, #CCFF00 0%, transparent 70%)', transform: 'translate(-40%, -40%)' }}
+      />
+      <div
+        className="absolute bottom-0 right-0 w-[400px] h-[400px] rounded-full opacity-8 pointer-events-none"
+        style={{ background: 'radial-gradient(circle, #FF5C00 0%, transparent 70%)', transform: 'translate(40%, 40%)' }}
+      />
 
-      <form
-        onSubmit={handleLogin}
-        className="relative z-10 bg-white/10 backdrop-blur-lg border border-white/10 shadow-lg w-[400px] rounded-xl px-8 py-10 text-white flex flex-col"
-      >
-        <h3 className="text-3xl font-medium text-center mb-4">
-          Login
-        </h3>
+      <div className="relative z-10 w-full max-w-[420px] animate-slide-up">
+        {/* Logo */}
+        <div className="mb-10 text-center">
+          <div className="inline-flex items-center gap-3 mb-2">
+            <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
+              <rect width="36" height="36" rx="2" fill="#CCFF00" />
+              <text x="18" y="26" textAnchor="middle" fontFamily="Barlow Condensed, sans-serif" fontWeight="900" fontSize="22" fontStyle="italic" fill="#000">F</text>
+            </svg>
+            <span className="ft-title text-3xl tracking-widest text-neon-lime text-glow-lime">FitTrack</span>
+          </div>
+          <p className="text-xs uppercase tracking-[0.3em] text-[#A0A0A0] font-display font-semibold mt-1">
+            Train Smart. Track Hard.
+          </p>
+        </div>
 
-        {error && <p className="text-red-400 text-sm text-center mb-2">{error}</p>}
-        {message && <p className="text-green-300 text-sm text-center mb-2">{message}</p>}
+        {/* Form Card */}
+        <div className="ft-card ft-corner-tl ft-corner-br p-8">
+          <h1 className="ft-title text-2xl text-white mb-1">Login</h1>
+          <p className="text-[#A0A0A0] text-sm mb-6">Enter your credentials to continue</p>
 
-        <label className="mt-2 text-sm font-medium">Email</label>
-        <input
-          type="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          placeholder="you@example.com"
-          className="bg-white/20 text-white px-3 py-2 rounded-md mt-1 placeholder-gray-300"
-          required
-        />
+          {error && (
+            <div className="mb-4 px-3 py-2 text-[#FF5C00] text-sm border border-[rgba(255,92,0,0.3)] bg-[rgba(255,92,0,0.06)] rounded-sm font-medium">
+              {error}
+            </div>
+          )}
+          {message && (
+            <div className="mb-4 px-3 py-2 text-neon-lime text-sm border border-[rgba(204,255,0,0.3)] bg-[rgba(204,255,0,0.06)] rounded-sm font-medium">
+              {message}
+            </div>
+          )}
 
-        <label className="mt-4 text-sm font-medium">Password</label>
-        <input
-          type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          placeholder="Password"
-          className="bg-white/20 text-white px-3 py-2 rounded-md mt-1 placeholder-gray-300"
-          required
-        />
+          <form onSubmit={handleLogin} className="flex flex-col gap-5">
+            <div>
+              <label className="ft-label">Email</label>
+              <input
+                id="login-email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="you@example.com"
+                className="ft-input"
+                required
+              />
+            </div>
 
-        <button
-          type="submit"
-          className="mt-8 bg-white text-black py-2 rounded-md font-semibold hover:bg-gray-200 transition"
-          disabled={loading}
-        >
-          {loading ? 'Logging in...' : 'Log In'}
-        </button>
+            <div>
+              <label className="ft-label">Password</label>
+              <input
+                id="login-password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••"
+                className="ft-input"
+                required
+              />
+            </div>
 
-        <p className="mt-4 text-center text-sm text-gray-300">
-          Forgot your password?{' '}
-          <button
-            type="button"
-            onClick={() => navigate('/reset-password')}
-            className="text-blue-300 hover:underline"
-          >
-            Reset it here
-          </button>
-        </p>
+            <div className="flex justify-end">
+              <button
+                type="button"
+                onClick={() => navigate('/reset-password')}
+                className="text-xs text-[#A0A0A0] hover:text-neon-lime transition-colors font-display font-semibold uppercase tracking-wider"
+              >
+                Forgot Password?
+              </button>
+            </div>
 
-        <p className="mt-4 text-center text-sm text-gray-300">
-          Don't have an account?{' '}
-          <button
-            type="button"
-            onClick={() => navigate('/register')}
-            className="text-blue-300 hover:underline"
-          >
-            Register here
-          </button>
-        </p>
-      </form>
+            <button
+              id="login-submit"
+              type="submit"
+              className="ft-btn-primary w-full text-sm py-3 mt-2"
+              disabled={loading}
+            >
+              {loading ? (
+                <span className="flex items-center justify-center gap-2">
+                  <span className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin inline-block" />
+                  Logging in...
+                </span>
+              ) : 'Log In'}
+            </button>
+          </form>
+
+          <div className="ft-divider" />
+
+          <p className="text-center text-sm text-[#A0A0A0]">
+            No account yet?{' '}
+            <button
+              id="go-register"
+              type="button"
+              onClick={() => navigate('/register')}
+              className="text-neon-lime hover:text-glow-lime font-display font-bold uppercase tracking-wider text-xs transition-colors"
+            >
+              Register
+            </button>
+          </p>
+        </div>
+      </div>
     </div>
   );
 }

@@ -2,20 +2,14 @@ import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import axiosClient from "../api/axiosClient";
-import dashboardBg from "../assets/icons/dashboard_background.jpg";
+import { ArrowLeft, User, LogOut, Save } from "lucide-react";
 
 export default function Profile() {
   const { user, logout, updateUser } = useAuth();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [formData, setFormData] = useState({
-    name: "",
-    age: "",
-    sex: "",
-    height: "",
-    weight: "",
-    bodyFat: "",
-    email: "",
+    name: "", age: "", sex: "", height: "", weight: "", bodyFat: "", email: "",
   });
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
@@ -23,15 +17,9 @@ export default function Profile() {
 
   const getUserProgress = useCallback(async () => {
     try {
-      if (!user) {
-        navigate("/login");
-        return;
-      }
-
-      // Get user progress data from backend
+      if (!user) { navigate("/login"); return; }
       const response = await axiosClient.get('/users/progress');
       const data = response.data;
-      
       setFormData((prev) => ({
         ...prev,
         name: data.name || "",
@@ -39,301 +27,214 @@ export default function Profile() {
         height: data.height || "",
         age: data.age || "",
         sex: data.sex || "",
-        // Get latest values from history arrays
-        weight: data.weightHistory?.length > 0 
-          ? data.weightHistory[data.weightHistory.length - 1].value 
-          : "",
-        bodyFat: data.bodyFatHistory?.length > 0 
-          ? data.bodyFatHistory[data.bodyFatHistory.length - 1].value 
-          : "",
+        weight: data.weightHistory?.length > 0 ? data.weightHistory[data.weightHistory.length - 1].value : "",
+        bodyFat: data.bodyFatHistory?.length > 0 ? data.bodyFatHistory[data.bodyFatHistory.length - 1].value : "",
       }));
     } catch (error) {
-      console.error("Error:", error);
       setError(error.response?.data?.message || "Failed to load profile");
     } finally {
       setLoading(false);
     }
   }, [user, navigate]);
 
-  useEffect(() => {
-    getUserProgress();
-  }, [getUserProgress]);
+  useEffect(() => { getUserProgress(); }, [getUserProgress]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    // Prevent email from being changed
     if (name === 'email') return;
-    
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const validateForm = () => {
-    if (formData.age && (formData.age < 13 || formData.age > 100)) {
-      setError("Age must be between 13 and 100");
-      return false;
-    }
-    if (formData.height && (formData.height < 100 || formData.height > 250)) {
-      setError("Height must be between 100cm and 250cm");
-      return false;
-    }
-    if (formData.weight && (formData.weight < 30 || formData.weight > 300)) {
-      setError("Weight must be between 30kg and 300kg");
-      return false;
-    }
-    if (formData.bodyFat && (formData.bodyFat < 3 || formData.bodyFat > 50)) {
-      setError("Body fat must be between 3% and 50%");
-      return false;
-    }
+    if (formData.age && (formData.age < 13 || formData.age > 100)) { setError("Age must be between 13 and 100"); return false; }
+    if (formData.height && (formData.height < 100 || formData.height > 250)) { setError("Height must be between 100cm and 250cm"); return false; }
+    if (formData.weight && (formData.weight < 30 || formData.weight > 300)) { setError("Weight must be between 30kg and 300kg"); return false; }
+    if (formData.bodyFat && (formData.bodyFat < 3 || formData.bodyFat > 50)) { setError("Body fat must be between 3% and 50%"); return false; }
     return true;
   };
 
   const handleUpdateProfile = async () => {
     if (!validateForm()) return;
-
-    setSaving(true);
-    setError("");
-    setMessage("");
-
+    setSaving(true); setError(""); setMessage("");
     try {
-      // Build update data with all profile fields
       const updateData = {};
-      
-      // Profile fields that overwrite
       if (formData.name) updateData.name = formData.name;
       if (formData.height) updateData.height = parseFloat(formData.height);
       if (formData.age) updateData.age = parseInt(formData.age);
       if (formData.sex) updateData.sex = formData.sex;
-      
-      // History fields that append
       if (formData.weight) updateData.weight = parseFloat(formData.weight);
       if (formData.bodyFat) updateData.bodyFat = parseFloat(formData.bodyFat);
-      
       if (Object.keys(updateData).length > 0) {
         await axiosClient.post('/users/progress', updateData);
         setMessage("Profile updated successfully!");
-        
-        // Reload data to reflect changes
         setTimeout(() => {
           getUserProgress();
-          // Update global user context if name changed
-          if (formData.name) {
-            updateUser({ name: formData.name });
-          }
-        }, 1000);
+          if (formData.name) updateUser({ name: formData.name });
+        }, 800);
       }
     } catch (error) {
-      console.error("Error:", error);
       setError(error.response?.data?.message || "Failed to update profile");
     } finally {
       setSaving(false);
     }
   };
 
-  const handleLogout = async () => {
-    logout();
-    navigate("/login");
-  };
+  const handleLogout = () => { logout(); navigate("/login"); };
 
   if (loading) {
     return (
-      <div className="h-screen bg-gray-900 flex items-center justify-center">
-        <div className="text-white text-xl">Loading profile...</div>
+      <div className="ft-page min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="ft-loader mx-auto mb-4" />
+          <p className="ft-label">Loading Profile...</p>
+        </div>
       </div>
     );
   }
 
+  const FIELD_GROUPS = [
+    {
+      title: "Identity",
+      fields: [
+        { label: "Full Name", name: "name", type: "text", placeholder: "John Doe", full: true },
+        { label: "Email", name: "email", type: "email", placeholder: user?.email, disabled: true, full: true },
+        { label: "Age", name: "age", type: "number", placeholder: "e.g. 25" },
+        { label: "Sex", name: "sex", type: "select", options: ["", "Male", "Female", "Other"] },
+      ],
+    },
+    {
+      title: "Physical Stats",
+      fields: [
+        { label: "Height (cm)", name: "height", type: "number", placeholder: "e.g. 175" },
+        { label: "Weight (kg)", name: "weight", type: "number", placeholder: "e.g. 75", step: "0.1" },
+        { label: "Body Fat (%)", name: "bodyFat", type: "number", placeholder: "e.g. 15", step: "0.1", full: true },
+      ],
+    },
+  ];
+
   return (
-    <div
-      className="min-h-screen w-full text-white bg-cover bg-center bg-no-repeat"
-      style={{
-        backgroundImage: `linear-gradient(to bottom, rgba(17, 24, 39, 0.8), rgba(31, 41, 55, 0.8)), url(${dashboardBg})`,
-        backgroundAttachment: "fixed",
-      }}
-    >
+    <div className="ft-page min-h-screen">
       {/* Header */}
-      <div className="sticky top-0 z-10 bg-gray-900/90 backdrop-blur-md border-b border-gray-700/50">
-        <div className="container mx-auto px-4 md:px-6 py-4">
+      <div className="ft-header px-4 md:px-8 py-0">
+        <div className="max-w-3xl mx-auto flex items-center justify-between h-16">
           <button
+            id="back-btn"
             onClick={() => navigate("/dashboard")}
-            className="flex items-center space-x-2 text-white hover:text-blue-300 transition"
+            className="flex items-center gap-2 transition-colors group"
+            style={{ color: '#A0A0A0' }}
+            onMouseEnter={e => e.currentTarget.style.color = '#CCFF00'}
+            onMouseLeave={e => e.currentTarget.style.color = '#A0A0A0'}
           >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-5 w-5"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M10 19l-7-7m0 0l7-7m-7 7h18"
-              />
-            </svg>
-            <span className="font-medium hidden md:inline">Back to Dashboard</span>
+            <ArrowLeft size={18} className="group-hover:-translate-x-1 transition-transform" />
+            <span className="hidden md:inline font-display font-bold uppercase tracking-widest text-xs">Dashboard</span>
           </button>
+          <h1 className="ft-title text-2xl md:text-3xl text-neon-lime">Profile</h1>
+          <div className="w-20 hidden md:block" />
         </div>
       </div>
 
-      {/* Profile Form */}
-      <div className="container mx-auto px-4 py-16">
-        <div className="max-w-xl mx-auto">
-          <div className="bg-gray-800/50 backdrop-blur-sm p-8 rounded-xl shadow-xl">
-            <h2 className="text-3xl font-bold mb-8 text-center">
-              Profile Settings
-            </h2>
+      <main className="max-w-3xl mx-auto px-4 md:px-8 py-8">
 
-            {/* Basic Info */}
-            <div className="space-y-6">
-              <div>
-                <label className="text-gray-300 text-sm font-medium block mb-2">
-                  Full Name
-                </label>
-                <input
-                  type="text"
-                  name="name"
-                  value={formData.name}
-                  onChange={handleInputChange}
-                  className="bg-gray-700/50 px-4 py-2 rounded-lg w-full border border-gray-600 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition"
-                  placeholder="Enter your name"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-gray-300 text-sm font-medium block mb-2">
-                    Age
-                  </label>
-                  <input
-                    type="number"
-                    name="age"
-                    value={formData.age}
-                    onChange={handleInputChange}
-                    className="bg-gray-700/50 px-4 py-2 rounded-lg w-full border border-gray-600 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition"
-                    placeholder="Age"
-                  />
-                </div>
-                <div>
-                  <label className="text-gray-300 text-sm font-medium block mb-2">
-                    Sex
-                  </label>
-                  <select
-                    name="sex"
-                    value={formData.sex}
-                    onChange={handleInputChange}
-                    className="bg-gray-700/50 px-4 py-2 rounded-lg w-full border border-gray-600 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition text-white"
-                  >
-                    <option value="" className="bg-gray-800 text-white">Select</option>
-                    <option value="Male" className="bg-gray-800 text-white">Male</option>
-                    <option value="Female" className="bg-gray-800 text-white">Female</option>
-                    <option value="Other" className="bg-gray-800 text-white">Other</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-gray-300 text-sm font-medium block mb-2">
-                    Height (cm)
-                  </label>
-                  <input
-                    type="number"
-                    name="height"
-                    value={formData.height}
-                    onChange={handleInputChange}
-                    className="bg-gray-700/50 px-4 py-2 rounded-lg w-full border border-gray-600 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition"
-                    placeholder="Height in cm"
-                  />
-                </div>
-                <div>
-                  <label className="text-gray-300 text-sm font-medium block mb-2">
-                    Weight (kg)
-                  </label>
-                  <input
-                    type="number"
-                    name="weight"
-                    value={formData.weight}
-                    onChange={handleInputChange}
-                    className="bg-gray-700/50 px-4 py-2 rounded-lg w-full border border-gray-600 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition"
-                    placeholder="Weight in kg"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="text-gray-300 text-sm font-medium block mb-2">
-                  Body Fat (%)
-                </label>
-                <input
-                  type="number"
-                  step="0.1"
-                  name="bodyFat"
-                  value={formData.bodyFat}
-                  onChange={handleInputChange}
-                  className="bg-gray-700/50 px-4 py-2 rounded-lg w-full border border-gray-600 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition"
-                  placeholder="Body fat percentage"
-                />
-              </div>
-            </div>
-
-            {/* Messages */}
-            {message && (
-              <div className="mt-4 p-3 bg-green-500/20 border border-green-500 rounded-lg text-green-400">
-                {message}
-              </div>
-            )}
-            {error && (
-              <div className="mt-4 p-3 bg-red-500/20 border border-red-500 rounded-lg text-red-400">
-                {error}
-              </div>
-            )}
-
-            {/* Buttons */}
-            <div className="mt-8 space-y-4">
-              <button
-                className="w-full bg-blue-500 hover:bg-blue-600 text-white py-3 rounded-lg font-medium transition-colors duration-200 flex items-center justify-center space-x-2 disabled:opacity-50"
-                onClick={handleUpdateProfile}
-                disabled={saving}
-              >
-                {saving ? (
-                  <>
-                    <svg className="animate-spin h-5 w-5 mr-2" viewBox="0 0 24 24">
-                      <circle
-                        className="opacity-25"
-                        cx="12"
-                        cy="12"
-                        r="10"
-                        stroke="currentColor"
-                        strokeWidth="4"
-                        fill="none"
-                      />
-                      <path
-                        className="opacity-75"
-                        fill="currentColor"
-                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                      />
-                    </svg>
-                    <span>Saving...</span>
-                  </>
-                ) : (
-                  "Save Changes"
-                )}
-              </button>
-
-              <button
-                onClick={handleLogout}
-                className="w-full bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500 py-3 rounded-lg font-medium transition-colors duration-200"
-              >
-                Log out
-              </button>
-            </div>
+        {/* Athlete card */}
+        <div className="mb-6 animate-slide-up flex items-center gap-4 p-4"
+          style={{ background: 'rgba(204,255,0,0.05)', border: '1px solid rgba(204,255,0,0.2)', borderRadius: '2px' }}>
+          <div
+            className="w-14 h-14 flex items-center justify-center flex-shrink-0"
+            style={{ background: 'rgba(204,255,0,0.1)', border: '1px solid rgba(204,255,0,0.3)', borderRadius: '2px' }}
+          >
+            <User size={24} style={{ color: '#CCFF00' }} />
+          </div>
+          <div>
+            <h2 className="ft-title text-xl text-white">{formData.name || user?.name || 'Athlete'}</h2>
+            <p className="text-xs mt-0.5" style={{ color: '#A0A0A0' }}>{formData.email}</p>
+          </div>
+          <div className="ml-auto">
+            <span className="ft-badge-lime">Active</span>
           </div>
         </div>
-      </div>
+
+        {/* Form sections */}
+        {FIELD_GROUPS.map(group => (
+          <div
+            key={group.title}
+            className="mb-5 p-5 animate-slide-up"
+            style={{ background: 'rgba(10,10,10,0.95)', border: '1px solid rgba(204,255,0,0.1)', borderRadius: '2px' }}
+          >
+            <p className="ft-label mb-4">// {group.title}</p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {group.fields.map(field => (
+                <div key={field.name} className={field.full ? 'md:col-span-2' : ''}>
+                  <label className="ft-label">{field.label}</label>
+                  {field.type === 'select' ? (
+                    <select
+                      name={field.name}
+                      value={formData[field.name]}
+                      onChange={handleInputChange}
+                      className="ft-input"
+                      style={{ cursor: 'pointer' }}
+                    >
+                      <option value="" style={{ background: '#0A0A0A' }}>Select...</option>
+                      {field.options.filter(Boolean).map(opt => (
+                        <option key={opt} value={opt} style={{ background: '#0A0A0A' }}>{opt}</option>
+                      ))}
+                    </select>
+                  ) : (
+                    <input
+                      type={field.type}
+                      name={field.name}
+                      value={formData[field.name]}
+                      onChange={handleInputChange}
+                      placeholder={field.disabled ? formData.email : field.placeholder}
+                      className="ft-input"
+                      disabled={field.disabled}
+                      step={field.step}
+                      style={field.disabled ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
+                    />
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+
+        {/* Messages */}
+        {message && (
+          <div className="mb-4 px-3 py-2 text-neon-lime text-sm border border-[rgba(204,255,0,0.3)] bg-[rgba(204,255,0,0.06)] rounded-sm font-medium animate-slide-up">
+            {message}
+          </div>
+        )}
+        {error && (
+          <div className="mb-4 px-3 py-2 text-[#FF5C00] text-sm border border-[rgba(255,92,0,0.3)] bg-[rgba(255,92,0,0.06)] rounded-sm font-medium animate-slide-up">
+            {error}
+          </div>
+        )}
+
+        {/* Action buttons */}
+        <div className="flex flex-col sm:flex-row gap-3 animate-slide-up">
+          <button
+            id="save-profile"
+            onClick={handleUpdateProfile}
+            disabled={saving}
+            className="ft-btn-primary flex-1 flex items-center justify-center gap-2 py-3 disabled:opacity-60"
+          >
+            {saving ? (
+              <><span className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin inline-block" /> Saving...</>
+            ) : (
+              <><Save size={16} /> Save Changes</>
+            )}
+          </button>
+          <button
+            id="logout-btn"
+            onClick={handleLogout}
+            className="flex-1 flex items-center justify-center gap-2 py-3 font-display font-bold uppercase tracking-wider text-sm transition-colors"
+            style={{ border: '1px solid rgba(255,92,0,0.3)', borderRadius: '2px', color: '#FF5C00', background: 'rgba(255,92,0,0.06)' }}
+            onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,92,0,0.12)'}
+            onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,92,0,0.06)'}
+          >
+            <LogOut size={16} /> Log Out
+          </button>
+        </div>
+      </main>
     </div>
   );
 }

@@ -1,18 +1,49 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axiosClient from '../api/axiosClient';
-import { 
-  ArrowLeft, 
-  Calendar, 
-  Dumbbell, 
-  TrendingUp, 
-  Play, 
-  CheckCircle, 
-  Trash2, 
+import {
+  ArrowLeft,
+  Calendar,
+  Dumbbell,
+  TrendingUp,
+  Play,
+  CheckCircle,
+  Trash2,
   ChevronDown,
   Filter
 } from 'lucide-react';
-import dashboardBg from '../assets/icons/dashboard_background.jpg';
+
+// Shared page header
+function PageHeader({ title, subtitle }) {
+  const navigate = useNavigate();
+  return (
+    <div className="ft-header px-4 md:px-8 py-0">
+      <div className="max-w-6xl mx-auto flex items-center h-16 gap-4">
+        <button
+          id="back-btn"
+          onClick={() => navigate('/dashboard')}
+          className="flex items-center gap-2 transition-colors group"
+          style={{ color: '#A0A0A0' }}
+          onMouseEnter={e => e.currentTarget.style.color = '#CCFF00'}
+          onMouseLeave={e => e.currentTarget.style.color = '#A0A0A0'}
+        >
+          <ArrowLeft size={18} className="group-hover:-translate-x-1 transition-transform" />
+          <span className="hidden md:inline font-display font-bold uppercase tracking-widest text-xs">Dashboard</span>
+        </button>
+        <div className="flex-1 text-center">
+          <h1
+            className="ft-title text-2xl md:text-3xl"
+            style={{ color: '#CCFF00' }}
+          >
+            {title}
+          </h1>
+          {subtitle && <p className="text-xs hidden md:block mt-0.5" style={{ color: '#A0A0A0' }}>{subtitle}</p>}
+        </div>
+        <div className="w-20 hidden md:block" />
+      </div>
+    </div>
+  );
+}
 
 export default function WorkoutHistory() {
   const navigate = useNavigate();
@@ -21,9 +52,7 @@ export default function WorkoutHistory() {
   const [expandedSessions, setExpandedSessions] = useState([]);
   const [filterStatus, setFilterStatus] = useState('all');
 
-  useEffect(() => {
-    fetchSessions();
-  }, []);
+  useEffect(() => { fetchSessions(); }, []);
 
   const fetchSessions = async () => {
     try {
@@ -38,75 +67,49 @@ export default function WorkoutHistory() {
 
   const toggleExpand = (sessionId) => {
     setExpandedSessions(prev =>
-      prev.includes(sessionId)
-        ? prev.filter(id => id !== sessionId)
-        : [...prev, sessionId]
+      prev.includes(sessionId) ? prev.filter(id => id !== sessionId) : [...prev, sessionId]
     );
   };
 
-  const handleStartWorkout = (sessionId) => {
-    navigate(`/workout/${sessionId}`);
-  };
+  const handleStartWorkout = (sessionId) => navigate(`/workout/${sessionId}`);
 
   const handleCompleteWorkout = async (sessionId) => {
     if (!window.confirm('Mark this workout as complete?')) return;
-    
     try {
       await axiosClient.patch(`/workout-sessions/${sessionId}/complete`);
       fetchSessions();
     } catch (error) {
       console.error('Error completing workout:', error);
-      alert('Failed to complete workout');
     }
   };
 
   const handleDeleteWorkout = async (sessionId) => {
     if (!window.confirm('Delete this workout? This action cannot be undone.')) return;
-    
     try {
       await axiosClient.delete(`/workout-sessions/${sessionId}`);
       fetchSessions();
     } catch (error) {
       console.error('Error deleting workout:', error);
-      alert('Failed to delete workout');
     }
   };
 
-  const getStatusColor = (status) => {
+  const getStatusBadge = (status) => {
     switch (status) {
-      case 'completed':
-        return 'bg-green-500/20 border-green-500 text-green-400';
-      case 'in-progress':
-        return 'bg-blue-500/20 border-blue-500 text-blue-400';
-      case 'planned':
-        return 'bg-gray-500/20 border-gray-500 text-gray-400';
-      default:
-        return 'bg-gray-500/20 border-gray-500 text-gray-400';
+      case 'completed':   return <span className="ft-badge-lime">Completed</span>;
+      case 'in-progress': return <span className="ft-badge-orange">In Progress</span>;
+      default:            return <span className="ft-badge-gray">Planned</span>;
     }
   };
 
-  const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric'
-    });
-  };
-
-  const formatTime = (dateString) => {
-    return new Date(dateString).toLocaleTimeString('en-US', {
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
+  const formatDate = (dateString) =>
+    new Date(dateString).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  const formatTime = (dateString) =>
+    new Date(dateString).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
 
   const calculateTotalVolume = (session) => {
     if (!session.exercises) return 0;
     return session.exercises.reduce((total, exercise) => {
-      const exerciseVolume = (exercise.actualSets || []).reduce((sum, set) => {
-        return sum + (set.weight * set.reps);
-      }, 0);
-      return total + exerciseVolume;
+      return total + (exercise.actualSets || []).reduce((sum, set) => sum + (set.weight * set.reps), 0);
     }, 0);
   };
 
@@ -115,206 +118,204 @@ export default function WorkoutHistory() {
     return session.status === filterStatus;
   });
 
-  return (
-    <div
-      className="min-h-screen bg-cover bg-center bg-fixed"
-      style={{
-        backgroundImage: `linear-gradient(to bottom, rgba(17, 24, 39, 0.95), rgba(31, 41, 55, 0.95)), url(${dashboardBg})`,
-      }}
-    >
-      <div className="bg-gray-900/80 backdrop-blur-sm border-b border-gray-800 sticky top-0 z-10">
-        <div className="container mx-auto px-4 md:px-6 py-4">
-          <div className="flex items-center justify-between gap-4">
-            <div className="flex-1 flex justify-start">
-              <button
-                onClick={() => navigate('/dashboard')}
-                className="flex items-center space-x-2 text-white hover:text-blue-400 rounded-lg transition-colors"
-              >
-                <ArrowLeft className="w-5 h-5" />
-                <span className="font-medium hidden md:inline">Back to Dashboard</span>
-              </button>
-            </div>
-            
-            <div className="flex-1 text-center">
-              <h1 className="text-xl md:text-3xl font-bold bg-gradient-to-r from-orange-400 to-amber-400 bg-clip-text text-transparent">
-                Workout History
-              </h1>
-              <p className="text-gray-400 mt-1 text-sm hidden md:block">View and manage your workout sessions</p>
-            </div>
-            
-            <div className="flex-1"></div>
-          </div>
-        </div>
-      </div>
+  const STATUS_FILTERS = ['all', 'completed', 'in-progress', 'planned'];
 
-      <div className="container mx-auto px-4 py-8">
-        {/* Filter Tabs */}
-        <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-xl p-4 mb-6">
-          <div className="flex items-center gap-2 mb-4">
-            <Filter className="w-5 h-5 text-gray-400" />
-            <span className="text-gray-300 font-medium">Filter by Status</span>
-          </div>
-          <div className="flex flex-wrap gap-3">
-            {['all', 'completed', 'in-progress', 'planned'].map((status) => (
+  return (
+    <div className="ft-page min-h-screen">
+      <PageHeader title="Workout History" subtitle="View and manage your workout sessions" />
+
+      <main className="max-w-6xl mx-auto px-4 md:px-8 py-8">
+        {/* Section label */}
+        <div className="mb-6 animate-slide-up">
+          <p className="ft-label">// Filter Sessions</p>
+          <div className="flex flex-wrap items-center gap-2 mt-3">
+            <Filter size={14} style={{ color: '#A0A0A0' }} />
+            {STATUS_FILTERS.map((status) => (
               <button
                 key={status}
+                id={`filter-${status}`}
                 onClick={() => setFilterStatus(status)}
-                className={`px-4 py-2 rounded-lg font-medium transition-all ${
-                  filterStatus === status
-                    ? 'bg-blue-500 text-white'
-                    : 'bg-gray-700/50 text-gray-300 hover:bg-gray-700'
-                }`}
+                className="font-display font-bold uppercase tracking-wider text-xs px-4 py-1.5 transition-all"
+                style={{
+                  background: filterStatus === status ? '#CCFF00' : 'rgba(10,10,10,0.9)',
+                  color: filterStatus === status ? '#000' : '#A0A0A0',
+                  border: `1px solid ${filterStatus === status ? '#CCFF00' : '#1A1A1A'}`,
+                  borderRadius: '2px',
+                  boxShadow: filterStatus === status ? '0 0 10px rgba(204,255,0,0.4)' : 'none',
+                }}
               >
-                {status === 'all' ? 'All' : status.charAt(0).toUpperCase() + status.slice(1)}
+                {status === 'all' ? 'All' : status.replace('-', ' ')}
               </button>
             ))}
-          </div>
-          <div className="mt-4 text-sm text-gray-400">
-            {filteredSessions.length} workout{filteredSessions.length !== 1 ? 's' : ''} found
+            <span className="ml-auto text-xs font-mono-sport" style={{ color: '#A0A0A0' }}>
+              {filteredSessions.length} found
+            </span>
           </div>
         </div>
 
-        {/* Loading State */}
+        {/* Loading */}
         {loading && (
-          <div className="text-center py-12">
-            <div className="animate-spin w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full mx-auto"></div>
-            <p className="text-gray-400 mt-4">Loading workout history...</p>
+          <div className="flex items-center justify-center py-20">
+            <div className="ft-loader" />
           </div>
         )}
 
-        {/* Empty State */}
+        {/* Empty */}
         {!loading && filteredSessions.length === 0 && (
-          <div className="text-center py-12">
-            <Dumbbell className="w-16 h-16 text-gray-600 mx-auto mb-4" />
-            <p className="text-gray-400 text-lg">No workouts found</p>
-            <p className="text-gray-500 text-sm mt-2">
-              {filterStatus !== 'all' 
+          <div
+            className="text-center py-20 animate-slide-up"
+            style={{ border: '1px dashed rgba(204,255,0,0.15)', borderRadius: '2px' }}
+          >
+            <Dumbbell size={40} style={{ color: '#1A1A1A', margin: '0 auto 16px' }} />
+            <p className="ft-title text-2xl text-white mb-2">No Workouts Found</p>
+            <p className="text-sm" style={{ color: '#A0A0A0' }}>
+              {filterStatus !== 'all'
                 ? `No ${filterStatus} workouts to display`
                 : 'Start your first workout to see it here!'}
             </p>
           </div>
         )}
 
-        {/* Workout Sessions List */}
+        {/* Sessions list */}
         {!loading && filteredSessions.length > 0 && (
-          <div className="space-y-4">
-            {filteredSessions.map((session) => (
-              <div
-                key={session.id}
-                className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-xl overflow-hidden hover:border-gray-600 transition-all"
-              >
-                {/* Session Card */}
-                <div className="p-4 md:p-6">
-                  {/* Header Row */}
-                  <div className="flex items-start justify-between gap-4 mb-3">
-                    <div className="flex-1">
-                      <div className="flex flex-wrap items-center gap-2 mb-2">
-                        <h3 className="text-lg md:text-xl font-bold text-white">{session.name}</h3>
-                        <span className={`px-2 md:px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(session.status)}`}>
-                          {session.status}
-                        </span>
-                      </div>
-                      
-                      {/* Info Row */}
-                      <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs md:text-sm text-gray-400">
-                        <div className="flex items-center gap-1.5">
-                          <Calendar className="w-4 h-4 flex-shrink-0" />
-                          <span>{formatDate(session.date)}</span>
-                          {session.completedAt && <span className="text-gray-500">• {formatTime(session.completedAt)}</span>}
+          <div className="space-y-3">
+            {filteredSessions.map((session, idx) => {
+              const isExpanded = expandedSessions.includes(session.id);
+              const volume = calculateTotalVolume(session);
+              return (
+                <div
+                  key={session.id}
+                  className="overflow-hidden animate-slide-up"
+                  style={{
+                    background: 'rgba(10,10,10,0.95)',
+                    border: '1px solid rgba(204,255,0,0.12)',
+                    borderRadius: '2px',
+                    animationDelay: `${idx * 0.04}s`,
+                    animationFillMode: 'both',
+                  }}
+                >
+                  {/* Card header */}
+                  <div className="p-4 md:p-5">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex flex-wrap items-center gap-2 mb-2">
+                          <h3
+                            className="font-display font-black italic uppercase text-white text-lg leading-none"
+                          >
+                            {session.name}
+                          </h3>
+                          {getStatusBadge(session.status)}
                         </div>
-                        <div className="flex items-center gap-1.5">
-                          <Dumbbell className="w-4 h-4 flex-shrink-0" />
-                          <span>{session.exercises?.length || 0} exercises</span>
+                        <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs" style={{ color: '#A0A0A0' }}>
+                          <span className="flex items-center gap-1">
+                            <Calendar size={11} />
+                            {formatDate(session.date)}
+                            {session.completedAt && <span style={{ color: '#555' }}>• {formatTime(session.completedAt)}</span>}
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <Dumbbell size={11} />
+                            {session.exercises?.length || 0} exercises
+                          </span>
+                          {session.status === 'completed' && volume > 0 && (
+                            <span className="flex items-center gap-1">
+                              <TrendingUp size={11} />
+                              {volume.toLocaleString()} kg
+                            </span>
+                          )}
                         </div>
-                        {session.status === 'completed' && (
-                          <div className="flex items-center gap-1.5">
-                            <TrendingUp className="w-4 h-4 flex-shrink-0" />
-                            <span>{calculateTotalVolume(session).toLocaleString()} kg</span>
-                          </div>
-                        )}
                       </div>
-                    </div>
-                    
-                    {/* Expand Button */}
-                    <button
-                      onClick={() => toggleExpand(session.id)}
-                      className="p-2 hover:bg-gray-700 rounded-lg transition-colors flex-shrink-0"
-                    >
-                      <ChevronDown className={`w-5 h-5 transition-transform ${expandedSessions.includes(session.id) ? 'rotate-180' : ''}`} />
-                    </button>
-                  </div>
-                  
-                  {/* Action Buttons */}
-                  {session.status !== 'completed' && (
-                    <div className="flex flex-wrap gap-2 pt-3 mt-3 border-t border-gray-700/50">
-                      {session.status === 'in-progress' && (
-                        <button
-                          onClick={() => handleStartWorkout(session.id)}
-                          className="flex items-center gap-2 px-4 py-2 bg-blue-500 hover:bg-blue-600 rounded-lg text-white text-sm font-medium transition-colors"
-                        >
-                          <Play className="w-4 h-4" />
-                          Continue
-                        </button>
-                      )}
-                      {session.status === 'planned' && (
-                        <button
-                          onClick={() => handleStartWorkout(session.id)}
-                          className="flex items-center gap-2 px-4 py-2 bg-green-500 hover:bg-green-600 rounded-lg text-white text-sm font-medium transition-colors"
-                        >
-                          <Play className="w-4 h-4" />
-                          Start Workout
-                        </button>
-                      )}
                       <button
-                        onClick={() => handleCompleteWorkout(session.id)}
-                        className="flex items-center gap-2 px-4 py-2 bg-emerald-500 hover:bg-emerald-600 rounded-lg text-white text-sm font-medium transition-colors"
+                        onClick={() => toggleExpand(session.id)}
+                        className="p-2 flex-shrink-0 transition-colors"
+                        style={{ border: '1px solid #1A1A1A', borderRadius: '2px', color: '#A0A0A0' }}
+                        onMouseEnter={e => e.currentTarget.style.borderColor = '#CCFF00'}
+                        onMouseLeave={e => e.currentTarget.style.borderColor = '#1A1A1A'}
                       >
-                        <CheckCircle className="w-4 h-4" />
-                        <span className="hidden sm:inline">Complete</span>
-                      </button>
-                      <button
-                        onClick={() => handleDeleteWorkout(session.id)}
-                        className="flex items-center gap-2 px-4 py-2 bg-red-500 hover:bg-red-600 rounded-lg text-white text-sm font-medium transition-colors ml-auto"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                        <span className="hidden sm:inline">Delete</span>
+                        <ChevronDown size={16} className={`transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`} />
                       </button>
                     </div>
-                  )}
-                </div>
 
-                {/* Expanded Details */}
-                {expandedSessions.includes(session.id) && (
-                  <div className="px-4 md:px-6 pb-4 md:pb-6 border-t border-gray-700/50">
-                    <div className="pt-4">
-                      <h4 className="text-sm font-semibold text-gray-300 mb-3">Exercises</h4>
+                    {/* Action buttons */}
+                    {session.status !== 'completed' && (
+                      <div className="flex flex-wrap gap-2 mt-3 pt-3" style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+                        {session.status === 'in-progress' && (
+                          <button
+                            onClick={() => handleStartWorkout(session.id)}
+                            className="ft-btn-secondary flex items-center gap-2 text-xs"
+                            style={{ padding: '6px 14px' }}
+                          >
+                            <Play size={12} /> Continue
+                          </button>
+                        )}
+                        {session.status === 'planned' && (
+                          <button
+                            onClick={() => handleStartWorkout(session.id)}
+                            className="ft-btn-primary flex items-center gap-2 text-xs"
+                            style={{ padding: '6px 14px' }}
+                          >
+                            <Play size={12} /> Start Workout
+                          </button>
+                        )}
+                        <button
+                          onClick={() => handleCompleteWorkout(session.id)}
+                          className="flex items-center gap-2 text-xs font-display font-bold uppercase tracking-wider transition-colors"
+                          style={{ padding: '6px 14px', border: '1px solid rgba(204,255,0,0.3)', borderRadius: '2px', color: '#CCFF00', background: 'rgba(204,255,0,0.06)' }}
+                          onMouseEnter={e => e.currentTarget.style.background = 'rgba(204,255,0,0.12)'}
+                          onMouseLeave={e => e.currentTarget.style.background = 'rgba(204,255,0,0.06)'}
+                        >
+                          <CheckCircle size={12} /> <span className="hidden sm:inline">Mark Complete</span>
+                        </button>
+                        <button
+                          onClick={() => handleDeleteWorkout(session.id)}
+                          className="ml-auto flex items-center gap-2 text-xs font-display font-bold uppercase tracking-wider transition-colors"
+                          style={{ padding: '6px 14px', border: '1px solid rgba(255,92,0,0.3)', borderRadius: '2px', color: '#FF5C00', background: 'rgba(255,92,0,0.06)' }}
+                          onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,92,0,0.12)'}
+                          onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,92,0,0.06)'}
+                        >
+                          <Trash2 size={12} /> <span className="hidden sm:inline">Delete</span>
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Expanded exercise details */}
+                  {isExpanded && (
+                    <div
+                      className="px-4 md:px-5 pb-4 animate-slide-up"
+                      style={{ borderTop: '1px solid rgba(204,255,0,0.1)' }}
+                    >
+                      <p className="ft-label mt-4 mb-3">// Exercises</p>
                       {session.exercises && session.exercises.length > 0 ? (
-                        <div className="space-y-2">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                           {session.exercises.map((exercise, idx) => (
-                            <div key={idx} className="bg-gray-700/30 rounded-lg p-3">
-                              <div className="flex items-center justify-between">
-                                <span className="font-medium text-white">{exercise.exerciseName}</span>
-                                <span className="text-xs text-gray-400">{exercise.category}</span>
+                            <div
+                              key={idx}
+                              className="flex items-center justify-between px-3 py-2"
+                              style={{ background: 'rgba(204,255,0,0.03)', border: '1px solid rgba(204,255,0,0.08)', borderRadius: '2px' }}
+                            >
+                              <span className="font-display font-bold italic uppercase text-sm text-white">{exercise.exerciseName}</span>
+                              <div className="flex items-center gap-2">
+                                {exercise.category && <span className="ft-badge-gray" style={{ fontSize: '10px' }}>{exercise.category}</span>}
+                                {exercise.actualSets?.length > 0 && (
+                                  <span className="font-mono-sport text-xs" style={{ color: '#CCFF00' }}>
+                                    {exercise.actualSets.length} sets
+                                  </span>
+                                )}
                               </div>
-                              {exercise.actualSets && exercise.actualSets.length > 0 && (
-                                <div className="mt-2 text-xs text-gray-400">
-                                  {exercise.actualSets.length} sets completed
-                                </div>
-                              )}
                             </div>
                           ))}
                         </div>
                       ) : (
-                        <p className="text-gray-500 text-sm">No exercises logged</p>
+                        <p className="text-sm" style={{ color: '#555' }}>No exercises logged</p>
                       )}
                     </div>
-                  </div>
-                )}
-              </div>
-            ))}
+                  )}
+                </div>
+              );
+            })}
           </div>
         )}
-      </div>
+      </main>
     </div>
   );
 }

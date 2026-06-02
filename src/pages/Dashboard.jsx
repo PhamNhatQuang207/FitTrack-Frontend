@@ -2,9 +2,157 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import axiosClient from "../api/axiosClient";
-import { Dumbbell, TrendingUp, Calendar, Zap, User, ClipboardList, Play } from "lucide-react";
-import dashboardBg from "../assets/icons/dashboard_background.jpg";
+import { Dumbbell, TrendingUp, Calendar, Zap, User, ClipboardList, Play, Bell } from "lucide-react";
 
+// ── Mini stat card ─────────────────────────────────────────
+function StatCard({ icon: Icon, value, label, accent = "lime", delay = "" }) {
+  const isLime = accent === "lime";
+  const color = isLime ? "#CCFF00" : "#FF5C00";
+  const bg = isLime ? "rgba(204,255,0,0.06)" : "rgba(255,92,0,0.06)";
+  const border = isLime ? "rgba(204,255,0,0.2)" : "rgba(255,92,0,0.2)";
+  const glow = isLime ? "rgba(204,255,0,0.3)" : "rgba(255,92,0,0.3)";
+
+  return (
+    <div
+      className={`relative overflow-hidden p-5 ${delay}`}
+      style={{
+        background: "rgba(10,10,10,0.9)",
+        border: `1px solid ${border}`,
+        borderRadius: "2px",
+        transition: "border-color 0.25s, box-shadow 0.25s, transform 0.25s",
+      }}
+      onMouseEnter={e => {
+        e.currentTarget.style.borderColor = color;
+        e.currentTarget.style.boxShadow = `0 0 16px ${glow}`;
+        e.currentTarget.style.transform = "translateY(-3px)";
+      }}
+      onMouseLeave={e => {
+        e.currentTarget.style.borderColor = border;
+        e.currentTarget.style.boxShadow = "none";
+        e.currentTarget.style.transform = "translateY(0)";
+      }}
+    >
+      {/* Top-left corner accent */}
+      <span style={{ position: "absolute", top: 0, left: 0, width: 14, height: 14, borderTop: `2px solid ${color}`, borderLeft: `2px solid ${color}` }} />
+      {/* Bottom-right corner accent */}
+      <span style={{ position: "absolute", bottom: 0, right: 0, width: 14, height: 14, borderBottom: `2px solid ${color}`, borderRight: `2px solid ${color}` }} />
+
+      <div className="flex items-start justify-between mb-3">
+        <div
+          className="w-10 h-10 flex items-center justify-center"
+          style={{ background: bg, border: `1px solid ${border}`, borderRadius: "2px" }}
+        >
+          <Icon size={18} style={{ color }} />
+        </div>
+        <div className="text-right">
+          <div
+            className="font-mono-sport font-bold text-3xl leading-none"
+            style={{ color, fontFamily: "'JetBrains Mono', monospace" }}
+          >
+            {value}
+          </div>
+        </div>
+      </div>
+      {/* Progress bar */}
+      <div className="w-full h-[2px] rounded-full mb-3" style={{ background: "rgba(255,255,255,0.05)" }}>
+        <div className="h-full rounded-full" style={{ width: "60%", background: color, boxShadow: `0 0 6px ${color}` }} />
+      </div>
+      <p className="text-xs uppercase tracking-widest font-display font-bold" style={{ color: "#A0A0A0" }}>
+        {label}
+      </p>
+    </div>
+  );
+}
+
+// ── Feature card ───────────────────────────────────────────
+function FeatureCard({ icon: Icon, title, description, extra, onClick, accent = "lime", delay = "" }) {
+  const isLime = accent === "lime";
+  const color = isLime ? "#CCFF00" : "#FF5C00";
+  const bg = isLime ? "rgba(204,255,0,0.06)" : "rgba(255,92,0,0.06)";
+  const border = isLime ? "rgba(204,255,0,0.15)" : "rgba(255,92,0,0.15)";
+  const glow = isLime ? "rgba(204,255,0,0.25)" : "rgba(255,92,0,0.25)";
+
+  return (
+    <div
+      className={`relative overflow-hidden cursor-pointer p-6 group ${delay}`}
+      style={{
+        background: "rgba(10,10,10,0.95)",
+        border: `1px solid ${border}`,
+        borderRadius: "2px",
+        transition: "border-color 0.25s, box-shadow 0.25s, transform 0.25s",
+      }}
+      onClick={onClick}
+      onMouseEnter={e => {
+        e.currentTarget.style.borderColor = color;
+        e.currentTarget.style.boxShadow = `0 0 20px ${glow}, inset 0 0 30px rgba(${isLime ? '204,255,0' : '255,92,0'},0.03)`;
+        e.currentTarget.style.transform = "translateY(-3px)";
+      }}
+      onMouseLeave={e => {
+        e.currentTarget.style.borderColor = border;
+        e.currentTarget.style.boxShadow = "none";
+        e.currentTarget.style.transform = "translateY(0)";
+      }}
+    >
+      {/* Corner accents */}
+      <span style={{ position: "absolute", top: 0, left: 0, width: 16, height: 16, borderTop: `2px solid ${color}`, borderLeft: `2px solid ${color}` }} />
+      <span style={{ position: "absolute", bottom: 0, right: 0, width: 16, height: 16, borderBottom: `2px solid ${color}`, borderRight: `2px solid ${color}` }} />
+
+      {/* Diagonal scan line */}
+      <div
+        className="absolute inset-0 opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity duration-300"
+        style={{
+          background: `linear-gradient(135deg, ${isLime ? 'rgba(204,255,0,0.04)' : 'rgba(255,92,0,0.04)'} 0%, transparent 60%)`,
+        }}
+      />
+
+      <div className="flex items-start gap-5 relative z-10">
+        <div
+          className="w-14 h-14 flex-shrink-0 flex items-center justify-center"
+          style={{
+            background: bg,
+            border: `1px solid ${border}`,
+            borderRadius: "2px",
+            boxShadow: `0 0 12px ${glow}`,
+          }}
+        >
+          <Icon size={26} style={{ color }} />
+        </div>
+
+        <div className="flex-1 min-w-0">
+          <h2
+            className="mb-1 leading-tight"
+            style={{
+              fontFamily: "'Barlow Condensed', sans-serif",
+              fontStyle: "italic",
+              fontWeight: 800,
+              fontSize: "1.35rem",
+              textTransform: "uppercase",
+              color: "#ffffff",
+              letterSpacing: "0.02em",
+            }}
+          >
+            {title}
+          </h2>
+          <p className="text-sm mb-3" style={{ color: "#A0A0A0", lineHeight: 1.5 }}>{description}</p>
+          {extra && (
+            <span className="text-xs font-display font-bold uppercase tracking-widest" style={{ color }}>
+              {extra}
+            </span>
+          )}
+        </div>
+
+        <div
+          className="flex-shrink-0 w-8 h-8 flex items-center justify-center self-center transition-transform group-hover:translate-x-1"
+          style={{ border: `1px solid ${border}`, borderRadius: "2px", color }}
+        >
+          ›
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Main Dashboard ─────────────────────────────────────────
 export default function Dashboard() {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -13,60 +161,57 @@ export default function Dashboard() {
     currentWeight: null,
     weeklyWorkouts: 0,
     streak: 0,
-    plannedSessions: 0
+    plannedSessions: 0,
+    totalVolume: 0,
+    avgExercises: 0,
   });
   const [activeSchedule, setActiveSchedule] = useState(null);
   const [plannedWorkouts, setPlannedWorkouts] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    fetchDashboardData();
-  }, []);
+  useEffect(() => { fetchDashboardData(); }, []);
 
   const fetchDashboardData = async () => {
     try {
-      // Fetch active weekly schedule
-      try {
-        const scheduleRes = await axiosClient.get('/weekly-schedules/current');
-        setActiveSchedule(scheduleRes.data);
-      } catch (e) {
-        setActiveSchedule(null);
-      }
+      const [scheduleRes, progressRes, sessionsRes] = await Promise.allSettled([
+        axiosClient.get('/weekly-schedules/current'),
+        axiosClient.get('/users/progress'),
+        axiosClient.get('/workout-sessions')
+      ]);
 
-      // Fetch user progress
-      const progressRes = await axiosClient.get('/users/progress');
-      const progressData = progressRes.data;
-      
-      // Fetch workout sessions (legacy & stats)
-      const sessionsRes = await axiosClient.get('/workout-sessions');
-      const sessions = sessionsRes.data;
+      if (scheduleRes.status === 'fulfilled') setActiveSchedule(scheduleRes.value.data);
+      else setActiveSchedule(null);
 
-      // Calculate stats
+      const progressData = progressRes.status === 'fulfilled' ? progressRes.value.data : {};
+      const sessions = sessionsRes.status === 'fulfilled' ? sessionsRes.value.data : [];
+
       const currentWeight = progressData.weightHistory?.length > 0
         ? progressData.weightHistory[progressData.weightHistory.length - 1].value
         : null;
 
-      // Get workouts from this week - simplified logic using activeSchedule if available
       const completedSessions = sessions.filter(s => s.status === 'completed');
-      
-      const weeklyWorkouts = activeSchedule 
-        ? activeSchedule.completedDays 
+      const weeklyWorkouts = activeSchedule
+        ? activeSchedule.completedDays
         : completedSessions.filter(s => {
             const oneWeekAgo = new Date();
             oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
             return new Date(s.date) >= oneWeekAgo;
           }).length;
-          
+
       const planned = sessions.filter(s => s.status === 'planned');
 
-      setStats({
-        totalWorkouts: completedSessions.length,
-        currentWeight,
-        weeklyWorkouts,
-        streak: weeklyWorkouts, // Placeholder logic
-        plannedSessions: planned.length
-      });
-      
+      // Calculate total volume
+      const totalVolume = completedSessions.reduce((total, session) => {
+        return total + (session.exercises || []).reduce((sum, ex) => {
+          return sum + (ex.actualSets || []).reduce((s2, set) => s2 + (set.weight * set.reps), 0);
+        }, 0);
+      }, 0);
+
+      const avgExercises = completedSessions.length > 0
+        ? Math.round(completedSessions.reduce((s, sess) => s + (sess.exercises?.length || 0), 0) / completedSessions.length)
+        : 0;
+
+      setStats({ totalWorkouts: completedSessions.length, currentWeight, weeklyWorkouts, streak: weeklyWorkouts, plannedSessions: planned.length, totalVolume, avgExercises });
       setPlannedWorkouts(planned);
     } catch (error) {
       console.error("Error fetching dashboard data:", error);
@@ -75,234 +220,164 @@ export default function Dashboard() {
     }
   };
 
-  const handleProfileClick = () => {
-    navigate("/profile");
-  };
-
   const handleWeeklyActionClick = () => {
-    if (activeSchedule) {
-      navigate("/weekly-schedule");
-    } else {
-      navigate("/weekly-plan-library");
-    }
+    if (activeSchedule) navigate("/weekly-schedule");
+    else navigate("/weekly-plan-library");
   };
 
-  const handleProgressTrackingClick = () => {
-    navigate("/progress-tracking");
-  };
+  const formatVolume = (v) => v >= 1000 ? `${(v / 1000).toFixed(1)}k` : v;
 
   return (
-    <div
-      className="min-h-screen w-full text-white bg-cover bg-center bg-no-repeat"
-      style={{
-        backgroundImage: `linear-gradient(to bottom, rgba(17, 24, 39, 0.85), rgba(31, 41, 55, 0.85)), url(${dashboardBg})`,
-        backgroundAttachment: "fixed",
-        backgroundSize: "cover",
-      }}
-    >
-      {/* Header Section */}
-      <header className="w-full px-4 md:px-8 py-6 flex justify-between items-center">
-        <div
-          className="flex items-center space-x-3 cursor-pointer group flex-1"
-          onClick={handleProfileClick}
-        >
-          <div className="w-12 h-12 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center group-hover:scale-110 transition-transform">
-            <User className="w-6 h-6 text-white" />
+    <div className="ft-page min-h-screen">
+      {/* ── Header ── */}
+      <header className="ft-header px-4 md:px-8 py-0">
+        <div className="max-w-6xl mx-auto flex items-center justify-between h-16">
+          {/* Logo */}
+          <div className="flex items-center gap-3">
+            <svg width="28" height="28" viewBox="0 0 36 36" fill="none">
+              <rect width="36" height="36" rx="2" fill="#CCFF00" />
+              <text x="18" y="26" textAnchor="middle" fontFamily="Barlow Condensed, sans-serif" fontWeight="900" fontSize="22" fontStyle="italic" fill="#000">F</text>
+            </svg>
+            <span className="ft-title text-2xl tracking-widest text-neon-lime text-glow-lime">FitTrack</span>
           </div>
-          <div className="hidden md:block">
-            <p className="text-sm text-gray-400">Welcome back</p>
-            <p className="font-semibold text-lg">{user?.name || 'User'}</p>
+
+          {/* User info */}
+          <div className="flex items-center gap-4">
+            <button
+              id="notification-btn"
+              className="w-9 h-9 flex items-center justify-center transition-colors"
+              style={{ border: "1px solid #1A1A1A", borderRadius: "2px", color: "#A0A0A0" }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = "#CCFF00"; e.currentTarget.style.color = "#CCFF00"; }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = "#1A1A1A"; e.currentTarget.style.color = "#A0A0A0"; }}
+            >
+              <Bell size={16} />
+            </button>
+            <button
+              id="profile-btn"
+              onClick={() => navigate("/profile")}
+              className="flex items-center gap-2 group"
+            >
+              <div
+                className="w-9 h-9 flex items-center justify-center transition-colors"
+                style={{ background: "rgba(204,255,0,0.1)", border: "1px solid rgba(204,255,0,0.3)", borderRadius: "2px" }}
+              >
+                <User size={16} style={{ color: "#CCFF00" }} />
+              </div>
+              <div className="hidden md:block text-left">
+                <p className="text-xs uppercase tracking-widest font-display font-bold" style={{ color: "#A0A0A0" }}>Athlete</p>
+                <p className="text-sm font-semibold text-white leading-none">{user?.name || 'User'}</p>
+              </div>
+            </button>
           </div>
         </div>
-        <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent flex-1 text-center">
-          FitTrack
-        </h1>
-        <div className="flex-1"></div>
       </header>
 
-      {/* Main Content */}
-      <main className="container mx-auto px-4 py-8">
-        {/* Stats Cards */}
+      {/* ── Content ── */}
+      <main className="max-w-6xl mx-auto px-4 md:px-8 py-8">
+
+        {/* Welcome banner */}
+        <div className="mb-8 animate-slide-up">
+          <p className="text-xs uppercase tracking-[0.3em] font-display font-bold mb-1" style={{ color: "#CCFF00" }}>
+            // Dashboard
+          </p>
+          <h1 className="ft-title text-5xl md:text-6xl text-white leading-none mb-2">
+            Welcome back,{" "}
+            <span className="text-neon-lime text-glow-lime">{user?.name?.split(" ")[0] || "Athlete"}</span>
+          </h1>
+          <p style={{ color: "#A0A0A0" }} className="text-sm">
+            {new Date().toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}
+          </p>
+        </div>
+
+        {/* ── Stats row ── */}
         {!loading && (
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8 animate-fade-in">
-            <div className="bg-gradient-to-br from-blue-500/20 to-blue-600/20 backdrop-blur-sm p-6 rounded-xl border border-blue-500/30 hover:scale-105 transition-transform">
-              <div className="flex items-center justify-between mb-2">
-                <Calendar className="w-8 h-8 text-blue-400" />
-                <span className="text-3xl font-bold">{stats.weeklyWorkouts}</span>
-              </div>
-              <p className="text-sm text-gray-300">This Week</p>
-            </div>
-
-            <div className="bg-gradient-to-br from-green-500/20 to-emerald-600/20 backdrop-blur-sm p-6 rounded-xl border border-green-500/30 hover:scale-105 transition-transform">
-              <div className="flex items-center justify-between mb-2">
-                <Dumbbell className="w-8 h-8 text-green-400" />
-                <span className="text-3xl font-bold">{stats.totalWorkouts}</span>
-              </div>
-              <p className="text-sm text-gray-300">Total Completed</p>
-            </div>
-
-            <div className="bg-gradient-to-br from-purple-500/20 to-pink-600/20 backdrop-blur-sm p-6 rounded-xl border border-purple-500/30 hover:scale-105 transition-transform">
-              <div className="flex items-center justify-between mb-2">
-                <TrendingUp className="w-8 h-8 text-purple-400" />
-                <span className="text-3xl font-bold">{stats.currentWeight ? `${stats.currentWeight}kg` : '--'}</span>
-              </div>
-              <p className="text-sm text-gray-300">Current Weight</p>
-            </div>
-
-            <div className="bg-gradient-to-br from-amber-500/20 to-orange-600/20 backdrop-blur-sm p-6 rounded-xl border border-amber-500/30 hover:scale-105 transition-transform">
-              <div className="flex items-center justify-between mb-2">
-                <Zap className="w-8 h-8 text-amber-400" />
-                <span className="text-3xl font-bold">{activeSchedule ? 'Active' : 'Empty'}</span>
-              </div>
-              <p className="text-sm text-gray-300">Weekly Plan</p>
-            </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8">
+            <StatCard icon={Dumbbell} value={stats.weeklyWorkouts} label="This Week" accent="lime" delay="ft-stagger-1" />
+            <StatCard icon={TrendingUp} value={formatVolume(stats.totalVolume)} label="Volume (kg)" accent="orange" delay="ft-stagger-2" />
+            <StatCard icon={Zap} value={stats.avgExercises || '--'} label="Avg Exercises" accent="lime" delay="ft-stagger-3" />
+            <StatCard icon={Calendar} value={stats.currentWeight ? `${stats.currentWeight}` : '--'} label="Weight (kg)" accent="orange" delay="ft-stagger-4" />
           </div>
         )}
 
-        {/* Main Feature Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-5xl mx-auto mb-8">
-          {/* Weekly Schedule / Planning Card */}
-          <div
-            className="group relative bg-gradient-to-br from-gray-800/80 to-gray-900/80 backdrop-blur-md p-8 rounded-2xl cursor-pointer 
-                     hover:from-gray-700/80 hover:to-gray-800/80 transition-all duration-300 transform hover:-translate-y-2 
-                     shadow-xl hover:shadow-2xl border border-gray-700/50 hover:border-blue-500/50 overflow-hidden"
-            onClick={handleWeeklyActionClick}
-          >
-            <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 rounded-full -mr-16 -mt-16 group-hover:scale-150 transition-transform duration-500"></div>
-            <div className="relative z-10">
-              <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                <ClipboardList className="w-10 h-10 text-white" />
-              </div>
-              <h2 className="text-2xl font-bold mb-3 bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">
-                {activeSchedule ? 'Current Weekly Schedule' : 'Weekly Planning'}
-              </h2>
-              <p className="text-gray-400 mb-4">
-                {activeSchedule 
-                  ? `Continue your "${activeSchedule.weeklyPlanName}" workouts. ${activeSchedule.completedDays}/${activeSchedule.totalWorkoutDays} completed.`
-                  : "Create or start a weekly workout plan"}
-              </p>
-              {activeSchedule && (
-                <div className="w-full bg-gray-700/50 rounded-full h-2 mt-4">
-                   <div 
-                      className="bg-blue-500 h-2 rounded-full transition-all duration-500" 
-                      style={{ width: `${(activeSchedule.completedDays / activeSchedule.totalWorkoutDays) * 100}%` }}
-                   />
-                </div>
-              )}
-            </div>
+        {loading && (
+          <div className="flex items-center justify-center py-16">
+            <div className="ft-loader" />
           </div>
+        )}
 
-          {/* Single Workout Planning Card */}
-          <div
-            className="group relative bg-gradient-to-br from-gray-800/80 to-gray-900/80 backdrop-blur-md p-8 rounded-2xl cursor-pointer 
-                     hover:from-gray-700/80 hover:to-gray-800/80 transition-all duration-300 transform hover:-translate-y-2 
-                     shadow-xl hover:shadow-2xl border border-gray-700/50 hover:border-green-500/50 overflow-hidden"
-            onClick={() => navigate('/workout-planning')}
-          >
-            <div className="absolute top-0 right-0 w-32 h-32 bg-green-500/10 rounded-full -mr-16 -mt-16 group-hover:scale-150 transition-transform duration-500"></div>
-            <div className="relative z-10">
-              <div className="w-20 h-20 bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                <Dumbbell className="w-10 h-10 text-white" />
-              </div>
-              <h2 className="text-2xl font-bold mb-3 bg-gradient-to-r from-green-400 to-emerald-400 bg-clip-text text-transparent">
-                Single Workout
-              </h2>
-              <p className="text-gray-400 mb-4">
-                Plan a one-time workout session
-              </p>
-              {stats.plannedSessions > 0 && (
-                <p className="text-sm text-green-400">
-                  {stats.plannedSessions} session{stats.plannedSessions !== 1 ? 's' : ''} planned
-                </p>
-              )}
-             </div>
+        {/* ── Feature cards grid ── */}
+        {!loading && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+            <FeatureCard
+              icon={ClipboardList}
+              title={activeSchedule ? "Current Schedule" : "Weekly Planning"}
+              description={
+                activeSchedule
+                  ? `Continue "${activeSchedule.weeklyPlanName}" — ${activeSchedule.completedDays}/${activeSchedule.totalWorkoutDays} sessions done.`
+                  : "Create or start a weekly workout plan to stay consistent."
+              }
+              extra={activeSchedule ? `${Math.round((activeSchedule.completedDays / activeSchedule.totalWorkoutDays) * 100)}% complete` : null}
+              onClick={handleWeeklyActionClick}
+              accent="lime"
+              delay="ft-stagger-1"
+            />
+            <FeatureCard
+              icon={Dumbbell}
+              title="Single Workout"
+              description="Plan a one-time workout session for today."
+              extra={stats.plannedSessions > 0 ? `${stats.plannedSessions} session${stats.plannedSessions !== 1 ? 's' : ''} planned` : null}
+              onClick={() => navigate('/workout-planning')}
+              accent="orange"
+              delay="ft-stagger-2"
+            />
+            <FeatureCard
+              icon={Calendar}
+              title="Workout History"
+              description="View your past workout sessions and track progress."
+              extra={stats.totalWorkouts > 0 ? `${stats.totalWorkouts} workout${stats.totalWorkouts !== 1 ? 's' : ''} logged` : null}
+              onClick={() => navigate('/workout-history')}
+              accent="orange"
+              delay="ft-stagger-3"
+            />
+            <FeatureCard
+              icon={TrendingUp}
+              title="Progress Tracking"
+              description="Monitor your fitness journey and track measurements."
+              extra={stats.totalWorkouts > 0 ? `${stats.totalWorkouts} sessions analyzed` : null}
+              onClick={() => navigate('/progress-tracking')}
+              accent="lime"
+              delay="ft-stagger-4"
+            />
           </div>
+        )}
 
-          {/* Workout History Card */}
-          <div
-            className="group relative bg-gradient-to-br from-gray-800/80 to-gray-900/80 backdrop-blur-md p-8 rounded-2xl cursor-pointer 
-                     hover:from-gray-700/80 hover:to-gray-800/80 transition-all duration-300 transform hover:-translate-y-2 
-                     shadow-xl hover:shadow-2xl border border-gray-700/50 hover:border-orange-500/50 overflow-hidden"
-            onClick={() => navigate('/workout-history')}
-          >
-            <div className="absolute top-0 right-0 w-32 h-32 bg-orange-500/10 rounded-full -mr-16 -mt-16 group-hover:scale-150 transition-transform duration-500"></div>
-            <div className="relative z-10">
-              <div className="w-20 h-20 bg-gradient-to-br from-orange-500 to-amber-600 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                <Calendar className="w-10 h-10 text-white" />
-              </div>
-              <h2 className="text-2xl font-bold mb-3 bg-gradient-to-r from-orange-400 to-amber-400 bg-clip-text text-transparent">
-                Workout History
-              </h2>
-              <p className="text-gray-400 mb-4">
-                View your past workout sessions and track progress
-              </p>
-              {stats.totalWorkouts > 0 && (
-                <p className="text-sm text-orange-400">
-                  {stats.totalWorkouts} workout{stats.totalWorkouts !== 1 ? 's' : ''} logged
-                </p>
-              )}
-            </div>
-          </div>
-
-          {/* Progress Tracking Card */}
-          <div
-            className="group relative bg-gradient-to-br from-gray-800/80 to-gray-900/80 backdrop-blur-md p-8 rounded-2xl cursor-pointer 
-                     hover:from-gray-700/80 hover:to-gray-800/80 transition-all duration-300 transform hover:-translate-y-2 
-                     shadow-xl hover:shadow-2xl border border-gray-700/50 hover:border-purple-500/50 overflow-hidden"
-            onClick={handleProgressTrackingClick}
-          >
-            <div className="absolute top-0 right-0 w-32 h-32 bg-purple-500/10 rounded-full -mr-16 -mt-16 group-hover:scale-150 transition-transform duration-500"></div>
-            <div className="relative z-10">
-              <div className="w-20 h-20 bg-gradient-to-br from-purple-500 to-pink-600 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                <TrendingUp className="w-10 h-10 text-white" />
-              </div>
-              <h2 className="text-2xl font-bold mb-3 bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
-                Progress Tracking
-              </h2>
-              <p className="text-gray-400 mb-4">
-                Monitor your fitness journey and track measurements
-              </p>
-              {stats.totalWorkouts > 0 && (
-                <p className="text-sm text-purple-400">
-                  {stats.totalWorkouts} workout{stats.totalWorkouts !== 1 ? 's' : ''} completed
-                </p>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Planned Workouts Section (Legacy/Individual) */}
+        {/* ── Planned Workouts (legacy) ── */}
         {plannedWorkouts.length > 0 && (
-          <div className="max-w-5xl mx-auto mt-8">
-            <h2 className="text-2xl font-bold mb-4">Individual Planned Sessions</h2>
+          <div className="mt-4">
+            <p className="ft-label mb-4">// Upcoming Sessions</p>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {plannedWorkouts.map((workout) => (
                 <div
                   key={workout.id}
-                  className="bg-gray-800/50 backdrop-blur-sm p-6 rounded-xl border border-gray-700/50 hover:border-blue-500/50 transition-all"
+                  className="flex items-center justify-between p-4 gap-4"
+                  style={{ background: "rgba(10,10,10,0.9)", border: "1px solid rgba(204,255,0,0.15)", borderRadius: "2px" }}
                 >
-                  <div className="flex items-center justify-between mb-4">
-                    <div>
-                      <h3 className="text-xl font-semibold">{workout.name}</h3>
-                      <p className="text-sm text-gray-400">
-                        {workout.exercises.length} exercise{workout.exercises.length !== 1 ? 's' : ''}
-                      </p>
+                  <div>
+                    <h3 className="font-display font-bold italic uppercase text-white text-lg leading-tight">{workout.name}</h3>
+                    <p className="text-xs mt-1" style={{ color: "#A0A0A0" }}>{workout.exercises.length} exercise{workout.exercises.length !== 1 ? 's' : ''}</p>
+                    <div className="flex flex-wrap gap-1 mt-2">
+                      {workout.exercises.slice(0, 2).map((ex, idx) => (
+                        <span key={idx} className="ft-badge-gray">{ex.exerciseName}</span>
+                      ))}
                     </div>
-                    <button
-                      onClick={() => navigate(`/workout/${workout.id}`)}
-                      className="px-4 py-2 bg-blue-500 hover:bg-blue-600 rounded-lg font-medium transition-colors flex items-center gap-2"
-                    >
-                      <Play className="w-4 h-4" />
-                      Start
-                    </button>
                   </div>
-                  <div className="flex flex-wrap gap-2">
-                    {workout.exercises.slice(0, 3).map((ex, idx) => (
-                      <span key={idx} className="px-3 py-1 bg-gray-700/50 rounded-full text-xs">
-                        {ex.exerciseName}
-                      </span>
-                    ))}
-                  </div>
+                  <button
+                    onClick={() => navigate(`/workout/${workout.id}`)}
+                    className="ft-btn-primary flex items-center gap-2 text-xs flex-shrink-0"
+                    style={{ padding: "8px 16px" }}
+                  >
+                    <Play size={14} /> Start
+                  </button>
                 </div>
               ))}
             </div>
@@ -310,28 +385,15 @@ export default function Dashboard() {
         )}
       </main>
 
-      {/* Footer Quote */}
-      <footer className="fixed bottom-0 w-full py-6 bg-gradient-to-t from-black/50 to-transparent">
-        <div className="text-center italic text-gray-300 font-medium">
+      {/* ── Footer quote ── */}
+      <footer className="fixed bottom-0 w-full py-4 pointer-events-none" style={{ background: "linear-gradient(to top, rgba(5,5,5,0.9) 0%, transparent 100%)" }}>
+        <p
+          className="text-center italic text-sm font-display font-semibold"
+          style={{ color: "rgba(160,160,160,0.7)", letterSpacing: "0.05em" }}
+        >
           "Today's effort is tomorrow's result!"
-        </div>
+        </p>
       </footer>
-
-      <style>{`
-        @keyframes fade-in {
-          from {
-            opacity: 0;
-            transform: translateY(20px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-        .animate-fade-in {
-          animation: fade-in 0.5s ease-out;
-        }
-      `}</style>
     </div>
   );
 }

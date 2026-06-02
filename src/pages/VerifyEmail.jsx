@@ -2,15 +2,14 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useSearchParams, Link } from 'react-router-dom';
 import axiosClient from '../api/axiosClient';
 import { CheckCircle2, XCircle, Loader2 } from 'lucide-react';
-import gymImage from '../assets/background.jpg';
 
 export default function VerifyEmail() {
-  const { token: pathToken } = useParams(); // From /verify-email/:token
-  const [searchParams] = useSearchParams(); // From /verify-email?token=...
-  const token = searchParams.get('token') || pathToken; // Support both formats
-  const [status, setStatus] = useState('loading'); // loading, success, error
+  const { token: pathToken } = useParams();
+  const [searchParams] = useSearchParams();
+  const token = searchParams.get('token') || pathToken;
+  const [status, setStatus] = useState('loading');
   const [message, setMessage] = useState('');
-  const hasVerified = useRef(false); // Prevent double verification in StrictMode
+  const hasVerified = useRef(false);
 
   const verifyEmail = useCallback(async () => {
     try {
@@ -31,62 +30,86 @@ export default function VerifyEmail() {
   }, [verifyEmail]);
 
   return (
-    <div
-      className="w-full h-screen flex items-center justify-center bg-cover bg-center relative"
-      style={{ backgroundImage: `url(${gymImage})` }}
-    >
-      {/* Dark overlay */}
-      <div className="absolute inset-0 bg-black/60 z-0"></div>
+    <div className="ft-page flex items-center justify-center min-h-screen px-4">
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{ background: 'radial-gradient(ellipse at 50% 0%, rgba(204,255,0,0.08) 0%, transparent 60%)' }}
+      />
 
-      {/* Verification Card */}
-      <div className="relative z-10 bg-white/10 backdrop-blur-lg border border-white/10 shadow-lg w-[450px] rounded-xl px-8 py-10 text-white flex flex-col items-center">
-        {status === 'loading' && (
-          <>
-            <Loader2 className="w-16 h-16 text-blue-400 animate-spin mb-4" />
-            <h2 className="text-2xl font-bold mb-2">Verifying Your Email</h2>
-            <p className="text-gray-300 text-center">Please wait while we verify your email address...</p>
-          </>
-        )}
+      <div className="relative z-10 w-full max-w-[420px] animate-slide-up">
+        {/* Logo */}
+        <div className="mb-8 text-center">
+          <div className="inline-flex items-center gap-3">
+            <svg width="30" height="30" viewBox="0 0 36 36" fill="none">
+              <rect width="36" height="36" rx="2" fill="#CCFF00" />
+              <text x="18" y="26" textAnchor="middle" fontFamily="Barlow Condensed, sans-serif" fontWeight="900" fontSize="22" fontStyle="italic" fill="#000">F</text>
+            </svg>
+            <span className="ft-title text-2xl tracking-widest text-neon-lime">FitTrack</span>
+          </div>
+        </div>
 
-        {status === 'success' && (
-          <>
-            <div className="w-20 h-20 rounded-full bg-green-500/20 flex items-center justify-center mb-4">
-              <CheckCircle2 className="w-12 h-12 text-green-400" />
-            </div>
-            <h2 className="text-2xl font-bold mb-2">Email Verified!</h2>
-            <p className="text-gray-300 text-center mb-6">{message}</p>
-            <Link
-              to="/login"
-              className="w-full py-3 bg-green-500 hover:bg-green-600 rounded-md font-semibold text-center transition-colors"
-            >
-              Go to Login
-            </Link>
-          </>
-        )}
-
-        {status === 'error' && (
-          <>
-            <div className="w-20 h-20 rounded-full bg-red-500/20 flex items-center justify-center mb-4">
-              <XCircle className="w-12 h-12 text-red-400" />
-            </div>
-            <h2 className="text-2xl font-bold mb-2">Verification Failed</h2>
-            <p className="text-gray-300 text-center mb-6">{message}</p>
-            <div className="flex gap-3 w-full">
-              <Link
-                to="/register"
-                className="flex-1 py-3 bg-blue-500 hover:bg-blue-600 rounded-md font-semibold text-center transition-colors"
+        <div className="ft-card ft-corner-tl ft-corner-br p-8 text-center">
+          {status === 'loading' && (
+            <>
+              <div
+                className="w-16 h-16 flex items-center justify-center mx-auto mb-5"
+                style={{ border: '1px solid rgba(204,255,0,0.3)', borderRadius: '2px', background: 'rgba(204,255,0,0.06)' }}
               >
-                Register Again
-              </Link>
+                <Loader2 size={28} style={{ color: '#CCFF00' }} className="animate-spin" />
+              </div>
+              <h1 className="ft-title text-2xl text-white mb-2">Verifying Email</h1>
+              <p className="text-sm" style={{ color: '#A0A0A0' }}>Please wait while we verify your email address...</p>
+            </>
+          )}
+
+          {status === 'success' && (
+            <>
+              <div
+                className="w-16 h-16 flex items-center justify-center mx-auto mb-5"
+                style={{ border: '1px solid rgba(204,255,0,0.4)', borderRadius: '2px', background: 'rgba(204,255,0,0.08)', boxShadow: '0 0 20px rgba(204,255,0,0.2)' }}
+              >
+                <CheckCircle2 size={28} style={{ color: '#CCFF00' }} />
+              </div>
+              <h1 className="ft-title text-2xl text-neon-lime mb-2">Email Verified!</h1>
+              <p className="text-sm mb-6" style={{ color: '#A0A0A0' }}>{message}</p>
               <Link
                 to="/login"
-                className="flex-1 py-3 bg-gray-700 hover:bg-gray-600 rounded-md font-semibold text-center transition-colors"
+                className="ft-btn-primary block w-full py-3 text-center no-underline"
               >
-                Back to Login
+                Go to Login
               </Link>
-            </div>
-          </>
-        )}
+            </>
+          )}
+
+          {status === 'error' && (
+            <>
+              <div
+                className="w-16 h-16 flex items-center justify-center mx-auto mb-5"
+                style={{ border: '1px solid rgba(255,92,0,0.4)', borderRadius: '2px', background: 'rgba(255,92,0,0.08)' }}
+              >
+                <XCircle size={28} style={{ color: '#FF5C00' }} />
+              </div>
+              <h1 className="ft-title text-2xl text-white mb-2">Verification Failed</h1>
+              <p className="text-sm mb-6" style={{ color: '#A0A0A0' }}>{message}</p>
+              <div className="flex gap-3">
+                <Link
+                  to="/register"
+                  className="flex-1 py-3 text-center font-display font-bold uppercase tracking-wider text-xs no-underline transition-colors"
+                  style={{ background: '#FF5C00', color: '#000', borderRadius: '2px' }}
+                >
+                  Register Again
+                </Link>
+                <Link
+                  to="/login"
+                  className="flex-1 py-3 text-center font-display font-bold uppercase tracking-wider text-xs no-underline transition-colors"
+                  style={{ border: '1px solid #1A1A1A', color: '#A0A0A0', borderRadius: '2px' }}
+                >
+                  Back to Login
+                </Link>
+              </div>
+            </>
+          )}
+        </div>
       </div>
     </div>
   );

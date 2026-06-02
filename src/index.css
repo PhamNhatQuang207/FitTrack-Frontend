@@ -1,3 +1,338 @@
+@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,400;0,600;0,700;0,800;1,600;1,700;1,800&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* =========================================================
+   FITTRACK — FUTURISTIC SPORTY GLOBAL STYLES
+   ========================================================= */
+
+@layer base {
+  *, *::before, *::after {
+    box-sizing: border-box;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    background-color: #050505;
+    color: #ffffff;
+    font-family: 'Inter', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    overflow-x: hidden;
+  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+  }
+  ::-webkit-scrollbar-track {
+    background: #0a0a0a;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #CCFF00;
+    border-radius: 2px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #aadd00;
+  }
+
+  /* Selection */
+  ::selection {
+    background: rgba(204, 255, 0, 0.25);
+    color: #CCFF00;
+  }
+}
+
+@layer components {
+  /* -------- LAYOUT -------- */
+  .ft-page {
+    @apply min-h-screen text-white relative overflow-hidden;
+    background-color: #050505;
+    background-image:
+      linear-gradient(rgba(204,255,0,0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(204,255,0,0.04) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(5,5,5,0.92), rgba(10,10,10,0.98)),
+      url('./assets/background.jpg');
+    background-size: 40px 40px, 40px 40px, cover, cover;
+    background-position: center, center, center, center;
+    background-attachment: fixed, fixed, fixed, fixed;
+  }
+
+  /* -------- TYPOGRAPHY -------- */
+  .ft-title {
+    font-family: 'Barlow Condensed', sans-serif;
+    @apply font-black italic uppercase tracking-wide text-white;
+  }
+
+  .ft-stat-number {
+    font-family: 'JetBrains Mono', monospace;
+    @apply font-bold;
+  }
+
+  /* -------- CARDS -------- */
+  .ft-card {
+    @apply relative overflow-hidden;
+    background: rgba(10, 10, 10, 0.9);
+    border: 1px solid rgba(204, 255, 0, 0.2);
+    border-radius: 2px;
+    transition: border-color 0.25s ease, box-shadow 0.25s ease, transform 0.25s ease;
+  }
+  .ft-card:hover {
+    border-color: rgba(204, 255, 0, 0.6);
+    box-shadow: 0 0 12px rgba(204, 255, 0, 0.2), inset 0 0 20px rgba(204, 255, 0, 0.03);
+    transform: translateY(-2px);
+  }
+
+  .ft-card-orange {
+    @apply relative overflow-hidden;
+    background: rgba(10, 10, 10, 0.9);
+    border: 1px solid rgba(255, 92, 0, 0.2);
+    border-radius: 2px;
+    transition: border-color 0.25s ease, box-shadow 0.25s ease, transform 0.25s ease;
+  }
+  .ft-card-orange:hover {
+    border-color: rgba(255, 92, 0, 0.6);
+    box-shadow: 0 0 12px rgba(255, 92, 0, 0.2), inset 0 0 20px rgba(255, 92, 0, 0.03);
+    transform: translateY(-2px);
+  }
+
+  /* -------- BUTTONS -------- */
+  .ft-btn-primary {
+    font-family: 'Barlow Condensed', sans-serif;
+    @apply font-bold uppercase tracking-wider;
+    background: #CCFF00;
+    color: #000000;
+    border: none;
+    border-radius: 2px;
+    padding: 10px 24px;
+    cursor: pointer;
+    transition: background 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease;
+  }
+  .ft-btn-primary:hover {
+    background: #d4ff1a;
+    box-shadow: 0 0 16px rgba(204, 255, 0, 0.5);
+    transform: translateY(-1px);
+  }
+  .ft-btn-primary:active {
+    transform: translateY(0);
+  }
+
+  .ft-btn-secondary {
+    font-family: 'Barlow Condensed', sans-serif;
+    @apply font-bold uppercase tracking-wider;
+    background: transparent;
+    color: #CCFF00;
+    border: 1px solid #CCFF00;
+    border-radius: 2px;
+    padding: 9px 24px;
+    cursor: pointer;
+    transition: background 0.2s ease, box-shadow 0.2s ease, color 0.2s ease;
+  }
+  .ft-btn-secondary:hover {
+    background: rgba(204, 255, 0, 0.1);
+    box-shadow: 0 0 12px rgba(204, 255, 0, 0.3);
+  }
+
+  .ft-btn-orange {
+    font-family: 'Barlow Condensed', sans-serif;
+    @apply font-bold uppercase tracking-wider;
+    background: #FF5C00;
+    color: #000000;
+    border: none;
+    border-radius: 2px;
+    padding: 10px 24px;
+    cursor: pointer;
+    transition: background 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease;
+  }
+  .ft-btn-orange:hover {
+    background: #ff7020;
+    box-shadow: 0 0 16px rgba(255, 92, 0, 0.5);
+    transform: translateY(-1px);
+  }
+
+  .ft-btn-ghost {
+    font-family: 'Barlow Condensed', sans-serif;
+    @apply font-bold uppercase tracking-wider;
+    background: transparent;
+    color: #A0A0A0;
+    border: 1px solid #1A1A1A;
+    border-radius: 2px;
+    padding: 9px 24px;
+    cursor: pointer;
+    transition: color 0.2s ease, border-color 0.2s ease;
+  }
+  .ft-btn-ghost:hover {
+    color: #ffffff;
+    border-color: #333333;
+  }
+
+  /* -------- FORM INPUTS -------- */
+  .ft-input {
+    background: rgba(10, 10, 10, 0.8);
+    border: 1px solid #1A1A1A;
+    border-radius: 2px;
+    color: #ffffff;
+    padding: 10px 14px;
+    width: 100%;
+    font-size: 14px;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    outline: none;
+    font-family: 'Inter', sans-serif;
+  }
+  .ft-input::placeholder {
+    color: #555555;
+  }
+  .ft-input:focus {
+    border-color: #CCFF00;
+    box-shadow: 0 0 0 2px rgba(204, 255, 0, 0.1);
+  }
+
+  .ft-label {
+    @apply text-xs font-semibold uppercase tracking-widest mb-1 block;
+    color: #A0A0A0;
+    font-family: 'Barlow Condensed', sans-serif;
+  }
+
+  /* -------- HEADER -------- */
+  .ft-header {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    background: rgba(5, 5, 5, 0.95);
+    border-bottom: 1px solid rgba(204, 255, 0, 0.15);
+    backdrop-filter: blur(16px);
+  }
+
+  /* -------- STATUS BADGES -------- */
+  .ft-badge-lime {
+    background: rgba(204, 255, 0, 0.12);
+    color: #CCFF00;
+    border: 1px solid rgba(204, 255, 0, 0.3);
+    border-radius: 1px;
+    padding: 2px 10px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-family: 'Barlow Condensed', sans-serif;
+  }
+
+  .ft-badge-orange {
+    background: rgba(255, 92, 0, 0.12);
+    color: #FF5C00;
+    border: 1px solid rgba(255, 92, 0, 0.3);
+    border-radius: 1px;
+    padding: 2px 10px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-family: 'Barlow Condensed', sans-serif;
+  }
+
+  .ft-badge-gray {
+    background: rgba(160, 160, 160, 0.1);
+    color: #A0A0A0;
+    border: 1px solid rgba(160, 160, 160, 0.2);
+    border-radius: 1px;
+    padding: 2px 10px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-family: 'Barlow Condensed', sans-serif;
+  }
+
+  /* -------- LOADER -------- */
+  .ft-loader {
+    width: 40px;
+    height: 40px;
+    border: 2px solid #1A1A1A;
+    border-top-color: #CCFF00;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+
+  /* -------- NEON DIVIDER -------- */
+  .ft-divider {
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(204,255,0,0.4), transparent);
+    margin: 24px 0;
+  }
+
+  /* -------- CORNER ACCENT -------- */
+  .ft-corner-tl::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 16px; height: 16px;
+    border-top: 2px solid #CCFF00;
+    border-left: 2px solid #CCFF00;
+  }
+  .ft-corner-br::after {
+    content: '';
+    position: absolute;
+    bottom: 0; right: 0;
+    width: 16px; height: 16px;
+    border-bottom: 2px solid #CCFF00;
+    border-right: 2px solid #CCFF00;
+  }
+}
+
+@layer utilities {
+  .text-neon-lime { color: #CCFF00; }
+  .text-neon-orange { color: #FF5C00; }
+  .bg-neon-lime { background-color: #CCFF00; }
+  .bg-neon-orange { background-color: #FF5C00; }
+  .border-neon-lime { border-color: rgba(204, 255, 0, 0.3); }
+  .border-neon-orange { border-color: rgba(255, 92, 0, 0.3); }
+
+  .font-display {
+    font-family: 'Barlow Condensed', sans-serif;
+  }
+  .font-mono-sport {
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .glow-lime {
+    box-shadow: 0 0 10px rgba(204,255,0,0.5), 0 0 30px rgba(204,255,0,0.2);
+  }
+  .glow-orange {
+    box-shadow: 0 0 10px rgba(255,92,0,0.5), 0 0 30px rgba(255,92,0,0.2);
+  }
+  .text-glow-lime {
+    text-shadow: 0 0 8px rgba(204,255,0,0.6);
+  }
+  .text-glow-orange {
+    text-shadow: 0 0 8px rgba(255,92,0,0.6);
+  }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes slide-up {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes glow-pulse {
+  0%, 100% { box-shadow: 0 0 8px rgba(204,255,0,0.4); }
+  50%       { box-shadow: 0 0 24px rgba(204,255,0,0.8), 0 0 48px rgba(204,255,0,0.3); }
+}
+
+.animate-slide-up { animation: slide-up 0.4s ease-out both; }
+.animate-glow-pulse { animation: glow-pulse 2.5s ease-in-out infinite; }
+
+/* Staggered card animation */
+.ft-stagger-1 { animation: slide-up 0.4s ease-out 0.05s both; }
+.ft-stagger-2 { animation: slide-up 0.4s ease-out 0.10s both; }
+.ft-stagger-3 { animation: slide-up 0.4s ease-out 0.15s both; }
+.ft-stagger-4 { animation: slide-up 0.4s ease-out 0.20s both; }

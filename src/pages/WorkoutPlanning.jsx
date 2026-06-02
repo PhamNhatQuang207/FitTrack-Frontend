@@ -2,10 +2,9 @@ import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import axiosClient from "../api/axiosClient";
 import { ArrowLeft, Search, Save, Plus, Trash2, CheckCircle2 } from "lucide-react";
-import dashboardBg from "../assets/icons/dashboard_background.jpg";
 import ErrorBoundary from "../components/ErrorBoundary";
 
-// Import muscle group icons
+// Muscle group data (icons kept, colors removed)
 import chestIcon from "../assets/icons/muscle/chest.png";
 import shouldersIcon from "../assets/icons/muscle/shoulders.png";
 import bicepsIcon from "../assets/icons/muscle/biceps.png";
@@ -21,23 +20,52 @@ import glutesIcon from "../assets/icons/muscle/glutes.png";
 import calvesIcon from "../assets/icons/muscle/calves.png";
 import forearmsIcon from "../assets/icons/muscle/forearms.png";
 
-// Muscle group data with icons and gradient colors
 const muscleGroupData = [
-  { id: 'chest', name: 'Chest', icon: chestIcon, color: 'from-red-500 to-pink-500' },
-  { id: 'shoulders', name: 'Shoulders', icon: shouldersIcon, color: 'from-orange-500 to-amber-500' },
-  { id: 'biceps', name: 'Biceps', icon: bicepsIcon, color: 'from-blue-500 to-cyan-500' },
-  { id: 'triceps', name: 'Triceps', icon: tricepsIcon, color: 'from-purple-500 to-pink-500' },
-  { id: 'lats', name: 'Lats', icon: latsIcon, color: 'from-green-500 to-emerald-500' },
-  { id: 'middle_back', name: 'Middle Back', icon: middleBackIcon, color: 'from-teal-500 to-cyan-500' },
-  { id: 'lower_back', name: 'Lower Back', icon: lowerBackIcon, color: 'from-indigo-500 to-blue-500' },
-  { id: 'traps', name: 'Traps', icon: trapsIcon, color: 'from-violet-500 to-purple-500' },
-  { id: 'abdominals', name: 'Abdominals', icon: absIcon, color: 'from-yellow-500 to-orange-500' },
-  { id: 'quadriceps', name: 'Quadriceps', icon: quadsIcon, color: 'from-lime-500 to-green-500' },
-  { id: 'hamstrings', name: 'Hamstrings', icon: hamstringsIcon, color: 'from-emerald-500 to-teal-500' },
-  { id: 'glutes', name: 'Glutes', icon: glutesIcon, color: 'from-rose-500 to-pink-500' },
-  { id: 'calves', name: 'Calves', icon: calvesIcon, color: 'from-cyan-500 to-blue-500' },
-  { id: 'forearms', name: 'Forearms', icon: forearmsIcon, color: 'from-gray-500 to-slate-500' }
+  { id: 'chest', name: 'Chest', icon: chestIcon },
+  { id: 'shoulders', name: 'Shoulders', icon: shouldersIcon },
+  { id: 'biceps', name: 'Biceps', icon: bicepsIcon },
+  { id: 'triceps', name: 'Triceps', icon: tricepsIcon },
+  { id: 'lats', name: 'Lats', icon: latsIcon },
+  { id: 'middle_back', name: 'Middle Back', icon: middleBackIcon },
+  { id: 'lower_back', name: 'Lower Back', icon: lowerBackIcon },
+  { id: 'traps', name: 'Traps', icon: trapsIcon },
+  { id: 'abdominals', name: 'Abdominals', icon: absIcon },
+  { id: 'quadriceps', name: 'Quadriceps', icon: quadsIcon },
+  { id: 'hamstrings', name: 'Hamstrings', icon: hamstringsIcon },
+  { id: 'glutes', name: 'Glutes', icon: glutesIcon },
+  { id: 'calves', name: 'Calves', icon: calvesIcon },
+  { id: 'forearms', name: 'Forearms', icon: forearmsIcon },
 ];
+
+// Step indicator
+function StepIndicator({ current, total = 2 }) {
+  return (
+    <div className="flex items-center gap-2">
+      {Array.from({ length: total }, (_, i) => i + 1).map((step) => (
+        <React.Fragment key={step}>
+          <div
+            className="w-7 h-7 flex items-center justify-center font-mono-sport font-bold text-xs transition-all"
+            style={{
+              background: current >= step ? '#CCFF00' : 'rgba(255,255,255,0.05)',
+              color: current >= step ? '#000' : '#555',
+              border: `1px solid ${current >= step ? '#CCFF00' : '#1A1A1A'}`,
+              borderRadius: '2px',
+              boxShadow: current >= step ? '0 0 8px rgba(204,255,0,0.4)' : 'none',
+            }}
+          >
+            {step}
+          </div>
+          {step < total && (
+            <div
+              className="w-8 h-0.5 transition-all"
+              style={{ background: current > step ? '#CCFF00' : '#1A1A1A' }}
+            />
+          )}
+        </React.Fragment>
+      ))}
+    </div>
+  );
+}
 
 function WorkoutPlanningContent() {
   const navigate = useNavigate();
@@ -52,7 +80,6 @@ function WorkoutPlanningContent() {
   const fetchExercisesForSelectedGroups = useCallback(async () => {
     setLoading(true);
     try {
-      // Fetch exercises for all selected muscle groups
       const allExercises = [];
       for (const group of selectedMuscleGroups) {
         const response = await axiosClient.get(`/exercises/category/${group.id}`);
@@ -67,39 +94,27 @@ function WorkoutPlanningContent() {
   }, [selectedMuscleGroups]);
 
   useEffect(() => {
-    if (step === 2 && selectedMuscleGroups.length > 0) {
-      fetchExercisesForSelectedGroups();
-    }
+    if (step === 2 && selectedMuscleGroups.length > 0) fetchExercisesForSelectedGroups();
   }, [step, fetchExercisesForSelectedGroups]);
 
   const handleMuscleGroupToggle = (group) => {
     const isSelected = selectedMuscleGroups.find(g => g.id === group.id);
-    if (isSelected) {
-      setSelectedMuscleGroups(selectedMuscleGroups.filter(g => g.id !== group.id));
-    } else {
-      setSelectedMuscleGroups([...selectedMuscleGroups, group]);
-    }
+    if (isSelected) setSelectedMuscleGroups(selectedMuscleGroups.filter(g => g.id !== group.id));
+    else setSelectedMuscleGroups([...selectedMuscleGroups, group]);
   };
 
   const handleAddExercise = (exercise) => {
-    // Check if already added
-    if (workoutExercises.find(ex => ex.exerciseId === exercise.id)) {
-      return;
-    }
-
-    setWorkoutExercises([
-      ...workoutExercises,
-      {
-        exerciseId: exercise.id,
-        exerciseName: exercise.name,
-        category: exercise.category,
-        sets: [
-          { setNumber: 1, targetReps: 10, targetWeight: 0 },
-          { setNumber: 2, targetReps: 10, targetWeight: 0 },
-          { setNumber: 3, targetReps: 10, targetWeight: 0 }
-        ]
-      }
-    ]);
+    if (workoutExercises.find(ex => ex.exerciseId === exercise.id)) return;
+    setWorkoutExercises([...workoutExercises, {
+      exerciseId: exercise.id,
+      exerciseName: exercise.name,
+      category: exercise.category,
+      sets: [
+        { setNumber: 1, targetReps: 10, targetWeight: 0 },
+        { setNumber: 2, targetReps: 10, targetWeight: 0 },
+        { setNumber: 3, targetReps: 10, targetWeight: 0 },
+      ],
+    }]);
   };
 
   const handleRemoveExercise = (index) => {
@@ -117,14 +132,8 @@ function WorkoutPlanningContent() {
   const handleAddSet = (exerciseIndex) => {
     const newExercises = [...workoutExercises];
     const exercise = newExercises[exerciseIndex];
-    const newSetNumber = exercise.sets.length + 1;
     const lastSet = exercise.sets[exercise.sets.length - 1] || { targetReps: 10, targetWeight: 0 };
-    
-    newExercises[exerciseIndex].sets.push({
-      setNumber: newSetNumber,
-      targetReps: lastSet.targetReps,
-      targetWeight: lastSet.targetWeight
-    });
+    newExercises[exerciseIndex].sets.push({ setNumber: exercise.sets.length + 1, targetReps: lastSet.targetReps, targetWeight: lastSet.targetWeight });
     setWorkoutExercises(newExercises);
   };
 
@@ -132,44 +141,24 @@ function WorkoutPlanningContent() {
     const newExercises = [...workoutExercises];
     if (newExercises[exerciseIndex].sets.length > 1) {
       newExercises[exerciseIndex].sets.splice(setIndex, 1);
-      // Renumber remaining sets
-      newExercises[exerciseIndex].sets.forEach((set, idx) => {
-        set.setNumber = idx + 1;
-      });
+      newExercises[exerciseIndex].sets.forEach((set, idx) => { set.setNumber = idx + 1; });
       setWorkoutExercises(newExercises);
     }
   };
 
   const handleNextToExercises = () => {
-    if (!workoutName.trim()) {
-      alert("Please enter a workout name");
-      return;
-    }
-    if (selectedMuscleGroups.length === 0) {
-      alert("Please select at least one muscle group");
-      return;
-    }
+    if (!workoutName.trim()) { alert("Please enter a workout name"); return; }
+    if (selectedMuscleGroups.length === 0) { alert("Please select at least one muscle group"); return; }
     setStep(2);
   };
 
   const handleSaveWorkout = async () => {
-    if (workoutExercises.length === 0) {
-      alert("Please add at least one exercise");
-      return;
-    }
-
+    if (workoutExercises.length === 0) { alert("Please add at least one exercise"); return; }
     setLoading(true);
     try {
-      await axiosClient.post('/workout-sessions', {
-        name: workoutName,
-        exercises: workoutExercises,
-        notes: ""
-      });
-      
-      alert("Workout plan saved successfully!");
+      await axiosClient.post('/workout-sessions', { name: workoutName, exercises: workoutExercises, notes: "" });
       navigate('/dashboard');
     } catch (error) {
-      console.error("Error saving workout:", error);
       alert(error.response?.data?.message || "Failed to save workout");
     } finally {
       setLoading(false);
@@ -181,325 +170,298 @@ function WorkoutPlanningContent() {
   );
 
   return (
-    <div
-      className="min-h-screen w-full text-white bg-cover bg-center bg-no-repeat"
-      style={{
-        backgroundImage: `linear-gradient(to bottom, rgba(17, 24, 39, 0.9), rgba(31, 41, 55, 0.9)), url(${dashboardBg})`,
-        backgroundAttachment: "fixed",
-      }}
-    >
+    <div className="ft-page min-h-screen">
       {/* Header */}
-      <div className="sticky top-0 z-10 bg-gray-900/80 backdrop-blur-md border-b border-gray-700/50">
-        <div className="container mx-auto px-4 md:px-6 py-4">
-          <div className="flex items-center justify-between gap-4">
-            <div className="flex-1 flex justify-start">
-              <button
-                onClick={() => {
-                  if (step > 1) {
-                    setStep(step - 1);
-                  } else {
-                    navigate("/dashboard");
-                  }
-                }}
-                className="flex items-center space-x-2 text-white hover:text-blue-400 transition-colors group"
-              >
-                <ArrowLeft className="h-5 w-5 group-hover:-translate-x-1 transition-transform" />
-                <span className="font-medium hidden md:inline">
-                  {step === 1 ? <span>Back to Dashboard</span> : <span>Back</span>}
-                </span>
-              </button>
-            </div>
-            
-            {/* Progress Indicator */}
-            <div className="flex-1 flex items-center justify-center">
-              <div className="flex items-center gap-2">
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm ${step >= 1 ? 'bg-blue-500' : 'bg-gray-600'}`}>1</div>
-                <div className="w-8 md:w-12 h-1 bg-gray-600"></div>
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm ${step >= 2 ? 'bg-blue-500' : 'bg-gray-600'}`}>2</div>
-              </div>
-            </div>
+      <div className="ft-header px-4 md:px-8 py-0">
+        <div className="max-w-6xl mx-auto flex items-center justify-between h-16 gap-4">
+          <button
+            id="back-btn"
+            onClick={() => { if (step > 1) setStep(step - 1); else navigate("/dashboard"); }}
+            className="flex items-center gap-2 transition-colors group"
+            style={{ color: '#A0A0A0' }}
+            onMouseEnter={e => e.currentTarget.style.color = '#CCFF00'}
+            onMouseLeave={e => e.currentTarget.style.color = '#A0A0A0'}
+          >
+            <ArrowLeft size={18} className="group-hover:-translate-x-1 transition-transform" />
+            <span className="hidden md:inline font-display font-bold uppercase tracking-widest text-xs">
+              {step === 1 ? 'Dashboard' : 'Back'}
+            </span>
+          </button>
 
-            <div className="flex-1"></div>
-          </div>
+          <StepIndicator current={step} />
+
+          <div className="w-20 hidden md:block" />
         </div>
       </div>
 
-      <div className="container mx-auto px-4 py-8">
-        <div className="max-w-7xl mx-auto">
-          
-          {/* Step 1: Workout Name & Muscle Group Selection */}
-          {step === 1 && (
-            <div>
-              <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">
-                <span>Create Workout Plan</span>
-              </h1>
-              <p className="text-gray-400 mb-8">
-                <span>Name your workout and select target muscle groups</span>
-              </p>
-              
-              {/* Workout Name */}
-              <div className="bg-gray-800/50 backdrop-blur-sm p-6 rounded-xl border border-gray-700 mb-8">
-                <label className="block text-lg font-semibold mb-3">
-                  <span>Workout Name</span>
-                </label>
-                <input
-                  type="text"
-                  placeholder="e.g., Push Day A, Full Body Strength, Leg Day..."
-                  value={workoutName}
-                  onChange={(e) => setWorkoutName(e.target.value)}
-                  className="w-full px-4 py-3 bg-gray-700/50 border border-gray-600 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all outline-none text-white placeholder-gray-500"
-                />
-              </div>
+      <main className="max-w-6xl mx-auto px-4 md:px-8 py-8">
 
-              {/* Muscle Group Selection */}
-              <div className="mb-6">
-                <h2 className="text-2xl font-bold mb-4">
-                  <span>Select Muscle Groups</span>
-                </h2>
-                <p className="text-gray-400 mb-6">
-                  <span>{selectedMuscleGroups.length}</span>
-                  <span> muscle group</span>
-                  <span>{selectedMuscleGroups.length !== 1 ? 's' : ''}</span>
-                  <span> selected</span>
-                </p>
-              </div>
+        {/* ── STEP 1: Name + Muscle Groups ── */}
+        {step === 1 && (
+          <div className="animate-slide-up">
+            <p className="ft-label mb-1">// Step 1 of 2</p>
+            <h1 className="ft-title text-4xl md:text-5xl text-white mb-1">Create Workout</h1>
+            <p className="text-sm mb-8" style={{ color: '#A0A0A0' }}>Name your workout and select target muscle groups</p>
 
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 mb-8" >
+            {/* Workout Name */}
+            <div
+              className="p-5 mb-8"
+              style={{ background: 'rgba(10,10,10,0.95)', border: '1px solid rgba(204,255,0,0.15)', borderRadius: '2px' }}
+            >
+              <label className="ft-label">Workout Name</label>
+              <input
+                id="workout-name-input"
+                type="text"
+                placeholder="e.g. Push Day A, Full Body Strength, Leg Day..."
+                value={workoutName}
+                onChange={(e) => setWorkoutName(e.target.value)}
+                className="ft-input text-lg"
+                style={{ fontFamily: "'Barlow Condensed', sans-serif", fontStyle: 'italic', fontWeight: 700 }}
+              />
+            </div>
+
+            {/* Muscle Groups */}
+            <div className="mb-8">
+              <div className="flex items-center justify-between mb-4">
+                <p className="ft-label">// Select Muscle Groups</p>
+                <span className="font-mono-sport text-xs" style={{ color: '#CCFF00', fontFamily: "'JetBrains Mono', monospace" }}>
+                  {selectedMuscleGroups.length} selected
+                </span>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
                 {muscleGroupData.map((group) => {
-                  const isSelected = selectedMuscleGroups.find(g => g.id === group.id);
+                  const isSelected = !!selectedMuscleGroups.find(g => g.id === group.id);
                   return (
-                    <div
+                    <button
                       key={group.id}
+                      id={`muscle-${group.id}`}
                       onClick={() => handleMuscleGroupToggle(group)}
-                      className={`relative cursor-pointer rounded-xl overflow-hidden transition-all duration-300 border-2 ${
-                        isSelected 
-                          ? 'border-blue-500 bg-gradient-to-br ' + group.color + ' scale-105 shadow-lg shadow-blue-500/50' 
-                          : 'border-gray-700 bg-gray-800/50 hover:border-gray-600 hover:scale-105'
-                      }`}
+                      className="relative aspect-square flex flex-col items-center justify-center p-4 transition-all"
+                      style={{
+                        background: isSelected ? 'rgba(204,255,0,0.1)' : 'rgba(10,10,10,0.95)',
+                        border: `1px solid ${isSelected ? '#CCFF00' : '#1A1A1A'}`,
+                        borderRadius: '2px',
+                        boxShadow: isSelected ? '0 0 12px rgba(204,255,0,0.3)' : 'none',
+                        transform: isSelected ? 'translateY(-2px)' : 'none',
+                      }}
                     >
-                      <div className="aspect-square flex flex-col items-center justify-center p-6">
-                        <img 
-                          src={group.icon} 
-                          alt={group.name} 
-                          className={`w-16 h-16 object-contain mb-3 drop-shadow-md`}
-                        />
-                        <h3 className={`font-bold text-lg text-center ${
-                          isSelected ? 'text-white drop-shadow-lg' : 'text-gray-300'
-                        }`}>
-                          <span>{group.name}</span>
-                        </h3>
-                      </div>
+                      <img src={group.icon} alt={group.name} className="w-10 h-10 object-contain mb-2"
+                        style={{ filter: isSelected ? 'none' : 'grayscale(0.4) brightness(0.7)' }}
+                      />
+                      <span
+                        className="font-display font-bold uppercase text-xs text-center leading-tight"
+                        style={{ color: isSelected ? '#CCFF00' : '#A0A0A0' }}
+                      >
+                        {group.name}
+                      </span>
                       {isSelected && (
-                        <div className="absolute top-3 right-3 bg-white rounded-full p-1.5">
-                          <CheckCircle2 className="w-5 h-5 text-blue-600" />
+                        <div
+                          className="absolute top-1.5 right-1.5 w-4 h-4 flex items-center justify-center"
+                          style={{ background: '#CCFF00', borderRadius: '50%' }}
+                        >
+                          <CheckCircle2 size={10} style={{ color: '#000' }} />
                         </div>
                       )}
-                    </div>
+                    </button>
                   );
                 })}
               </div>
-
-              <button
-                onClick={handleNextToExercises}
-                disabled={!workoutName.trim() || selectedMuscleGroups.length === 0}
-                className="w-full py-4 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 rounded-xl font-semibold text-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <span>Next: Add Exercises</span>
-              </button>
             </div>
-          )}
 
-          {/* Step 2: Exercise Selection & Configuration */}
-          {step === 2 && (
-            <div>
-              <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">
-                {workoutName}
-              </h1>
-              <p className="text-gray-400 mb-6">
-                <span>Add exercises from: </span>
-                <span>{selectedMuscleGroups.map(g => g.name).join(', ')}</span>
-              </p>
+            <button
+              id="next-step-btn"
+              onClick={handleNextToExercises}
+              disabled={!workoutName.trim() || selectedMuscleGroups.length === 0}
+              className="ft-btn-primary w-full py-4 text-base disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              Next: Add Exercises →
+            </button>
+          </div>
+        )}
 
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Available Exercises */}
-                <div>
-                  <h2 className="text-xl font-bold mb-4">
-                    <span>Available Exercises</span>
-                  </h2>
-                  
-                  {/* Search */}
-                  <div className="relative mb-4">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-                    <input
-                      type="text"
-                      placeholder="Search exercises..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="w-full pl-10 pr-4 py-3 bg-gray-800/50 border border-gray-700 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all outline-none text-white placeholder-gray-500"
-                    />
+        {/* ── STEP 2: Exercise Selection ── */}
+        {step === 2 && (
+          <div className="animate-slide-up">
+            <p className="ft-label mb-1">// Step 2 of 2</p>
+            <h1 className="ft-title text-3xl md:text-4xl text-white mb-1">{workoutName}</h1>
+            <p className="text-sm mb-6" style={{ color: '#A0A0A0' }}>
+              From: {selectedMuscleGroups.map(g => g.name).join(', ')}
+            </p>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+              {/* Available exercises */}
+              <div>
+                <p className="ft-label mb-3">// Available Exercises</p>
+                <div className="relative mb-3">
+                  <Search size={14} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: '#555' }} />
+                  <input
+                    type="text"
+                    placeholder="Search exercises..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="ft-input"
+                    style={{ paddingLeft: '36px' }}
+                  />
+                </div>
+                {loading ? (
+                  <div className="flex items-center justify-center py-12">
+                    <div className="ft-loader" />
                   </div>
-
-                  <div className="space-y-2 max-h-[600px] overflow-y-auto pr-2" >
+                ) : (
+                  <div className="space-y-1.5 max-h-[520px] overflow-y-auto pr-1">
                     {filteredExercises.map((exercise) => {
-                      const isAdded = workoutExercises.find(ex => ex.exerciseId === exercise.id);
+                      const isAdded = !!workoutExercises.find(ex => ex.exerciseId === exercise.id);
                       return (
                         <button
                           key={exercise.id}
                           onClick={() => handleAddExercise(exercise)}
                           disabled={isAdded}
-                          className={`w-full p-4 rounded-lg text-left transition-all ${
-                            isAdded
-                              ? 'bg-gray-700/30 cursor-not-allowed opacity-50'
-                              : 'bg-gray-800/50 hover:bg-gray-700/50 border border-gray-700 hover:border-gray-600'
-                          }`}
+                          className="w-full px-4 py-3 text-left flex items-center justify-between transition-all"
+                          style={{
+                            background: isAdded ? 'rgba(204,255,0,0.04)' : 'rgba(10,10,10,0.9)',
+                            border: `1px solid ${isAdded ? 'rgba(204,255,0,0.2)' : '#1A1A1A'}`,
+                            borderRadius: '2px',
+                            opacity: isAdded ? 0.6 : 1,
+                            cursor: isAdded ? 'not-allowed' : 'pointer',
+                          }}
                         >
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <p className="font-semibold">
-                                <span>{exercise.name}</span>
-                              </p>
-                              <p className="text-sm text-gray-400">
-                                <span>{exercise.category}</span>
-                                <span> • </span>
-                                <span>{exercise.equipment}</span>
-                              </p>
-                            </div>
-                            {!isAdded && <Plus className="w-5 h-5 text-blue-400" />}
-                            {isAdded && <CheckCircle2 className="w-5 h-5 text-green-400" />}
+                          <div>
+                            <p className="font-display font-bold italic uppercase text-sm text-white">{exercise.name}</p>
+                            <p className="text-xs mt-0.5" style={{ color: '#555' }}>{exercise.category} • {exercise.equipment}</p>
                           </div>
+                          {isAdded
+                            ? <CheckCircle2 size={16} style={{ color: '#CCFF00', flexShrink: 0 }} />
+                            : <Plus size={16} style={{ color: '#A0A0A0', flexShrink: 0 }} />
+                          }
                         </button>
                       );
                     })}
                   </div>
+                )}
+              </div>
+
+              {/* Selected exercises */}
+              <div>
+                <div className="flex items-center justify-between mb-3">
+                  <p className="ft-label">// Your Exercises</p>
+                  <span className="font-mono-sport text-xs" style={{ color: '#CCFF00', fontFamily: "'JetBrains Mono', monospace" }}>
+                    {workoutExercises.length} added
+                  </span>
                 </div>
 
-                {/* Selected Exercises with Configuration */}
-                <div>
-                  <h2 className="text-xl font-bold mb-4">
-                    <span>Your Exercises (</span>
-                    <span>{workoutExercises.length}</span>
-                    <span>)</span>
-                  </h2>
+                <div className="space-y-3 max-h-[520px] overflow-y-auto pr-1">
+                  {workoutExercises.length === 0 && (
+                    <div
+                      className="text-center py-16"
+                      style={{ border: '1px dashed rgba(204,255,0,0.1)', borderRadius: '2px' }}
+                    >
+                      <p className="ft-label">No exercises added yet</p>
+                      <p className="text-xs mt-1" style={{ color: '#555' }}>Select from the left panel</p>
+                    </div>
+                  )}
+                  {workoutExercises.map((exercise, index) => (
+                    <div
+                      key={`exercise-${exercise.exerciseId}-${index}`}
+                      className="p-4"
+                      style={{ background: 'rgba(10,10,10,0.95)', border: '1px solid rgba(204,255,0,0.15)', borderRadius: '2px' }}
+                    >
+                      <div className="flex items-start justify-between mb-3">
+                        <div>
+                          <h3 className="font-display font-black italic uppercase text-white">{exercise.exerciseName}</h3>
+                          <p className="text-xs" style={{ color: '#A0A0A0' }}>{exercise.category}</p>
+                        </div>
+                        <button
+                          onClick={() => handleRemoveExercise(index)}
+                          className="p-1.5 transition-colors"
+                          style={{ color: '#FF5C00' }}
+                          onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,92,0,0.1)'}
+                          onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                        >
+                          <Trash2 size={15} />
+                        </button>
+                      </div>
 
-                  <div className="space-y-4 max-h-[600px] overflow-y-auto pr-2" translate="no">
-                    {workoutExercises.map((exercise, index) => (
-                      <div key={`exercise-${exercise.exerciseId}-${index}`} className="bg-gray-800/50 p-4 rounded-xl border border-gray-700">
-                        <div className="flex items-center justify-between mb-3">
-                          <div>
-                            <h3 className="font-semibold">
-                              <span>{exercise.exerciseName}</span>
-                            </h3>
-                            <p className="text-sm text-gray-400">
-                              <span>{exercise.category}</span>
-                            </p>
-                          </div>
+                      {/* Sets config */}
+                      <div>
+                        <div className="flex items-center justify-between mb-2">
+                          <p className="ft-label mb-0">Sets</p>
                           <button
-                            onClick={() => handleRemoveExercise(index)}
-                            className="text-red-400 hover:text-red-300 transition-colors"
+                            onClick={() => handleAddSet(index)}
+                            className="flex items-center gap-1 text-xs font-display font-bold uppercase tracking-wider transition-colors"
+                            style={{ color: '#CCFF00' }}
                           >
-                            <Trash2 className="w-5 h-5" />
+                            <Plus size={11} /> Add Set
                           </button>
                         </div>
-                        
-                        {/* Sets Configuration */}
-                        <div className="mt-4 space-y-2">
-                          <div className="flex items-center justify-between">
-                            <label className="text-sm font-medium text-gray-300">
-                              <span>Sets Configuration</span>
-                            </label>
-                            <button
-                              onClick={() => handleAddSet(index)}
-                              className="text-xs px-3 py-1 bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 rounded-lg transition-colors flex items-center gap-1"
-                            >
-                              <Plus className="w-3 h-3" />
-                              <span>Add Set</span>
-                            </button>
-                          </div>
-                          
+                        <div className="space-y-1.5">
                           {exercise.sets.map((set, setIdx) => (
-                            <div key={setIdx} className="flex items-center gap-2 bg-gray-700/30 p-2 rounded-lg">
-                              <span className="text-xs font-medium text-gray-400 w-12">
-                                <span>Set </span>
-                                <span>{set.setNumber}</span>
+                            <div
+                              key={setIdx}
+                              className="flex items-center gap-2 px-3 py-2"
+                              style={{ background: 'rgba(255,255,255,0.03)', borderRadius: '2px' }}
+                            >
+                              <span className="font-mono-sport text-xs w-10" style={{ color: '#555', fontFamily: "'JetBrains Mono', monospace" }}>
+                                S{set.setNumber}
                               </span>
-                              
                               <div className="flex-1">
                                 <input
-                                  type="number"
-                                  min="1"
+                                  type="number" min="1"
                                   value={set.targetReps}
                                   onChange={(e) => handleSetChange(index, setIdx, 'targetReps', e.target.value)}
+                                  className="ft-input text-center text-xs py-1"
+                                  style={{ paddingLeft: '4px', paddingRight: '4px' }}
                                   placeholder="Reps"
-                                  className="w-full px-2 py-1.5 bg-gray-600/50 border border-gray-500 rounded text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500/20 outline-none"
                                 />
-                                <label className="text-[10px] text-gray-500">
-                                  <span>reps</span>
-                                </label>
+                                <p className="text-[9px] text-center mt-0.5" style={{ color: '#555' }}>reps</p>
                               </div>
-                              
                               <div className="flex-1">
                                 <input
-                                  type="number"
-                                  min="0"
-                                  step="0.5"
+                                  type="number" min="0" step="0.5"
                                   value={set.targetWeight || ''}
                                   onChange={(e) => handleSetChange(index, setIdx, 'targetWeight', e.target.value)}
+                                  className="ft-input text-center text-xs py-1"
+                                  style={{ paddingLeft: '4px', paddingRight: '4px' }}
                                   placeholder="Weight"
-                                  className="w-full px-2 py-1.5 bg-gray-600/50 border border-gray-500 rounded text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500/20 outline-none"
                                 />
-                                <label className="text-[10px] text-gray-500">
-                                  <span>kg</span>
-                                </label>
+                                <p className="text-[9px] text-center mt-0.5" style={{ color: '#555' }}>kg</p>
                               </div>
-                              
                               {exercise.sets.length > 1 && (
                                 <button
                                   onClick={() => handleRemoveSet(index, setIdx)}
-                                  className="p-1.5 text-red-400 hover:bg-red-500/20 rounded transition-colors"
-                                  title="Remove set"
+                                  className="p-1 transition-colors"
+                                  style={{ color: '#FF5C00' }}
                                 >
-                                  <Trash2 className="w-4 h-4" />
+                                  <Trash2 size={12} />
                                 </button>
                               )}
                             </div>
                           ))}
                         </div>
                       </div>
-                    ))}
-
-                    {workoutExercises.length === 0 && (
-                      <div className="text-center py-12 text-gray-400">
-                        <p>
-                          <span>No exercises added yet</span>
-                        </p>
-                        <p className="text-sm mt-2">
-                          <span>Select exercises from the left to add them</span>
-                        </p>
-                      </div>
-                    )}
-                  </div>
-
-                  {workoutExercises.length > 0 && (
-                    <button
-                      onClick={handleSaveWorkout}
-                      disabled={loading}
-                      className="w-full mt-4 py-4 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 rounded-xl font-semibold text-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                    >
-                      <Save className="w-5 h-5" />
-                      <span>{loading ? <span>Saving...</span> : <span>Save Workout Plan</span>}</span>
-                    </button>
-                  )}
+                    </div>
+                  ))}
                 </div>
+
+                {workoutExercises.length > 0 && (
+                  <button
+                    id="save-workout-btn"
+                    onClick={handleSaveWorkout}
+                    disabled={loading}
+                    className="ft-btn-primary w-full mt-4 py-3.5 flex items-center justify-center gap-2 disabled:opacity-60"
+                  >
+                    <Save size={16} />
+                    {loading ? 'Saving...' : 'Save Workout Plan'}
+                  </button>
+                )}
               </div>
             </div>
-          )}
-        </div>
-      </div>
+          </div>
+        )}
+      </main>
     </div>
   );
 }
 
-// Export wrapped component with Error Boundary
 export default function WorkoutPlanning() {
   return (
     <ErrorBoundary>

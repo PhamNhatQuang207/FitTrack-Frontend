@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
-import gymImage from '../assets/background.jpg';
 
 export default function Register() {
   const [name, setName] = useState('');
@@ -17,105 +16,146 @@ export default function Register() {
     e.preventDefault();
     setError('');
     setMessage('');
-  
+
     if (password !== confirm) {
       setError('Passwords do not match.');
       return;
     }
-
     if (password.length < 6) {
       setError('Password must be at least 6 characters long.');
       return;
     }
-  
+
     try {
-      await register({
-        name,
-        email,
-        password
-      });
-      setMessage('Registration successful! Please check your email to verify your account.');
-      // Don't auto-redirect - user needs to verify email first
+      await register({ name, email, password });
+      setMessage('Registration successful! Check your email to verify your account.');
     } catch (err) {
       setError(err.response?.data?.message || 'Registration failed. Please try again.');
     }
   };
 
   return (
-    <div
-      className="w-full h-screen flex items-center justify-center bg-cover bg-center relative"
-      style={{ backgroundImage: `url(${gymImage})` }}
-    >
-      {/* Dark overlay for contrast */}
-      <div className="absolute inset-0 bg-black/60 z-0"></div>
+    <div className="ft-page flex items-center justify-center min-h-screen px-4 py-10">
+      {/* Background accent blobs */}
+      <div
+        className="absolute top-0 right-0 w-[500px] h-[500px] rounded-full opacity-8 pointer-events-none"
+        style={{ background: 'radial-gradient(circle, #CCFF00 0%, transparent 70%)', transform: 'translate(40%, -40%)' }}
+      />
+      <div
+        className="absolute bottom-0 left-0 w-[400px] h-[400px] rounded-full opacity-6 pointer-events-none"
+        style={{ background: 'radial-gradient(circle, #FF5C00 0%, transparent 70%)', transform: 'translate(-40%, 40%)' }}
+      />
 
-      {/* Register Form */}
-      <form
-        onSubmit={handleRegister}
-        className="relative z-10 bg-white/10 backdrop-blur-lg border border-white/10 shadow-lg w-[400px] rounded-xl px-8 py-10 text-white flex flex-col"
-      >
-        <h3 className="text-3xl font-medium text-center mb-6">Create Account</h3>
-        
-        {error && <p className="text-red-400 text-sm mb-2 bg-red-500/10 border border-red-500/20 rounded px-3 py-2">{error}</p>}
-        {message && <p className="text-green-300 text-sm mb-2 bg-green-500/10 border border-green-500/20 rounded px-3 py-2">{message}</p>}
-        
-        <label className="mt-2 text-white text-sm font-medium">Full Name</label>
-        <input
-          type="text"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          placeholder="John Doe"
-          className="bg-white/20 text-white px-3 py-2 rounded-md mt-1 placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-green-400"
-          required
-        />
+      <div className="relative z-10 w-full max-w-[420px] animate-slide-up">
+        {/* Logo */}
+        <div className="mb-8 text-center">
+          <div className="inline-flex items-center gap-3 mb-2">
+            <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
+              <rect width="36" height="36" rx="2" fill="#CCFF00" />
+              <text x="18" y="26" textAnchor="middle" fontFamily="Barlow Condensed, sans-serif" fontWeight="900" fontSize="22" fontStyle="italic" fill="#000">F</text>
+            </svg>
+            <span className="ft-title text-3xl tracking-widest text-neon-lime text-glow-lime">FitTrack</span>
+          </div>
+          <p className="text-xs uppercase tracking-[0.3em] text-[#A0A0A0] font-display font-semibold mt-1">
+            Begin Your Journey
+          </p>
+        </div>
 
-        <label className="mt-4 text-white text-sm font-medium">Email</label>
-        <input
-          type="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          placeholder="you@example.com"
-          className="bg-white/20 text-white px-3 py-2 rounded-md mt-1 placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-green-400"
-          required
-        />
+        {/* Form Card */}
+        <div className="ft-card ft-corner-tl ft-corner-br p-8">
+          <h1 className="ft-title text-2xl text-white mb-1">Create Account</h1>
+          <p className="text-[#A0A0A0] text-sm mb-6">Join the elite. Start tracking today.</p>
 
-        <label className="mt-4 text-white text-sm font-medium">Password</label>
-        <input
-          type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          placeholder="Create a password (min 6 characters)"
-          className="bg-white/20 text-white px-3 py-2 rounded-md mt-1 placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-green-400"
-          required
-          minLength={6}
-        />
+          {error && (
+            <div className="mb-4 px-3 py-2 text-[#FF5C00] text-sm border border-[rgba(255,92,0,0.3)] bg-[rgba(255,92,0,0.06)] rounded-sm font-medium">
+              {error}
+            </div>
+          )}
+          {message && (
+            <div className="mb-4 px-3 py-2 text-neon-lime text-sm border border-[rgba(204,255,0,0.3)] bg-[rgba(204,255,0,0.06)] rounded-sm font-medium">
+              {message}
+            </div>
+          )}
 
-        <label className="mt-4 text-white text-sm font-medium">Confirm Password</label>
-        <input
-          type="password"
-          value={confirm}
-          onChange={(e) => setConfirm(e.target.value)}
-          placeholder="Re-enter password"
-          className="bg-white/20 text-white px-3 py-2 rounded-md mt-1 placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-green-400"
-          required
-          minLength={6}
-        />
+          <form onSubmit={handleRegister} className="flex flex-col gap-4">
+            <div>
+              <label className="ft-label">Full Name</label>
+              <input
+                id="reg-name"
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="John Doe"
+                className="ft-input"
+                required
+              />
+            </div>
 
-        <button className="mt-8 bg-white text-black py-3 rounded-md font-semibold hover:bg-gray-200 transition">
-          Register
-        </button>
+            <div>
+              <label className="ft-label">Email</label>
+              <input
+                id="reg-email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="you@example.com"
+                className="ft-input"
+                required
+              />
+            </div>
 
-        <p className="mt-6 text-center text-sm text-gray-300">
-          Already have an account?{' '}
-          <button
-            type="button"
-            onClick={() => navigate('/login')}
-            className="text-blue-300 hover:underline"
-          >
-            Login here
-          </button>
-        </p>
-      </form>
+            <div>
+              <label className="ft-label">Password</label>
+              <input
+                id="reg-password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Min. 6 characters"
+                className="ft-input"
+                required
+                minLength={6}
+              />
+            </div>
+
+            <div>
+              <label className="ft-label">Confirm Password</label>
+              <input
+                id="reg-confirm"
+                type="password"
+                value={confirm}
+                onChange={(e) => setConfirm(e.target.value)}
+                placeholder="Re-enter password"
+                className="ft-input"
+                required
+                minLength={6}
+              />
+            </div>
+
+            <button
+              id="register-submit"
+              type="submit"
+              className="ft-btn-primary w-full text-sm py-3 mt-2"
+            >
+              Create Account
+            </button>
+          </form>
+
+          <div className="ft-divider" />
+
+          <p className="text-center text-sm text-[#A0A0A0]">
+            Already have an account?{' '}
+            <button
+              id="go-login"
+              type="button"
+              onClick={() => navigate('/login')}
+              className="text-neon-lime font-display font-bold uppercase tracking-wider text-xs transition-colors hover:text-glow-lime"
+            >
+              Login
+            </button>
+          </p>
+        </div>
+      </div>
     </div>
   );
 }
