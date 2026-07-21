@@ -25,12 +25,23 @@ axiosClient.interceptors.request.use(
     }
 );
 
-// Response interceptor to handle 401 errors
+// Pages where a 401 is an expected part of the flow (bad login, unverified
+// email, reset link). Bouncing to /login here would interrupt the form and
+// can cause redirect churn, so we let the page handle the error itself.
+const AUTH_PATHS = ['/login', '/register', '/reset-password', '/verify-email'];
+
+// Response interceptor: treat a 401 as an expired/invalid session ONLY when we
+// actually had a token. An anonymous 401 (e.g. a failed login attempt) is left
+// for the calling page to display, instead of hard-redirecting and wiping state.
 axiosClient.interceptors.response.use(
     (response) => response,
     (error) => {
-        if (error.response?.status === 401) {
-            // Clear localStorage and redirect to login
+        const hadToken = !!localStorage.getItem('token');
+        const onAuthPage = AUTH_PATHS.some((p) => window.location.pathname.startsWith(p));
+
+        if (error.response?.status === 401 && hadToken && !onAuthPage) {
+            // A previously valid session was rejected — clear it and send the
+            // user to log in again.
             localStorage.removeItem('token');
             localStorage.removeItem('user');
             window.location.href = '/login';
