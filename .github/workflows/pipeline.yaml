@@ -1,0 +1,50 @@
+name: Frontend-Pipeline
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    env:
+      # react-scripts test watches by default; CI=true makes it run once and exit.
+      CI: true
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24.18.0'  # matches the backend pipeline
+          cache: 'npm'
+      - name: Install dependencies
+        run: npm ci
+      - name: Run tests
+        run: npm test -- --watchAll=false
+      - name: Production build
+        run: npm run build
+
+  # Validates that the production (nginx) image still builds. Build-only (no push):
+  # the app is served by Vercel, so there is no image consumer yet. Add a
+  # push-to-registry step here if the image ever gets one.
+  docker-build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Build image (validation only)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: false
+          tags: fittrack-frontend:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

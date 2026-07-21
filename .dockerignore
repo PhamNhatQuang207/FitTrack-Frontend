@@ -1,0 +1,24 @@
+# Dependencies & build output (reinstalled / regenerated inside the image)
+node_modules
+build
+coverage
+
+# VCS / CI
+.git
+.gitignore
+.github
+
+# Local-only env files (never override the committed .env.production in the image).
+# .env and .env.production ARE included — the build needs REACT_APP_* baked in.
+.env.local
+.env.*.local
+
+# Editor / OS / docs
+.vscode
+.idea
+.DS_Store
+*.md
+
+# Docker meta (not needed inside the context)
+Dockerfile
+.dockerignore
