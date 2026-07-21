@@ -13,7 +13,13 @@ export const AuthProvider = ({ children }) => {
         const storedUser = localStorage.getItem('user');
         
         if (token && storedUser) {
-            setUser(JSON.parse(storedUser));
+            try {
+                setUser(JSON.parse(storedUser));
+            } catch {
+                // Corrupted localStorage — clear it so the app doesn't white-screen on mount.
+                localStorage.removeItem('token');
+                localStorage.removeItem('user');
+            }
         }
         setLoading(false);
     }, []);
