@@ -10,7 +10,8 @@ const DAYS = [
 ];
 
 const MUSCLE_GROUPS = [
-  { id: 'abdominals', name: 'Abdominals' }, { id: 'biceps', name: 'Biceps' },
+  { id: 'abdominals', name: 'Abdominals' }, { id: 'adductor', name: 'Adductor' },
+  { id: 'biceps', name: 'Biceps' },
   { id: 'calves', name: 'Calves' }, { id: 'chest', name: 'Chest' },
   { id: 'forearms', name: 'Forearms' }, { id: 'glutes', name: 'Glutes' },
   { id: 'hamstrings', name: 'Hamstrings' }, { id: 'lats', name: 'Lats' },

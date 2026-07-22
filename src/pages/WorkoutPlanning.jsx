@@ -16,6 +16,7 @@ import absIcon from "../assets/icons/muscle/abdo.png";
 import quadsIcon from "../assets/icons/muscle/quads.png";
 import hamstringsIcon from "../assets/icons/muscle/hamstrings.png";
 import glutesIcon from "../assets/icons/muscle/glutes.png";
+import adductorIcon from "../assets/icons/muscle/adductor.png";
 import calvesIcon from "../assets/icons/muscle/calves.png";
 import forearmsIcon from "../assets/icons/muscle/forearms.png";
 
@@ -31,6 +32,7 @@ const muscleGroupData = [
   { id: 'quadriceps', name: 'Quadriceps', icon: quadsIcon },
   { id: 'hamstrings', name: 'Hamstrings', icon: hamstringsIcon },
   { id: 'glutes', name: 'Glutes', icon: glutesIcon },
+  { id: 'adductor', name: 'Adductor', icon: adductorIcon },
   { id: 'calves', name: 'Calves', icon: calvesIcon },
   { id: 'forearms', name: 'Forearms', icon: forearmsIcon },
 ];
