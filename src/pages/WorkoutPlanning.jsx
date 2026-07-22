@@ -10,7 +10,6 @@ import shouldersIcon from "../assets/icons/muscle/shoulders.png";
 import bicepsIcon from "../assets/icons/muscle/biceps.png";
 import tricepsIcon from "../assets/icons/muscle/triceps.png";
 import latsIcon from "../assets/icons/muscle/lats.png";
-import middleBackIcon from "../assets/icons/muscle/middleback.png";
 import lowerBackIcon from "../assets/icons/muscle/lowerback.png";
 import trapsIcon from "../assets/icons/muscle/trap.png";
 import absIcon from "../assets/icons/muscle/abdo.png";
@@ -26,7 +25,6 @@ const muscleGroupData = [
   { id: 'biceps', name: 'Biceps', icon: bicepsIcon },
   { id: 'triceps', name: 'Triceps', icon: tricepsIcon },
   { id: 'lats', name: 'Lats', icon: latsIcon },
-  { id: 'middle_back', name: 'Middle Back', icon: middleBackIcon },
   { id: 'lower_back', name: 'Lower Back', icon: lowerBackIcon },
   { id: 'traps', name: 'Traps', icon: trapsIcon },
   { id: 'abdominals', name: 'Abdominals', icon: absIcon },

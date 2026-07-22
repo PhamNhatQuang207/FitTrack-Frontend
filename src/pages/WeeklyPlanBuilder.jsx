@@ -14,8 +14,8 @@ const MUSCLE_GROUPS = [
   { id: 'calves', name: 'Calves' }, { id: 'chest', name: 'Chest' },
   { id: 'forearms', name: 'Forearms' }, { id: 'glutes', name: 'Glutes' },
   { id: 'hamstrings', name: 'Hamstrings' }, { id: 'lats', name: 'Lats' },
-  { id: 'lower_back', name: 'Lower Back' }, { id: 'middle_back', name: 'Middle Back' },
-  { id: 'quadriceps', name: 'Quadriceps' }, { id: 'shoulders', name: 'Shoulders' },
+  { id: 'lower_back', name: 'Lower Back' }, { id: 'quadriceps', name: 'Quadriceps' },
+  { id: 'shoulders', name: 'Shoulders' },
   { id: 'traps', name: 'Traps' }, { id: 'triceps', name: 'Triceps' }
 ];
 
