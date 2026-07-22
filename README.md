@@ -29,7 +29,6 @@ A modern, full-featured fitness tracking web application built with **React 19**
 
 ### API & State Management
 - **Axios** v1.13.2 - HTTP client for API calls
-- **Supabase** v2.49.4 - Backend services
 - **React Context API** - Global state management (Authentication)
 
 ### Charts & Data Visualization
@@ -157,8 +156,6 @@ src/
    ```bash
    # Create .env file in project root
    REACT_APP_API_URL=http://localhost:5000/api
-   REACT_APP_SUPABASE_URL=<your-supabase-url>
-   REACT_APP_SUPABASE_ANON_KEY=<your-supabase-anon-key>
    ```
 
 4. **Start development server**
@@ -328,8 +325,6 @@ npm run build    # Create production build
 
 **Environment Variables** on Vercel:
 - `REACT_APP_API_URL` - Backend API endpoint
-- `REACT_APP_SUPABASE_URL` - Supabase project URL
-- `REACT_APP_SUPABASE_ANON_KEY` - Supabase public key
 
 ---
 
@@ -356,7 +351,6 @@ npm run build    # Create production build
 ## 📚 Additional Documentation
 
 See [FRONTEND_SETUP.md](FRONTEND_SETUP.md) for:
-- Migration notes from Supabase
 - Detailed API configuration
 - Authentication implementation details
 - Next steps for full backend integration
