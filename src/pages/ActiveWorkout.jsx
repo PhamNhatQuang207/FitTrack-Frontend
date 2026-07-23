@@ -3,6 +3,14 @@ import { useParams, useNavigate } from "react-router-dom";
 import axiosClient from "../api/axiosClient";
 import { ArrowLeft, Check, X, CheckCircle2, Circle, Edit3, Search, Plus, Minus } from "lucide-react";
 
+// How many sets an exercise has. `targetSets` is what the Manage modal edits, so
+// it is authoritative; the plan's per-set `sets` array is only a fallback for
+// sessions saved before targetSets existed. Every read must go through here --
+// reading the two in the opposite order is what made a set count lowered from 3
+// to 2 still render "2/3 sets done".
+const getTotalSets = (exercise) =>
+  exercise.targetSets || (exercise.sets ? exercise.sets.length : 3);
+
 export default function ActiveWorkout() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -23,7 +31,7 @@ export default function ActiveWorkout() {
       const initialInputs = {};
       session.exercises.forEach((exercise, exIndex) => {
         initialInputs[exIndex] = {};
-        const numSets = exercise.targetSets || (exercise.sets ? exercise.sets.length : 3);
+        const numSets = getTotalSets(exercise);
         for (let setIndex = 0; setIndex < numSets; setIndex++) {
           const actualSet = exercise.actualSets?.find(s => s.setNumber === setIndex + 1);
           if (actualSet) {
@@ -122,11 +130,24 @@ export default function ActiveWorkout() {
   };
 
   const handleAddExercise = (exercise) => {
-    const updatedExercises = [...session.exercises];
-    const existing = updatedExercises.find(ex => ex.exerciseId?.toString() === exercise._id || ex.exerciseName === exercise.name);
-    if (existing) { alert("Exercise already added"); return; }
-    updatedExercises.push({ exerciseId: exercise._id, exerciseName: exercise.name, category: exercise.category, targetSets: 3, targetReps: 10, targetWeight: 0, completed: false, actualSets: [] });
-    setSession({ ...session, exercises: updatedExercises });
+    // GET /exercises returns the id as `id` and explicitly blanks `_id`, so read
+    // `id` first. Reading `_id` alone yielded undefined, which both stored every
+    // exercise with no id and made `ex.exerciseId?.toString() === exercise._id`
+    // compare undefined to undefined -- true. One id-less exercise in the session
+    // therefore matched every candidate, so nothing could be added a second time.
+    const newId = exercise.id || exercise._id;
+    const isDuplicate = session.exercises.some(ex =>
+      (newId && ex.exerciseId && ex.exerciseId.toString() === newId.toString()) ||
+      ex.exerciseName === exercise.name
+    );
+    if (isDuplicate) { alert("Exercise already added"); return; }
+    setSession({
+      ...session,
+      exercises: [...session.exercises, {
+        exerciseId: newId, exerciseName: exercise.name, category: exercise.category,
+        targetSets: 3, targetReps: 10, targetWeight: 0, completed: false, actualSets: []
+      }]
+    });
   };
 
   const handleRemoveExercise = (exerciseIndex) => {
@@ -136,7 +157,18 @@ export default function ActiveWorkout() {
 
   const handleUpdateSets = (exerciseIndex, change) => {
     const updatedExercises = [...session.exercises];
-    updatedExercises[exerciseIndex].targetSets = Math.max(1, (updatedExercises[exerciseIndex].targetSets || 3) + change);
+    const exercise = { ...updatedExercises[exerciseIndex] };
+    const newTotal = Math.max(1, getTotalSets(exercise) + change);
+    exercise.targetSets = newTotal;
+
+    // Drop completions that now point past the last set, or a workout logged as
+    // 3/3 and then cut to 2 sets would read "3/2 sets done" and stay complete.
+    // `sets` is left intact so the per-set targets survive raising the count again.
+    if (exercise.actualSets) {
+      exercise.actualSets = exercise.actualSets.filter(s => s.setNumber <= newTotal);
+    }
+
+    updatedExercises[exerciseIndex] = exercise;
     setSession({ ...session, exercises: updatedExercises });
   };
 
@@ -152,13 +184,10 @@ export default function ActiveWorkout() {
   const isSetCompleted = (exercise, setIndex) => exercise.actualSets?.some(s => s.setNumber === setIndex + 1);
   const getExerciseProgress = (exercise) => {
     const completed = exercise.actualSets?.length || 0;
-    const total = exercise.sets ? exercise.sets.length : (exercise.targetSets || 0);
-    return `${completed}/${total}`;
+    return `${completed}/${getTotalSets(exercise)}`;
   };
-  const isExerciseComplete = (exercise) => {
-    const total = exercise.sets ? exercise.sets.length : (exercise.targetSets || 0);
-    return (exercise.actualSets?.length || 0) >= total;
-  };
+  const isExerciseComplete = (exercise) =>
+    (exercise.actualSets?.length || 0) >= getTotalSets(exercise);
 
   if (loading) {
     return (
@@ -247,7 +276,10 @@ export default function ActiveWorkout() {
               className="mb-5 p-3 grid grid-cols-3 gap-2 text-xs"
               style={{ background: 'rgba(255,255,255,0.02)', borderRadius: '2px' }}
             >
-              {currentExercise.sets.map((set, idx) => (
+              {/* Sliced, not stored trimmed: showing all 3 chips beside a 2-set
+                  checklist reads as a bug, but the extra target is kept on the
+                  document so raising the count back restores it. */}
+              {currentExercise.sets.slice(0, getTotalSets(currentExercise)).map((set, idx) => (
                 <div key={idx} className="text-center">
                   <p className="ft-label mb-0.5">S{set.setNumber}</p>
                   <p className="font-mono-sport" style={{ color: '#fff', fontFamily: "'JetBrains Mono', monospace" }}>
@@ -260,7 +292,7 @@ export default function ActiveWorkout() {
 
           {/* Sets checklist */}
           <div className="space-y-2.5">
-            {Array.from({ length: currentExercise.targetSets || (currentExercise.sets ? currentExercise.sets.length : 3) }).map((_, index) => {
+            {Array.from({ length: getTotalSets(currentExercise) }).map((_, index) => {
               const isCompleted = isSetCompleted(currentExercise, index);
               const inputValues = setInputs[currentExerciseIndex]?.[index] || { reps: 0, weight: 0 };
               return (
@@ -447,7 +479,7 @@ export default function ActiveWorkout() {
                   </div>
                   <div className="space-y-1.5 max-h-80 overflow-y-auto">
                     {availableExercises.filter(ex => ex.name.toLowerCase().includes(searchQuery.toLowerCase()) || ex.category.toLowerCase().includes(searchQuery.toLowerCase())).map((exercise, idx) => (
-                      <div key={exercise._id || idx} className="flex items-center justify-between px-4 py-3 transition-all"
+                      <div key={exercise.id || idx} className="flex items-center justify-between px-4 py-3 transition-all"
                         style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid #111', borderRadius: '2px' }}
                         onMouseEnter={e => e.currentTarget.style.borderColor = 'rgba(204,255,0,0.2)'}
                         onMouseLeave={e => e.currentTarget.style.borderColor = '#111'}
@@ -485,11 +517,11 @@ export default function ActiveWorkout() {
                           <div className="flex items-center justify-between mt-2 px-2 py-1.5" style={{ background: 'rgba(255,255,255,0.03)', borderRadius: '2px' }}>
                             <span className="text-xs ft-label mb-0">Sets:</span>
                             <div className="flex items-center gap-2">
-                              <button onClick={() => handleUpdateSets(index, -1)} className="w-6 h-6 flex items-center justify-center transition-colors" style={{ background: '#111', border: '1px solid #1A1A1A', borderRadius: '2px', color: '#A0A0A0' }}>
+                              <button aria-label={`Remove a set from ${exercise.exerciseName}`} onClick={() => handleUpdateSets(index, -1)} className="w-6 h-6 flex items-center justify-center transition-colors" style={{ background: '#111', border: '1px solid #1A1A1A', borderRadius: '2px', color: '#A0A0A0' }}>
                                 <Minus size={10} />
                               </button>
-                              <span className="font-mono-sport font-bold text-sm w-6 text-center" style={{ fontFamily: "'JetBrains Mono', monospace", color: '#CCFF00' }}>{exercise.targetSets || 3}</span>
-                              <button onClick={() => handleUpdateSets(index, 1)} className="w-6 h-6 flex items-center justify-center transition-colors" style={{ background: '#111', border: '1px solid #1A1A1A', borderRadius: '2px', color: '#A0A0A0' }}>
+                              <span className="font-mono-sport font-bold text-sm w-6 text-center" style={{ fontFamily: "'JetBrains Mono', monospace", color: '#CCFF00' }}>{getTotalSets(exercise)}</span>
+                              <button aria-label={`Add a set to ${exercise.exerciseName}`} onClick={() => handleUpdateSets(index, 1)} className="w-6 h-6 flex items-center justify-center transition-colors" style={{ background: '#111', border: '1px solid #1A1A1A', borderRadius: '2px', color: '#A0A0A0' }}>
                                 <Plus size={10} />
                               </button>
                             </div>

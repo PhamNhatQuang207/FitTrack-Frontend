@@ -4,9 +4,15 @@
 // the real package in tests. Only the pieces our components use are provided.
 const mockNavigate = jest.fn();
 
+let mockParams = {};
+// Lets a test drive useParams(), e.g. the :id an ActiveWorkout loads.
+const setMockParams = (params) => { mockParams = params; };
+
 module.exports = {
     __esModule: true,
     useNavigate: () => mockNavigate,
+    useParams: () => mockParams,
     // Exposed so tests can assert on / reset navigation calls.
     mockNavigate,
+    setMockParams,
 };
