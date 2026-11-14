@@ -531,7 +531,9 @@ export default function AiCoachWidget() {
                           >
                             {msg.draftPlan.mode === 'edit_schedule'
                               ? 'Edit Active Schedule'
-                              : 'New Weekly Schedule'}
+                              : msg.draftPlan.mode === 'update_plan'
+                              ? 'Edit Library Plan'
+                              : 'New Weekly Plan'}
                           </span>
                           <Calendar size={14} className="text-[#CCFF00]" />
                         </div>
@@ -593,18 +595,62 @@ export default function AiCoachWidget() {
                                 : 'View Plan Library'}
                             </button>
                           </div>
-                        ) : msg.draftPlan.mode === 'edit_schedule' ? (
+                        ) : msg.draftPlan.mode === 'update_plan' ? (
                           <button
                             type="button"
                             disabled={applyingMsgId === msg.id}
-                            onClick={() => handleApplyPlan(msg.id, 'activate_schedule')}
+                            onClick={() => handleApplyPlan(msg.id, 'update_plan_only')}
                             className="w-full py-2 rounded-lg font-bold text-xs transition-opacity disabled:opacity-50"
                             style={{ backgroundColor: '#CCFF00', color: '#000' }}
                           >
                             {applyingMsgId === msg.id
-                              ? 'Applying...'
-                              : 'Apply Schedule Changes'}
+                              ? 'Updating...'
+                              : 'Update Plan in Library'}
                           </button>
+                        ) : msg.draftPlan.mode === 'edit_schedule' ? (
+                          msg.draftPlan.targetPlanId ? (
+                            <div className="grid grid-cols-2 gap-2 pt-1">
+                              <button
+                                type="button"
+                                disabled={applyingMsgId === msg.id}
+                                onClick={() =>
+                                  handleApplyPlan(msg.id, 'update_schedule_only')
+                                }
+                                className="w-full py-2 px-2 rounded-lg font-bold text-xs border border-[#CCFF00] text-[#CCFF00] hover:bg-[#CCFF00]/10 transition-colors disabled:opacity-50"
+                              >
+                                {applyingMsgId === msg.id
+                                  ? 'Updating...'
+                                  : 'This Week Only'}
+                              </button>
+                              <button
+                                type="button"
+                                disabled={applyingMsgId === msg.id}
+                                onClick={() =>
+                                  handleApplyPlan(msg.id, 'update_schedule_and_plan')
+                                }
+                                className="w-full py-2 px-2 rounded-lg font-bold text-xs transition-opacity disabled:opacity-50"
+                                style={{ backgroundColor: '#CCFF00', color: '#000' }}
+                              >
+                                {applyingMsgId === msg.id
+                                  ? 'Updating...'
+                                  : 'Week & Template'}
+                              </button>
+                            </div>
+                          ) : (
+                            <button
+                              type="button"
+                              disabled={applyingMsgId === msg.id}
+                              onClick={() =>
+                                handleApplyPlan(msg.id, 'update_schedule_only')
+                              }
+                              className="w-full py-2 rounded-lg font-bold text-xs transition-opacity disabled:opacity-50"
+                              style={{ backgroundColor: '#CCFF00', color: '#000' }}
+                            >
+                              {applyingMsgId === msg.id
+                                ? 'Applying...'
+                                : 'Apply Schedule Changes'}
+                            </button>
+                          )
                         ) : (
                           <div className="grid grid-cols-2 gap-2 pt-1">
                             <button
