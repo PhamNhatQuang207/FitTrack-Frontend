@@ -73,6 +73,8 @@ function StepIndicator({ current, total = 2 }) {
 function WorkoutPlanningContent() {
   const navigate = useNavigate();
   const workoutNameInputRef = useRef(null);
+  const workoutNameCardRef = useRef(null);
+  const muscleGroupsSectionRef = useRef(null);
   const [step, setStep] = useState(1);
   const [workoutName, setWorkoutName] = useState("");
   const [muscleGroupData, setMuscleGroupData] = useState(DEFAULT_MUSCLE_GROUPS);
@@ -184,17 +186,24 @@ function WorkoutPlanningContent() {
     if (!workoutName.trim()) {
       setErrorMessage("Please enter a workout name before continuing.");
       setErrorField("workoutName");
-      workoutNameInputRef.current?.focus();
+      workoutNameInputRef.current?.focus({ preventScroll: true });
+      requestAnimationFrame(() => {
+        workoutNameCardRef.current?.scrollIntoView?.({ behavior: 'smooth', block: 'center' });
+      });
       return;
     }
     if (selectedMuscleGroups.length === 0) {
       setErrorMessage("Please select at least one target muscle group.");
       setErrorField("muscleGroups");
+      requestAnimationFrame(() => {
+        muscleGroupsSectionRef.current?.scrollIntoView?.({ behavior: 'smooth', block: 'center' });
+      });
       return;
     }
     setErrorMessage("");
     setErrorField(null);
     setStep(2);
+    window.scrollTo?.({ top: 0, behavior: 'smooth' });
   };
 
   const handleSaveWorkout = async () => {
@@ -233,7 +242,17 @@ function WorkoutPlanningContent() {
         <div className="max-w-6xl mx-auto flex items-center justify-between h-16 gap-4">
           <button
             id="back-btn"
-            onClick={() => { if (step > 1) setStep(step - 1); else navigate("/dashboard"); }}
+            type="button"
+            onClick={() => {
+              if (step > 1) {
+                setStep(step - 1);
+                setErrorMessage("");
+                setErrorField(null);
+                window.scrollTo?.({ top: 0, behavior: 'smooth' });
+              } else {
+                navigate("/dashboard");
+              }
+            }}
             className="flex items-center gap-2 transition-colors group"
             style={{ color: '#A0A0A0' }}
             onMouseEnter={e => e.currentTarget.style.color = '#CCFF00'}
@@ -253,7 +272,7 @@ function WorkoutPlanningContent() {
 
       <main className="max-w-6xl mx-auto px-4 md:px-8 py-8">
 
-        {errorMessage && (
+        {step === 2 && errorMessage && (
           <div
             id="workout-error-banner"
             role="alert"
@@ -279,8 +298,10 @@ function WorkoutPlanningContent() {
 
             {/* Workout Name */}
             <div
+              ref={workoutNameCardRef}
               className="p-5 mb-8"
               style={{
+                scrollMarginTop: '96px',
                 background: 'rgba(10,10,10,0.92)',
                 border: errorField === 'workoutName' ? '1px solid #FF5C00' : '1px solid rgba(204,255,0,0.15)',
                 boxShadow: errorField === 'workoutName' ? '0 0 12px rgba(255,92,0,0.2)' : 'none',
@@ -303,6 +324,12 @@ function WorkoutPlanningContent() {
                     setErrorField(null);
                   }
                 }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    handleNextToExercises();
+                  }
+                }}
                 className="ft-input text-lg"
                 style={{
                   fontFamily: "'Barlow Condensed', sans-serif",
@@ -319,25 +346,35 @@ function WorkoutPlanningContent() {
             </div>
 
             {/* Muscle Groups */}
-            <div className="mb-8">
+            <div
+              ref={muscleGroupsSectionRef}
+              className="mb-8"
+              style={{ scrollMarginTop: '96px' }}
+            >
               <div className="flex items-center justify-between mb-4">
                 <p className="ft-label">// Select Muscle Groups <span style={{ color: '#FF5C00' }}>*</span></p>
                 <span className="font-mono-sport text-xs" style={{ color: '#CCFF00', fontFamily: "'JetBrains Mono', monospace" }}>
                   {selectedMuscleGroups.length} selected
                 </span>
               </div>
+              {errorField === 'muscleGroups' && (
+                <p className="text-xs mb-3 font-medium" style={{ color: '#FF5C00' }}>
+                  ⚠ Please select at least one target muscle group.
+                </p>
+              )}
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
                 {muscleGroupData.map((group) => {
                   const isSelected = !!selectedMuscleGroups.find(g => g.id === group.id);
                   return (
                     <button
                       key={group.id}
+                      type="button"
                       id={`muscle-${group.id}`}
                       onClick={() => handleMuscleGroupToggle(group)}
                       className="relative aspect-square flex flex-col items-center justify-center p-4 transition-all"
                       style={{
                         background: isSelected ? 'rgba(204,255,0,0.1)' : 'rgba(10,10,10,0.95)',
-                        border: `1px solid ${isSelected ? '#CCFF00' : '#1A1A1A'}`,
+                        border: `1px solid ${isSelected ? '#CCFF00' : errorField === 'muscleGroups' ? 'rgba(255,92,0,0.45)' : '#1A1A1A'}`,
                         borderRadius: '2px',
                         boxShadow: isSelected ? '0 0 12px rgba(204,255,0,0.3)' : 'none',
                         transform: isSelected ? 'translateY(-2px)' : 'none',
@@ -366,8 +403,26 @@ function WorkoutPlanningContent() {
               </div>
             </div>
 
+            {errorMessage && (
+              <div
+                id="workout-error-banner"
+                role="alert"
+                className="mb-4 px-4 py-3 flex items-center gap-3 text-sm font-medium animate-slide-up"
+                style={{
+                  color: '#FF5C00',
+                  background: 'rgba(255, 92, 0, 0.1)',
+                  border: '1px solid rgba(255, 92, 0, 0.45)',
+                  borderRadius: '2px',
+                }}
+              >
+                <AlertCircle size={18} style={{ flexShrink: 0 }} />
+                <span>{errorMessage}</span>
+              </div>
+            )}
+
             <button
               id="next-step-btn"
+              type="button"
               onClick={handleNextToExercises}
               className="ft-btn-primary w-full py-4 text-base"
             >
