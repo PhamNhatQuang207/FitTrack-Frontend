@@ -204,7 +204,7 @@ function WorkoutPlanningContent() {
     setErrorMessage("");
     setErrorField(null);
     setStep(2);
-    window.scrollTo?.({ top: 0, behavior: 'smooth' });
+    window.scrollTo?.(0, 0);
   };
 
   const handleSaveWorkout = async () => {
@@ -271,7 +271,7 @@ function WorkoutPlanningContent() {
         </div>
       </div>
 
-      <main className="max-w-6xl mx-auto px-4 md:px-8 py-6">
+      <main className="max-w-6xl mx-auto px-4 md:px-8 py-8">
 
         {step === 2 && errorMessage && (
           <div
@@ -292,15 +292,15 @@ function WorkoutPlanningContent() {
 
         {/* ── STEP 1: Name + Muscle Groups ── */}
         {step === 1 && (
-          <div>
+          <div className="animate-slide-up">
             <p className="ft-label mb-1">// Step 1 of 2</p>
-            <h1 className="ft-title text-3xl md:text-4xl text-white mb-1">Create Workout</h1>
-            <p className="text-sm mb-4" style={{ color: '#A0A0A0' }}>Name your workout and select target muscle groups</p>
+            <h1 className="ft-title text-4xl md:text-5xl text-white mb-1">Create Workout</h1>
+            <p className="text-sm mb-8" style={{ color: '#A0A0A0' }}>Name your workout and select target muscle groups</p>
 
             {/* Workout Name */}
             <div
               ref={workoutNameCardRef}
-              className="p-4 mb-5"
+              className="p-5 mb-8"
               style={{
                 scrollMarginTop: '96px',
                 background: 'rgba(10,10,10,0.92)',
@@ -349,10 +349,10 @@ function WorkoutPlanningContent() {
             {/* Muscle Groups */}
             <div
               ref={muscleGroupsSectionRef}
-              className="mb-5"
+              className="mb-8"
               style={{ scrollMarginTop: '96px' }}
             >
-              <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center justify-between mb-4">
                 <p className="ft-label">// Select Muscle Groups <span style={{ color: '#FF5C00' }}>*</span></p>
                 <span className="font-mono-sport text-xs" style={{ color: '#CCFF00', fontFamily: "'JetBrains Mono', monospace" }}>
                   {selectedMuscleGroups.length} selected
@@ -363,7 +363,7 @@ function WorkoutPlanningContent() {
                   ⚠ Please select at least one target muscle group.
                 </p>
               )}
-              <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-7 gap-2.5">
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
                 {muscleGroupData.map((group) => {
                   const isSelected = !!selectedMuscleGroups.find(g => g.id === group.id);
                   return (
@@ -371,8 +371,9 @@ function WorkoutPlanningContent() {
                       key={group.id}
                       type="button"
                       id={`muscle-${group.id}`}
+                      onMouseDown={(e) => e.preventDefault()}
                       onClick={() => handleMuscleGroupToggle(group)}
-                      className="relative flex flex-col items-center justify-center py-4 px-2 transition-all"
+                      className="relative aspect-square flex flex-col items-center justify-center p-4 transition-all"
                       style={{
                         background: isSelected ? 'rgba(204,255,0,0.1)' : 'rgba(10,10,10,0.95)',
                         border: `1px solid ${isSelected ? '#CCFF00' : errorField === 'muscleGroups' ? 'rgba(255,92,0,0.45)' : '#1A1A1A'}`,
@@ -381,7 +382,7 @@ function WorkoutPlanningContent() {
                         transform: isSelected ? 'translateY(-2px)' : 'none',
                       }}
                     >
-                      <img src={group.icon} alt={group.name} className="w-9 h-9 object-contain mb-2"
+                      <img src={group.icon} alt={group.name} className="w-10 h-10 object-contain mb-2"
                         style={{ filter: isSelected ? 'none' : 'grayscale(0.4) brightness(0.7)' }}
                       />
                       <span
@@ -408,7 +409,7 @@ function WorkoutPlanningContent() {
               <div
                 id="workout-error-banner"
                 role="alert"
-                className="mb-4 px-4 py-3 flex items-center gap-3 text-sm font-medium"
+                className="mb-4 px-4 py-3 flex items-center gap-3 text-sm font-medium animate-slide-up"
                 style={{
                   color: '#FF5C00',
                   background: 'rgba(255, 92, 0, 0.1)',
@@ -421,22 +422,21 @@ function WorkoutPlanningContent() {
               </div>
             )}
 
-            <div>
-              <button
-                id="next-step-btn"
-                type="button"
-                onClick={handleNextToExercises}
-                className="ft-btn-primary w-full py-3.5 text-base"
-              >
-                Next: Add Exercises →
-              </button>
-            </div>
+            <button
+              id="next-step-btn"
+              type="button"
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={handleNextToExercises}
+              className="ft-btn-primary w-full py-4 text-base"
+            >
+              Next: Add Exercises →
+            </button>
           </div>
         )}
 
         {/* ── STEP 2: Exercise Selection ── */}
         {step === 2 && (
-          <div>
+          <div className="animate-slide-up">
             <p className="ft-label mb-1">// Step 2 of 2</p>
             <h1 className="ft-title text-3xl md:text-4xl text-white mb-1">{workoutName}</h1>
             <p className="text-sm mb-6" style={{ color: '#A0A0A0' }}>
