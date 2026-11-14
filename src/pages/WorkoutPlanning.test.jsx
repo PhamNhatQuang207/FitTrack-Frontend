@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import WorkoutPlanning from './WorkoutPlanning';
 import axiosClient from '../api/axiosClient';
@@ -70,6 +70,30 @@ test('advances immediately when pressing Enter in workout name after selecting a
   const nameInput = screen.getByLabelText(/workout name/i);
   userEvent.type(nameInput, 'Chest Pump{enter}');
 
+  await waitFor(() => {
+    expect(screen.getByText('// Step 2 of 2')).toBeInTheDocument();
+  });
+});
+
+test('cancels browser IME scroll jump when workout name input commits offscreen before Next click', async () => {
+  render(<WorkoutPlanning />);
+
+  const chestBtn = await screen.findByRole('button', { name: /chest/i });
+  userEvent.click(chestBtn);
+
+  const nameInput = screen.getByLabelText(/workout name/i);
+  userEvent.type(nameInput, 'Test');
+
+  nameInput.getBoundingClientRect = () => ({ top: -150, bottom: -100, left: 0, right: 200, width: 200, height: 50 });
+  Object.defineProperty(window, 'scrollY', { configurable: true, writable: true, value: 500 });
+
+  fireEvent.compositionEnd(nameInput);
+  Object.defineProperty(window, 'scrollY', { configurable: true, writable: true, value: 234 });
+  fireEvent.scroll(window);
+
+  expect(window.scrollTo).toHaveBeenCalledWith({ top: 500, behavior: 'instant' });
+
+  userEvent.click(screen.getByRole('button', { name: /next: add exercises/i }));
   await waitFor(() => {
     expect(screen.getByText('// Step 2 of 2')).toBeInTheDocument();
   });

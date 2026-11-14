@@ -75,6 +75,7 @@ function WorkoutPlanningContent() {
   const workoutNameInputRef = useRef(null);
   const workoutNameCardRef = useRef(null);
   const muscleGroupsSectionRef = useRef(null);
+  const scrollLockRef = useRef({ until: 0, y: 0 });
   const [step, setStep] = useState(1);
   const [workoutName, setWorkoutName] = useState("");
   const [muscleGroupData, setMuscleGroupData] = useState(DEFAULT_MUSCLE_GROUPS);
@@ -183,7 +184,48 @@ function WorkoutPlanningContent() {
     }
   };
 
+  // Guard against Chromium scrolling off-screen focused input back into view when IME commits on blur/click
+  const restoreLockedScroll = useCallback(() => {
+    const { until, y } = scrollLockRef.current;
+    if (performance.now() < until && window.scrollY !== y) {
+      window.scrollTo?.({ top: y, behavior: 'instant' });
+    }
+  }, []);
+
+  const lockScrollIfInputOffscreen = useCallback(() => {
+    const inputEl = workoutNameInputRef.current;
+    if (!inputEl) return;
+    const rect = inputEl.getBoundingClientRect();
+    if (rect.top < 80) {
+      scrollLockRef.current = { until: performance.now() + 450, y: window.scrollY };
+      queueMicrotask(restoreLockedScroll);
+    }
+  }, [restoreLockedScroll]);
+
+  const unlockScroll = useCallback(() => {
+    scrollLockRef.current.until = 0;
+  }, []);
+
+  useEffect(() => {
+    const handleScroll = () => restoreLockedScroll();
+    const handleUserInput = (e) => {
+      if (e.type === 'keydown' && (e.isComposing || e.key === 'Process')) return;
+      unlockScroll();
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    window.addEventListener('wheel', handleUserInput, { passive: true });
+    window.addEventListener('touchstart', handleUserInput, { passive: true });
+    window.addEventListener('keydown', handleUserInput, { passive: true });
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      window.removeEventListener('wheel', handleUserInput);
+      window.removeEventListener('touchstart', handleUserInput);
+      window.removeEventListener('keydown', handleUserInput);
+    };
+  }, [restoreLockedScroll, unlockScroll]);
+
   const handleNextToExercises = () => {
+    unlockScroll();
     if (!workoutName.trim()) {
       setErrorMessage("Please enter a workout name before continuing.");
       setErrorField("workoutName");
@@ -246,6 +288,7 @@ function WorkoutPlanningContent() {
             type="button"
             onClick={() => {
               if (step > 1) {
+                unlockScroll();
                 setStep(step - 1);
                 setErrorMessage("");
                 setErrorField(null);
@@ -325,6 +368,8 @@ function WorkoutPlanningContent() {
                     setErrorField(null);
                   }
                 }}
+                onCompositionEnd={lockScrollIfInputOffscreen}
+                onBlur={lockScrollIfInputOffscreen}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') {
                     e.preventDefault();
@@ -371,7 +416,7 @@ function WorkoutPlanningContent() {
                       key={group.id}
                       type="button"
                       id={`muscle-${group.id}`}
-                      onMouseDown={(e) => e.preventDefault()}
+                      onPointerDown={lockScrollIfInputOffscreen}
                       onClick={() => handleMuscleGroupToggle(group)}
                       className="relative aspect-square flex flex-col items-center justify-center p-4 transition-all"
                       style={{
@@ -425,7 +470,7 @@ function WorkoutPlanningContent() {
             <button
               id="next-step-btn"
               type="button"
-              onMouseDown={(e) => e.preventDefault()}
+              onPointerDown={lockScrollIfInputOffscreen}
               onClick={handleNextToExercises}
               className="ft-btn-primary w-full py-4 text-base"
             >
