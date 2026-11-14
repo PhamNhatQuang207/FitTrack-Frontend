@@ -27,6 +27,7 @@ export default function GoogleLoginButton({ onSuccess, onError }) {
         size: 'large',
         width: '350',
         text: 'continue_with',
+        locale: 'en',
       });
     };
 
@@ -39,7 +40,7 @@ export default function GoogleLoginButton({ onSuccess, onError }) {
     if (!script) {
       script = document.createElement('script');
       script.id = GSI_SCRIPT_ID;
-      script.src = 'https://accounts.google.com/gsi/client';
+      script.src = 'https://accounts.google.com/gsi/client?hl=en';
       script.async = true;
       script.defer = true;
       document.body.appendChild(script);
