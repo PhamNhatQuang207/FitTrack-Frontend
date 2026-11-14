@@ -73,6 +73,9 @@ function StepIndicator({ current, total = 2 }) {
 function WorkoutPlanningContent() {
   const navigate = useNavigate();
   const workoutNameInputRef = useRef(null);
+  const workoutNameCardRef = useRef(null);
+  const muscleGroupsSectionRef = useRef(null);
+  const scrollLockRef = useRef({ until: 0, y: 0 });
   const [step, setStep] = useState(1);
   const [workoutName, setWorkoutName] = useState("");
   const [muscleGroupData, setMuscleGroupData] = useState(DEFAULT_MUSCLE_GROUPS);
@@ -102,6 +105,7 @@ function WorkoutPlanningContent() {
   }, []);
 
   const fetchExercisesForSelectedGroups = useCallback(async () => {
+    if (selectedMuscleGroups.length === 0) return;
     setLoading(true);
     try {
       const allExercises = [];
@@ -118,7 +122,7 @@ function WorkoutPlanningContent() {
   }, [selectedMuscleGroups]);
 
   useEffect(() => {
-    if (step === 2 && selectedMuscleGroups.length > 0) fetchExercisesForSelectedGroups();
+    if (step === 2) fetchExercisesForSelectedGroups();
   }, [step, fetchExercisesForSelectedGroups]);
 
   const handleMuscleGroupToggle = (group) => {
@@ -180,21 +184,69 @@ function WorkoutPlanningContent() {
     }
   };
 
+  // Guard against Chromium scrolling off-screen focused input back into view when IME commits on blur/click
+  const restoreLockedScroll = useCallback(() => {
+    const { until, y } = scrollLockRef.current;
+    if (performance.now() < until && window.scrollY !== y) {
+      window.scrollTo?.({ top: y, behavior: 'instant' });
+    }
+  }, []);
+
+  const lockScrollIfInputOffscreen = useCallback(() => {
+    const inputEl = workoutNameInputRef.current;
+    if (!inputEl) return;
+    const rect = inputEl.getBoundingClientRect();
+    if (rect.top < 80) {
+      scrollLockRef.current = { until: performance.now() + 450, y: window.scrollY };
+      queueMicrotask(restoreLockedScroll);
+    }
+  }, [restoreLockedScroll]);
+
+  const unlockScroll = useCallback(() => {
+    scrollLockRef.current.until = 0;
+  }, []);
+
+  useEffect(() => {
+    const handleScroll = () => restoreLockedScroll();
+    const handleUserInput = (e) => {
+      if (e.type === 'keydown' && (e.isComposing || e.key === 'Process')) return;
+      unlockScroll();
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    window.addEventListener('wheel', handleUserInput, { passive: true });
+    window.addEventListener('touchstart', handleUserInput, { passive: true });
+    window.addEventListener('keydown', handleUserInput, { passive: true });
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      window.removeEventListener('wheel', handleUserInput);
+      window.removeEventListener('touchstart', handleUserInput);
+      window.removeEventListener('keydown', handleUserInput);
+    };
+  }, [restoreLockedScroll, unlockScroll]);
+
   const handleNextToExercises = () => {
+    unlockScroll();
     if (!workoutName.trim()) {
       setErrorMessage("Please enter a workout name before continuing.");
       setErrorField("workoutName");
-      workoutNameInputRef.current?.focus();
+      workoutNameInputRef.current?.focus({ preventScroll: true });
+      requestAnimationFrame(() => {
+        workoutNameCardRef.current?.scrollIntoView?.({ behavior: 'smooth', block: 'center' });
+      });
       return;
     }
     if (selectedMuscleGroups.length === 0) {
       setErrorMessage("Please select at least one target muscle group.");
       setErrorField("muscleGroups");
+      requestAnimationFrame(() => {
+        muscleGroupsSectionRef.current?.scrollIntoView?.({ behavior: 'smooth', block: 'center' });
+      });
       return;
     }
     setErrorMessage("");
     setErrorField(null);
     setStep(2);
+    window.scrollTo?.(0, 0);
   };
 
   const handleSaveWorkout = async () => {
@@ -233,7 +285,18 @@ function WorkoutPlanningContent() {
         <div className="max-w-6xl mx-auto flex items-center justify-between h-16 gap-4">
           <button
             id="back-btn"
-            onClick={() => { if (step > 1) setStep(step - 1); else navigate("/dashboard"); }}
+            type="button"
+            onClick={() => {
+              if (step > 1) {
+                unlockScroll();
+                setStep(step - 1);
+                setErrorMessage("");
+                setErrorField(null);
+                window.scrollTo?.({ top: 0, behavior: 'smooth' });
+              } else {
+                navigate("/dashboard");
+              }
+            }}
             className="flex items-center gap-2 transition-colors group"
             style={{ color: '#A0A0A0' }}
             onMouseEnter={e => e.currentTarget.style.color = '#CCFF00'}
@@ -253,7 +316,7 @@ function WorkoutPlanningContent() {
 
       <main className="max-w-6xl mx-auto px-4 md:px-8 py-8">
 
-        {errorMessage && (
+        {step === 2 && errorMessage && (
           <div
             id="workout-error-banner"
             role="alert"
@@ -279,8 +342,10 @@ function WorkoutPlanningContent() {
 
             {/* Workout Name */}
             <div
+              ref={workoutNameCardRef}
               className="p-5 mb-8"
               style={{
+                scrollMarginTop: '96px',
                 background: 'rgba(10,10,10,0.92)',
                 border: errorField === 'workoutName' ? '1px solid #FF5C00' : '1px solid rgba(204,255,0,0.15)',
                 boxShadow: errorField === 'workoutName' ? '0 0 12px rgba(255,92,0,0.2)' : 'none',
@@ -303,6 +368,14 @@ function WorkoutPlanningContent() {
                     setErrorField(null);
                   }
                 }}
+                onCompositionEnd={lockScrollIfInputOffscreen}
+                onBlur={lockScrollIfInputOffscreen}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    handleNextToExercises();
+                  }
+                }}
                 className="ft-input text-lg"
                 style={{
                   fontFamily: "'Barlow Condensed', sans-serif",
@@ -319,25 +392,36 @@ function WorkoutPlanningContent() {
             </div>
 
             {/* Muscle Groups */}
-            <div className="mb-8">
+            <div
+              ref={muscleGroupsSectionRef}
+              className="mb-8"
+              style={{ scrollMarginTop: '96px' }}
+            >
               <div className="flex items-center justify-between mb-4">
                 <p className="ft-label">// Select Muscle Groups <span style={{ color: '#FF5C00' }}>*</span></p>
                 <span className="font-mono-sport text-xs" style={{ color: '#CCFF00', fontFamily: "'JetBrains Mono', monospace" }}>
                   {selectedMuscleGroups.length} selected
                 </span>
               </div>
+              {errorField === 'muscleGroups' && (
+                <p className="text-xs mb-3 font-medium" style={{ color: '#FF5C00' }}>
+                  ⚠ Please select at least one target muscle group.
+                </p>
+              )}
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
                 {muscleGroupData.map((group) => {
                   const isSelected = !!selectedMuscleGroups.find(g => g.id === group.id);
                   return (
                     <button
                       key={group.id}
+                      type="button"
                       id={`muscle-${group.id}`}
+                      onPointerDown={lockScrollIfInputOffscreen}
                       onClick={() => handleMuscleGroupToggle(group)}
                       className="relative aspect-square flex flex-col items-center justify-center p-4 transition-all"
                       style={{
                         background: isSelected ? 'rgba(204,255,0,0.1)' : 'rgba(10,10,10,0.95)',
-                        border: `1px solid ${isSelected ? '#CCFF00' : '#1A1A1A'}`,
+                        border: `1px solid ${isSelected ? '#CCFF00' : errorField === 'muscleGroups' ? 'rgba(255,92,0,0.45)' : '#1A1A1A'}`,
                         borderRadius: '2px',
                         boxShadow: isSelected ? '0 0 12px rgba(204,255,0,0.3)' : 'none',
                         transform: isSelected ? 'translateY(-2px)' : 'none',
@@ -366,8 +450,27 @@ function WorkoutPlanningContent() {
               </div>
             </div>
 
+            {errorMessage && (
+              <div
+                id="workout-error-banner"
+                role="alert"
+                className="mb-4 px-4 py-3 flex items-center gap-3 text-sm font-medium animate-slide-up"
+                style={{
+                  color: '#FF5C00',
+                  background: 'rgba(255, 92, 0, 0.1)',
+                  border: '1px solid rgba(255, 92, 0, 0.45)',
+                  borderRadius: '2px',
+                }}
+              >
+                <AlertCircle size={18} style={{ flexShrink: 0 }} />
+                <span>{errorMessage}</span>
+              </div>
+            )}
+
             <button
               id="next-step-btn"
+              type="button"
+              onPointerDown={lockScrollIfInputOffscreen}
               onClick={handleNextToExercises}
               className="ft-btn-primary w-full py-4 text-base"
             >
