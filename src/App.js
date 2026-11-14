@@ -18,9 +18,12 @@ import ActiveWorkout from './pages/ActiveWorkout';
 import WorkoutHistory from './pages/WorkoutHistory';
 
 import axiosClient from './api/axiosClient';
+import { siteConfigAPI } from './api';
 
 export default function App() {
-  // Wake up Render server on initial load
+  const [announcement, setAnnouncement] = React.useState('');
+
+  // Wake up Render server & load dynamic site config on initial load
   React.useEffect(() => {
     const wakeUpServer = async () => {
       try {
@@ -30,10 +33,32 @@ export default function App() {
         console.log('Server wake-up failed (it might be sleeping) 🔴', error);
       }
     };
+    const loadSiteConfig = async () => {
+      try {
+        const cfg = await siteConfigAPI.get();
+        if (cfg?.heroBackgroundUrl) {
+          document.documentElement.style.setProperty('--ft-hero-bg', `url("${cfg.heroBackgroundUrl}")`);
+        }
+        if (cfg?.announcementBanner) {
+          setAnnouncement(cfg.announcementBanner);
+        }
+      } catch {
+        // Keep default static background if site-config is unavailable
+      }
+    };
     wakeUpServer();
+    loadSiteConfig();
   }, []);
   return (
     <AuthProvider>
+      {announcement && (
+        <div
+          className="w-full px-4 py-2 text-center text-xs font-semibold tracking-wider uppercase"
+          style={{ background: '#CCFF00', color: '#000' }}
+        >
+          {announcement}
+        </div>
+      )}
       <Router>
         <Routes>
           <Route path="/" element={<Login />} />

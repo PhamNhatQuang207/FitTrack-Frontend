@@ -1,7 +1,8 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import axiosClient from "../api/axiosClient";
-import { ArrowLeft, Search, Save, Plus, Trash2, CheckCircle2 } from "lucide-react";
+import { muscleGroupAPI } from "../api";
+import { ArrowLeft, Search, Save, Plus, Trash2, CheckCircle2, AlertCircle } from "lucide-react";
 import ErrorBoundary from "../components/ErrorBoundary";
 
 // Muscle group data (icons kept, colors removed)
@@ -20,7 +21,7 @@ import adductorIcon from "../assets/icons/muscle/adductor.png";
 import calvesIcon from "../assets/icons/muscle/calves.png";
 import forearmsIcon from "../assets/icons/muscle/forearms.png";
 
-const muscleGroupData = [
+const DEFAULT_MUSCLE_GROUPS = [
   { id: 'chest', name: 'Chest', icon: chestIcon },
   { id: 'shoulders', name: 'Shoulders', icon: shouldersIcon },
   { id: 'biceps', name: 'Biceps', icon: bicepsIcon },
@@ -36,6 +37,8 @@ const muscleGroupData = [
   { id: 'calves', name: 'Calves', icon: calvesIcon },
   { id: 'forearms', name: 'Forearms', icon: forearmsIcon },
 ];
+
+const LOCAL_ICON_BY_SLUG = Object.fromEntries(DEFAULT_MUSCLE_GROUPS.map((g) => [g.id, g.icon]));
 
 // Step indicator
 function StepIndicator({ current, total = 2 }) {
@@ -69,13 +72,34 @@ function StepIndicator({ current, total = 2 }) {
 
 function WorkoutPlanningContent() {
   const navigate = useNavigate();
+  const workoutNameInputRef = useRef(null);
   const [step, setStep] = useState(1);
   const [workoutName, setWorkoutName] = useState("");
+  const [muscleGroupData, setMuscleGroupData] = useState(DEFAULT_MUSCLE_GROUPS);
   const [selectedMuscleGroups, setSelectedMuscleGroups] = useState([]);
   const [availableExercises, setAvailableExercises] = useState([]);
   const [workoutExercises, setWorkoutExercises] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
+  const [errorField, setErrorField] = useState(null);
+
+  useEffect(() => {
+    let active = true;
+    muscleGroupAPI.getAll()
+      .then((groups) => {
+        if (!active || !Array.isArray(groups) || groups.length === 0) return;
+        setMuscleGroupData(groups.map((g) => ({
+          id: g.slug,
+          name: g.name,
+          icon: g.iconUrl || LOCAL_ICON_BY_SLUG[g.slug] || chestIcon,
+        })));
+      })
+      .catch(() => {
+        // Keep DEFAULT_MUSCLE_GROUPS fallback if API fails
+      });
+    return () => { active = false; };
+  }, []);
 
   const fetchExercisesForSelectedGroups = useCallback(async () => {
     setLoading(true);
@@ -100,11 +124,21 @@ function WorkoutPlanningContent() {
   const handleMuscleGroupToggle = (group) => {
     const isSelected = selectedMuscleGroups.find(g => g.id === group.id);
     if (isSelected) setSelectedMuscleGroups(selectedMuscleGroups.filter(g => g.id !== group.id));
-    else setSelectedMuscleGroups([...selectedMuscleGroups, group]);
+    else {
+      setSelectedMuscleGroups([...selectedMuscleGroups, group]);
+      if (errorField === 'muscleGroups') {
+        setErrorMessage("");
+        setErrorField(null);
+      }
+    }
   };
 
   const handleAddExercise = (exercise) => {
     if (workoutExercises.find(ex => ex.exerciseId === exercise.id)) return;
+    if (errorField === 'exercises') {
+      setErrorMessage("");
+      setErrorField(null);
+    }
     setWorkoutExercises([...workoutExercises, {
       exerciseId: exercise.id,
       exerciseName: exercise.name,
@@ -147,19 +181,42 @@ function WorkoutPlanningContent() {
   };
 
   const handleNextToExercises = () => {
-    if (!workoutName.trim()) { alert("Please enter a workout name"); return; }
-    if (selectedMuscleGroups.length === 0) { alert("Please select at least one muscle group"); return; }
+    if (!workoutName.trim()) {
+      setErrorMessage("Please enter a workout name before continuing.");
+      setErrorField("workoutName");
+      workoutNameInputRef.current?.focus();
+      return;
+    }
+    if (selectedMuscleGroups.length === 0) {
+      setErrorMessage("Please select at least one target muscle group.");
+      setErrorField("muscleGroups");
+      return;
+    }
+    setErrorMessage("");
+    setErrorField(null);
     setStep(2);
   };
 
   const handleSaveWorkout = async () => {
-    if (workoutExercises.length === 0) { alert("Please add at least one exercise"); return; }
+    if (!workoutName.trim()) {
+      setStep(1);
+      setErrorMessage("Please enter a workout name before saving.");
+      setErrorField("workoutName");
+      return;
+    }
+    if (workoutExercises.length === 0) {
+      setErrorMessage("Please add at least one exercise before saving your workout.");
+      setErrorField("exercises");
+      return;
+    }
+    setErrorMessage("");
+    setErrorField(null);
     setLoading(true);
     try {
-      await axiosClient.post('/workout-sessions', { name: workoutName, exercises: workoutExercises, notes: "" });
+      await axiosClient.post('/workout-sessions', { name: workoutName.trim(), exercises: workoutExercises, notes: "" });
       navigate('/dashboard');
     } catch (error) {
-      alert(error.response?.data?.message || "Failed to save workout");
+      setErrorMessage(error.response?.data?.message || "Failed to save workout. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -196,6 +253,23 @@ function WorkoutPlanningContent() {
 
       <main className="max-w-6xl mx-auto px-4 md:px-8 py-8">
 
+        {errorMessage && (
+          <div
+            id="workout-error-banner"
+            role="alert"
+            className="mb-6 px-4 py-3 flex items-center gap-3 text-sm font-medium animate-slide-up"
+            style={{
+              color: '#FF5C00',
+              background: 'rgba(255, 92, 0, 0.1)',
+              border: '1px solid rgba(255, 92, 0, 0.45)',
+              borderRadius: '2px',
+            }}
+          >
+            <AlertCircle size={18} style={{ flexShrink: 0 }} />
+            <span>{errorMessage}</span>
+          </div>
+        )}
+
         {/* ── STEP 1: Name + Muscle Groups ── */}
         {step === 1 && (
           <div className="animate-slide-up">
@@ -206,24 +280,48 @@ function WorkoutPlanningContent() {
             {/* Workout Name */}
             <div
               className="p-5 mb-8"
-              style={{ background: 'rgba(10,10,10,0.95)', border: '1px solid rgba(204,255,0,0.15)', borderRadius: '2px' }}
+              style={{
+                background: 'rgba(10,10,10,0.92)',
+                border: errorField === 'workoutName' ? '1px solid #FF5C00' : '1px solid rgba(204,255,0,0.15)',
+                boxShadow: errorField === 'workoutName' ? '0 0 12px rgba(255,92,0,0.2)' : 'none',
+                borderRadius: '2px',
+              }}
             >
-              <label className="ft-label">Workout Name</label>
+              <label className="ft-label" htmlFor="workout-name-input">
+                Workout Name <span style={{ color: '#FF5C00' }}>*</span>
+              </label>
               <input
+                ref={workoutNameInputRef}
                 id="workout-name-input"
                 type="text"
                 placeholder="e.g. Push Day A, Full Body Strength, Leg Day..."
                 value={workoutName}
-                onChange={(e) => setWorkoutName(e.target.value)}
+                onChange={(e) => {
+                  setWorkoutName(e.target.value);
+                  if (errorField === 'workoutName' && e.target.value.trim()) {
+                    setErrorMessage("");
+                    setErrorField(null);
+                  }
+                }}
                 className="ft-input text-lg"
-                style={{ fontFamily: "'Barlow Condensed', sans-serif", fontStyle: 'italic', fontWeight: 700 }}
+                style={{
+                  fontFamily: "'Barlow Condensed', sans-serif",
+                  fontStyle: 'italic',
+                  fontWeight: 700,
+                  borderColor: errorField === 'workoutName' ? '#FF5C00' : undefined,
+                }}
               />
+              {errorField === 'workoutName' && (
+                <p className="text-xs mt-2 font-medium" style={{ color: '#FF5C00' }}>
+                  ⚠ Workout name is required to continue.
+                </p>
+              )}
             </div>
 
             {/* Muscle Groups */}
             <div className="mb-8">
               <div className="flex items-center justify-between mb-4">
-                <p className="ft-label">// Select Muscle Groups</p>
+                <p className="ft-label">// Select Muscle Groups <span style={{ color: '#FF5C00' }}>*</span></p>
                 <span className="font-mono-sport text-xs" style={{ color: '#CCFF00', fontFamily: "'JetBrains Mono', monospace" }}>
                   {selectedMuscleGroups.length} selected
                 </span>
@@ -271,8 +369,7 @@ function WorkoutPlanningContent() {
             <button
               id="next-step-btn"
               onClick={handleNextToExercises}
-              disabled={!workoutName.trim() || selectedMuscleGroups.length === 0}
-              className="ft-btn-primary w-full py-4 text-base disabled:opacity-40 disabled:cursor-not-allowed"
+              className="ft-btn-primary w-full py-4 text-base"
             >
               Next: Add Exercises →
             </button>
@@ -442,17 +539,15 @@ function WorkoutPlanningContent() {
                   ))}
                 </div>
 
-                {workoutExercises.length > 0 && (
-                  <button
-                    id="save-workout-btn"
-                    onClick={handleSaveWorkout}
-                    disabled={loading}
-                    className="ft-btn-primary w-full mt-4 py-3.5 flex items-center justify-center gap-2 disabled:opacity-60"
-                  >
-                    <Save size={16} />
-                    {loading ? 'Saving...' : 'Save Workout Plan'}
-                  </button>
-                )}
+                <button
+                  id="save-workout-btn"
+                  onClick={handleSaveWorkout}
+                  disabled={loading}
+                  className="ft-btn-primary w-full mt-4 py-3.5 flex items-center justify-center gap-2 disabled:opacity-60"
+                >
+                  <Save size={16} />
+                  {loading ? 'Saving...' : 'Save Workout Plan'}
+                </button>
               </div>
             </div>
           </div>

@@ -21,6 +21,20 @@ export const authAPI = {
         }
         return response.data;
     },
+
+    googleLogin: async (idToken) => {
+        const response = await axiosClient.post('/auth/google', { idToken });
+        if (response.data.token) {
+            localStorage.setItem('token', response.data.token);
+            const user = {
+                id: response.data.userId,
+                name: response.data.name
+            };
+            localStorage.setItem('user', JSON.stringify(user));
+            return { ...response.data, user };
+        }
+        return response.data;
+    },
     
     logout: () => {
         localStorage.removeItem('token');
@@ -50,6 +64,20 @@ export const workoutAPI = {
     
     logWorkout: async (workoutData) => {
         const response = await axiosClient.post('/workouts', workoutData);
+        return response.data;
+    }
+};
+
+export const muscleGroupAPI = {
+    getAll: async () => {
+        const response = await axiosClient.get('/muscle-groups');
+        return response.data;
+    }
+};
+
+export const siteConfigAPI = {
+    get: async () => {
+        const response = await axiosClient.get('/site-config');
         return response.data;
     }
 };

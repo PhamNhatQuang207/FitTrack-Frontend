@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
+import GoogleLoginButton from '../components/GoogleLoginButton';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -9,7 +10,7 @@ export default function Login() {
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-  const { login, isAuthenticated } = useAuth();
+  const { login, googleLogin, isAuthenticated } = useAuth();
 
   // Already logged in (token restored from localStorage)? Skip the login form.
   // Without this, returning users landing on "/" or "/login" see the login
@@ -36,6 +37,25 @@ export default function Login() {
       setLoading(false);
     }
   };
+
+  const handleGoogleSuccess = useCallback(async (idToken) => {
+    setError('');
+    setMessage('');
+    setLoading(true);
+    try {
+      await googleLogin(idToken);
+      setMessage('Logged in with Google!');
+      setTimeout(() => navigate('/dashboard'), 600);
+    } catch (err) {
+      setError(err.response?.data?.message || 'Google sign-in failed.');
+    } finally {
+      setLoading(false);
+    }
+  }, [googleLogin, navigate]);
+
+  const handleGoogleError = useCallback((err) => {
+    setError(err?.message || 'Google sign-in failed.');
+  }, []);
 
   return (
     <div className="ft-page flex items-center justify-center min-h-screen px-4">
@@ -131,6 +151,8 @@ export default function Login() {
               ) : 'Log In'}
             </button>
           </form>
+
+          <GoogleLoginButton onSuccess={handleGoogleSuccess} onError={handleGoogleError} />
 
           <div className="ft-divider" />
 
