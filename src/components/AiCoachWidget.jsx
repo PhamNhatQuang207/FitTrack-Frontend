@@ -196,12 +196,12 @@ export default function AiCoachWidget() {
     sendMessage(input);
   };
 
-  const handleApplyPlan = async (msgId) => {
+  const handleApplyPlan = async (msgId, action = 'activate_schedule') => {
     if (!conversationId || applyingMsgId) return;
     setApplyingMsgId(msgId);
     setErrorBanner('');
     try {
-      const result = await aiAPI.applyPlan(conversationId, msgId);
+      const result = await aiAPI.applyPlan(conversationId, msgId, action);
       setMessages((prev) =>
         prev.map((m) =>
           m.id === msgId && m.draftPlan
@@ -396,7 +396,7 @@ export default function AiCoachWidget() {
                 ) : mcpKeyStatus.hasKey ? (
                   <div className="flex items-center justify-between pt-1">
                     <span className="text-xs font-mono text-gray-300">
-                      {mcpKeyStatus.keyPrefix}...
+                      {mcpKeyStatus.keyPrefix}
                     </span>
                     <button
                       type="button"
@@ -571,30 +571,64 @@ export default function AiCoachWidget() {
                           <div className="flex items-center justify-between pt-1">
                             <span className="inline-flex items-center gap-1 text-xs text-[#CCFF00] font-semibold">
                               <CheckCircle2 size={14} />
-                              <span>Applied to Schedule</span>
+                              <span>
+                                {msg.draftPlan.appliedScheduleId
+                                  ? 'Applied to Schedule'
+                                  : 'Saved to Plan Library'}
+                              </span>
                             </span>
                             <button
                               type="button"
-                              onClick={() => navigate('/weekly-schedule')}
+                              onClick={() =>
+                                navigate(
+                                  msg.draftPlan.appliedScheduleId
+                                    ? '/weekly-schedule'
+                                    : '/weekly-plan-library'
+                                )
+                              }
                               className="text-xs underline text-gray-200 hover:text-[#CCFF00]"
                             >
-                              View Weekly Schedule
+                              {msg.draftPlan.appliedScheduleId
+                                ? 'View Weekly Schedule'
+                                : 'View Plan Library'}
                             </button>
                           </div>
-                        ) : (
+                        ) : msg.draftPlan.mode === 'edit_schedule' ? (
                           <button
                             type="button"
                             disabled={applyingMsgId === msg.id}
-                            onClick={() => handleApplyPlan(msg.id)}
+                            onClick={() => handleApplyPlan(msg.id, 'activate_schedule')}
                             className="w-full py-2 rounded-lg font-bold text-xs transition-opacity disabled:opacity-50"
                             style={{ backgroundColor: '#CCFF00', color: '#000' }}
                           >
                             {applyingMsgId === msg.id
                               ? 'Applying...'
-                              : msg.draftPlan.mode === 'edit_schedule'
-                              ? 'Apply Schedule Changes'
-                              : 'Apply New Schedule'}
+                              : 'Apply Schedule Changes'}
                           </button>
+                        ) : (
+                          <div className="grid grid-cols-2 gap-2 pt-1">
+                            <button
+                              type="button"
+                              disabled={applyingMsgId === msg.id}
+                              onClick={() => handleApplyPlan(msg.id, 'save_plan')}
+                              className="w-full py-2 px-2 rounded-lg font-bold text-xs border border-[#CCFF00] text-[#CCFF00] hover:bg-[#CCFF00]/10 transition-colors disabled:opacity-50"
+                            >
+                              {applyingMsgId === msg.id
+                                ? 'Saving...'
+                                : 'Save to Library'}
+                            </button>
+                            <button
+                              type="button"
+                              disabled={applyingMsgId === msg.id}
+                              onClick={() => handleApplyPlan(msg.id, 'activate_schedule')}
+                              className="w-full py-2 px-2 rounded-lg font-bold text-xs transition-opacity disabled:opacity-50"
+                              style={{ backgroundColor: '#CCFF00', color: '#000' }}
+                            >
+                              {applyingMsgId === msg.id
+                                ? 'Applying...'
+                                : 'Apply New Schedule'}
+                            </button>
+                          </div>
                         )}
                       </div>
                     )}

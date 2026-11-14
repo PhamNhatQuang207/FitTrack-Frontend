@@ -126,11 +126,12 @@ describe('AiCoachWidget', () => {
     expect(screen.getByText('propose_weekly_plan')).toBeInTheDocument();
 
     // Confirm and apply draft schedule
+    expect(screen.getByRole('button', { name: /Save to Library/i })).toBeInTheDocument();
     const applyBtn = screen.getByRole('button', { name: /Apply New Schedule/i });
     fireEvent.click(applyBtn);
 
     await waitFor(() => {
-      expect(aiAPI.applyPlan).toHaveBeenCalledWith('conv-1', 'm-ai');
+      expect(aiAPI.applyPlan).toHaveBeenCalledWith('conv-1', 'm-ai', 'activate_schedule');
     });
   });
 
@@ -194,7 +195,7 @@ describe('AiCoachWidget', () => {
 
     aiAPI.getMcpKeyStatus.mockResolvedValue({
       hasKey: true,
-      keyPrefix: 'ftk_existing'
+      keyPrefix: 'ftk_existing...'
     });
     aiAPI.revokeMcpKey.mockResolvedValue({
       message: 'MCP API key revoked successfully'

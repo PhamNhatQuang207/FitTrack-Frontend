@@ -107,9 +107,10 @@ export const aiAPI = {
         const response = await axiosClient.delete(`/ai/memories/${id}`);
         return response.data;
     },
-    applyPlan: async (conversationId, messageId) => {
+    applyPlan: async (conversationId, messageId, action = 'activate_schedule') => {
         const response = await axiosClient.post(
-            `/ai/conversations/${conversationId}/messages/${messageId}/apply-plan`
+            `/ai/conversations/${conversationId}/messages/${messageId}/apply-plan`,
+            { action }
         );
         return response.data;
     },
