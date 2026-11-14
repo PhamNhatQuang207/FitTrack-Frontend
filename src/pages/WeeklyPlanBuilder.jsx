@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import axiosClient from "../api/axiosClient";
+import { muscleGroupAPI } from "../api";
 import { ArrowLeft, Save, Plus, Trash2, X, Check, Search, Trash, ChevronDown } from "lucide-react";
 import ErrorBoundary from "../components/ErrorBoundary";
 
@@ -9,7 +10,7 @@ const DAYS = [
   { id: 3, name: 'Thursday' }, { id: 4, name: 'Friday' }, { id: 5, name: 'Saturday' }, { id: 6, name: 'Sunday' }
 ];
 
-const MUSCLE_GROUPS = [
+const DEFAULT_MUSCLE_GROUPS = [
   { id: 'abdominals', name: 'Abdominals' }, { id: 'adductor', name: 'Adductor' },
   { id: 'biceps', name: 'Biceps' },
   { id: 'calves', name: 'Calves' }, { id: 'chest', name: 'Chest' },
@@ -35,7 +36,19 @@ function WeeklyPlanBuilderContent() {
   const [availableExercises, setAvailableExercises] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedMuscleGroup, setSelectedMuscleGroup] = useState("all");
+  const [muscleGroups, setMuscleGroups] = useState(DEFAULT_MUSCLE_GROUPS);
   const [showMuscleGroupDropdown, setShowMuscleGroupDropdown] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    muscleGroupAPI.getAll()
+      .then((groups) => {
+        if (!active || !Array.isArray(groups) || groups.length === 0) return;
+        setMuscleGroups(groups.map((g) => ({ id: g.slug, name: g.name })));
+      })
+      .catch(() => {});
+    return () => { active = false; };
+  }, []);
 
   const loadPlan = useCallback(async (planId) => {
     setLoading(true);
@@ -397,7 +410,7 @@ function WeeklyPlanBuilderContent() {
                         onClick={() => setShowMuscleGroupDropdown(!showMuscleGroupDropdown)}
                         className="ft-input w-full flex items-center justify-between cursor-pointer"
                       >
-                        <span>{selectedMuscleGroup === 'all' ? 'All Muscle Groups' : MUSCLE_GROUPS.find(g => g.id === selectedMuscleGroup)?.name || 'Select Group'}</span>
+                        <span>{selectedMuscleGroup === 'all' ? 'All Muscle Groups' : muscleGroups.find(g => g.id === selectedMuscleGroup)?.name || 'Select Group'}</span>
                         <ChevronDown size={14} style={{ color: '#555', transform: showMuscleGroupDropdown ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
                       </button>
                       {showMuscleGroupDropdown && (
@@ -405,7 +418,7 @@ function WeeklyPlanBuilderContent() {
                           className="absolute z-50 w-full mt-1 max-h-56 overflow-y-auto"
                           style={{ background: '#0A0A0A', border: '1px solid rgba(204,255,0,0.2)', borderRadius: '2px' }}
                         >
-                          {[{ id: 'all', name: 'All Muscle Groups' }, ...MUSCLE_GROUPS].map(group => (
+                          {[{ id: 'all', name: 'All Muscle Groups' }, ...muscleGroups].map(group => (
                             <button
                               key={group.id}
                               onClick={() => { setSelectedMuscleGroup(group.id); setShowMuscleGroupDropdown(false); }}

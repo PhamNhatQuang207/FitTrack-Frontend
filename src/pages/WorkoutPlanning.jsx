@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import axiosClient from "../api/axiosClient";
+import { muscleGroupAPI } from "../api";
 import { ArrowLeft, Search, Save, Plus, Trash2, CheckCircle2 } from "lucide-react";
 import ErrorBoundary from "../components/ErrorBoundary";
 
@@ -20,7 +21,7 @@ import adductorIcon from "../assets/icons/muscle/adductor.png";
 import calvesIcon from "../assets/icons/muscle/calves.png";
 import forearmsIcon from "../assets/icons/muscle/forearms.png";
 
-const muscleGroupData = [
+const DEFAULT_MUSCLE_GROUPS = [
   { id: 'chest', name: 'Chest', icon: chestIcon },
   { id: 'shoulders', name: 'Shoulders', icon: shouldersIcon },
   { id: 'biceps', name: 'Biceps', icon: bicepsIcon },
@@ -36,6 +37,8 @@ const muscleGroupData = [
   { id: 'calves', name: 'Calves', icon: calvesIcon },
   { id: 'forearms', name: 'Forearms', icon: forearmsIcon },
 ];
+
+const LOCAL_ICON_BY_SLUG = Object.fromEntries(DEFAULT_MUSCLE_GROUPS.map((g) => [g.id, g.icon]));
 
 // Step indicator
 function StepIndicator({ current, total = 2 }) {
@@ -71,11 +74,29 @@ function WorkoutPlanningContent() {
   const navigate = useNavigate();
   const [step, setStep] = useState(1);
   const [workoutName, setWorkoutName] = useState("");
+  const [muscleGroupData, setMuscleGroupData] = useState(DEFAULT_MUSCLE_GROUPS);
   const [selectedMuscleGroups, setSelectedMuscleGroups] = useState([]);
   const [availableExercises, setAvailableExercises] = useState([]);
   const [workoutExercises, setWorkoutExercises] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    muscleGroupAPI.getAll()
+      .then((groups) => {
+        if (!active || !Array.isArray(groups) || groups.length === 0) return;
+        setMuscleGroupData(groups.map((g) => ({
+          id: g.slug,
+          name: g.name,
+          icon: g.iconUrl || LOCAL_ICON_BY_SLUG[g.slug] || chestIcon,
+        })));
+      })
+      .catch(() => {
+        // Keep DEFAULT_MUSCLE_GROUPS fallback if API fails
+      });
+    return () => { active = false; };
+  }, []);
 
   const fetchExercisesForSelectedGroups = useCallback(async () => {
     setLoading(true);
