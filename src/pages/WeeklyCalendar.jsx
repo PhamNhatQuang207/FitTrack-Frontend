@@ -30,7 +30,7 @@ export default function WeeklyCalendar() {
   const handleStartWorkout = async (day) => {
     try {
       const response = await axiosClient.post('/workout-sessions', {
-        name: day.workout.name,
+        name: day.workout?.name?.trim() || `${day.dayName} Workout`,
         date: day.date,
         exercises: day.workout.exercises,
         status: 'planned',
@@ -39,7 +39,7 @@ export default function WeeklyCalendar() {
       });
       navigate(`/workout/${response.data.sessionId}`);
     } catch (error) {
-      alert("Failed to start workout");
+      alert(error.response?.data?.message || "Failed to start workout");
     }
   };
 

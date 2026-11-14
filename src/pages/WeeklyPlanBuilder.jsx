@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import axiosClient from "../api/axiosClient";
 import { muscleGroupAPI } from "../api";
-import { ArrowLeft, Save, Plus, Trash2, X, Check, Search, Trash, ChevronDown } from "lucide-react";
+import { ArrowLeft, Save, Plus, Trash2, X, Check, Search, Trash, ChevronDown, AlertCircle } from "lucide-react";
 import ErrorBoundary from "../components/ErrorBoundary";
 
 const DAYS = [
@@ -38,6 +38,7 @@ function WeeklyPlanBuilderContent() {
   const [selectedMuscleGroup, setSelectedMuscleGroup] = useState("all");
   const [muscleGroups, setMuscleGroups] = useState(DEFAULT_MUSCLE_GROUPS);
   const [showMuscleGroupDropdown, setShowMuscleGroupDropdown] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
 
   useEffect(() => {
     let active = true;
@@ -154,7 +155,18 @@ function WeeklyPlanBuilderContent() {
   };
 
   const handleSavePlan = async () => {
-    if (!planName.trim()) { alert("Please enter a plan name"); return; }
+    if (!planName.trim()) {
+      setErrorMessage("Please enter a plan name before saving.");
+      return;
+    }
+    const unnamedDayWithExercises = schedule.find(
+      (day) => !day.isRestDay && day.workout.exercises.length > 0 && !day.workout.name.trim()
+    );
+    if (unnamedDayWithExercises) {
+      setErrorMessage(`Please enter a workout name for ${unnamedDayWithExercises.name}.`);
+      return;
+    }
+    setErrorMessage("");
     setLoading(true);
     try {
       const transformedDays = schedule.map(day => ({ dayOfWeek: day.id, dayName: day.name, isRestDay: day.isRestDay, workout: day.workout }));
@@ -162,7 +174,7 @@ function WeeklyPlanBuilderContent() {
       else await axiosClient.post('/weekly-plans', { name: planName, description, days: transformedDays });
       navigate('/weekly-plan-library');
     } catch (error) {
-      alert("Failed to save plan: " + (error.response?.data?.message || error.message));
+      setErrorMessage("Failed to save plan: " + (error.response?.data?.message || error.message));
     } finally {
       setLoading(false);
     }
@@ -231,6 +243,22 @@ function WeeklyPlanBuilderContent() {
       </div>
 
       <main className="max-w-5xl mx-auto px-4 md:px-8 py-8">
+        {errorMessage && (
+          <div
+            role="alert"
+            className="mb-6 px-4 py-3 flex items-center gap-3 text-sm font-medium animate-slide-up"
+            style={{
+              color: '#FF5C00',
+              background: 'rgba(255, 92, 0, 0.1)',
+              border: '1px solid rgba(255, 92, 0, 0.45)',
+              borderRadius: '2px',
+            }}
+          >
+            <AlertCircle size={18} style={{ flexShrink: 0 }} />
+            <span>{errorMessage}</span>
+          </div>
+        )}
+
         {/* Plan info */}
         <div
           className="p-5 mb-6 animate-slide-up"

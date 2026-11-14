@@ -55,9 +55,9 @@
     @apply min-h-screen text-white relative overflow-hidden;
     background-color: #050505;
     background-image:
-      linear-gradient(rgba(204,255,0,0.04) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(204,255,0,0.04) 1px, transparent 1px),
-      linear-gradient(to bottom, rgba(5,5,5,0.92), rgba(10,10,10,0.98)),
+      linear-gradient(rgba(204,255,0,0.035) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(204,255,0,0.035) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(5,5,5,0.62), rgba(10,10,10,0.78)),
       var(--ft-hero-bg, url('./assets/background.jpg'));
     background-size: 40px 40px, 40px 40px, cover, cover;
     background-position: center, center, center, center;
