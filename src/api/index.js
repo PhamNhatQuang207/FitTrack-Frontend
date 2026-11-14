@@ -81,3 +81,49 @@ export const siteConfigAPI = {
         return response.data;
     }
 };
+
+export const aiAPI = {
+    chat: async ({ conversationId, message }) => {
+        const response = await axiosClient.post('/ai/chat', { conversationId, message });
+        return response.data;
+    },
+    getConversations: async () => {
+        const response = await axiosClient.get('/ai/conversations');
+        return response.data;
+    },
+    getConversation: async (id) => {
+        const response = await axiosClient.get(`/ai/conversations/${id}`);
+        return response.data;
+    },
+    deleteConversation: async (id) => {
+        const response = await axiosClient.delete(`/ai/conversations/${id}`);
+        return response.data;
+    },
+    getMemories: async () => {
+        const response = await axiosClient.get('/ai/memories');
+        return response.data;
+    },
+    deleteMemory: async (id) => {
+        const response = await axiosClient.delete(`/ai/memories/${id}`);
+        return response.data;
+    },
+    applyPlan: async (conversationId, messageId) => {
+        const response = await axiosClient.post(
+            `/ai/conversations/${conversationId}/messages/${messageId}/apply-plan`
+        );
+        return response.data;
+    },
+    getMcpKeyStatus: async () => {
+        const response = await axiosClient.get('/ai/mcp-key');
+        return response.data;
+    },
+    generateMcpKey: async () => {
+        const response = await axiosClient.post('/ai/mcp-key');
+        return response.data;
+    },
+    revokeMcpKey: async () => {
+        const response = await axiosClient.delete('/ai/mcp-key');
+        return response.data;
+    }
+};
+

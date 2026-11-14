@@ -16,6 +16,7 @@ import WeeklyCalendar from './pages/WeeklyCalendar';
 import ProgressTracking from './pages/ProgressTracking';
 import ActiveWorkout from './pages/ActiveWorkout';
 import WorkoutHistory from './pages/WorkoutHistory';
+import AiCoachWidget from './components/AiCoachWidget';
 
 import axiosClient from './api/axiosClient';
 import { siteConfigAPI } from './api';
@@ -150,6 +151,7 @@ export default function App() {
             }
           />
         </Routes>
+        <AiCoachWidget />
       </Router>
     </AuthProvider>
   );
