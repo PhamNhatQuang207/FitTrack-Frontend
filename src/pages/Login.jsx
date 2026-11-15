@@ -12,7 +12,7 @@ export default function Login() {
   const navigate = useNavigate();
   const { login, googleLogin, isAuthenticated } = useAuth();
 
-  // Already logged in (token restored from localStorage)? Skip the login form.
+  // Already logged in (session restored via refresh cookie)? Skip the login form.
   // Without this, returning users landing on "/" or "/login" see the login
   // screen even though their session is still valid, and re-authenticate needlessly.
   useEffect(() => {

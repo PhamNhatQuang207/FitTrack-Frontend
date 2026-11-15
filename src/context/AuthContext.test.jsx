@@ -1,15 +1,18 @@
 import React from 'react';
-import { renderHook, act } from '@testing-library/react';
+import { renderHook, act, waitFor } from '@testing-library/react';
 import { AuthProvider } from './AuthContext';
 import { useAuth } from '../hooks/useAuth';
 import { authAPI } from '../api';
+import { triggerAuthFailure } from '../api/tokenStore';
 
-// The provider talks to the API on login/logout — stub it so these are pure
-// unit tests of the context's state logic, with no network.
+// The provider talks to the API on mount/login/logout — stub it so these are
+// pure unit tests of the context's state logic, with no network.
 jest.mock('../api', () => ({
     authAPI: {
         login: jest.fn(),
+        googleLogin: jest.fn(),
         register: jest.fn(),
+        refreshSession: jest.fn(),
         logout: jest.fn(),
     },
 }));
@@ -19,61 +22,74 @@ const wrapper = ({ children }) => <AuthProvider>{children}</AuthProvider>;
 beforeEach(() => {
     localStorage.clear();
     jest.clearAllMocks();
+    authAPI.refreshSession.mockRejectedValue(new Error('No active session'));
 });
 
-describe('AuthContext bootstrap from localStorage', () => {
-    test('hydrates the user when a valid token + user are stored', () => {
-        localStorage.setItem('token', 'jwt-abc');
+describe('AuthContext bootstrap via refresh cookie', () => {
+    test('hydrates the user when refreshSession succeeds and cleans legacy localStorage keys', async () => {
+        localStorage.setItem('token', 'legacy-jwt');
+        localStorage.setItem('user', JSON.stringify({ id: 'old', name: 'Old' }));
+        authAPI.refreshSession.mockResolvedValue({
+            token: 'fresh-jwt',
+            user: { id: '1', name: 'Quang', email: 'q@fit.vn' },
+        });
+
+        const { result } = renderHook(() => useAuth(), { wrapper });
+
+        await waitFor(() => expect(result.current).not.toBeNull());
+
+        expect(authAPI.refreshSession).toHaveBeenCalledTimes(1);
+        expect(result.current.isAuthenticated).toBe(true);
+        expect(result.current.user).toEqual({ id: '1', name: 'Quang', email: 'q@fit.vn' });
+        expect(localStorage.getItem('token')).toBeNull();
+        expect(localStorage.getItem('user')).toBeNull();
+    });
+
+    test('stays logged out when refreshSession fails, even if legacy localStorage had data', async () => {
+        localStorage.setItem('token', 'stale-jwt');
         localStorage.setItem('user', JSON.stringify({ id: '1', name: 'Quang' }));
 
         const { result } = renderHook(() => useAuth(), { wrapper });
 
-        expect(result.current.isAuthenticated).toBe(true);
-        expect(result.current.user).toEqual({ id: '1', name: 'Quang' });
-    });
-
-    test('stays logged out and clears storage when the stored user is corrupted', () => {
-        // This is the security/robustness fix: a bad JSON blob must not
-        // white-screen the app on mount.
-        localStorage.setItem('token', 'jwt-abc');
-        localStorage.setItem('user', '{ not valid json');
-
-        const { result } = renderHook(() => useAuth(), { wrapper });
+        await waitFor(() => expect(result.current).not.toBeNull());
 
         expect(result.current.isAuthenticated).toBe(false);
         expect(result.current.user).toBeNull();
         expect(localStorage.getItem('token')).toBeNull();
         expect(localStorage.getItem('user')).toBeNull();
     });
-
-    test('has no session when nothing is stored', () => {
-        const { result } = renderHook(() => useAuth(), { wrapper });
-
-        expect(result.current.isAuthenticated).toBe(false);
-        expect(result.current.user).toBeNull();
-    });
-
-    test('does not hydrate when a user exists but the token is missing', () => {
-        localStorage.setItem('user', JSON.stringify({ id: '1', name: 'Quang' }));
-
-        const { result } = renderHook(() => useAuth(), { wrapper });
-
-        expect(result.current.isAuthenticated).toBe(false);
-    });
 });
 
 describe('AuthContext actions', () => {
     test('login sets the user from the API response', async () => {
-        authAPI.login.mockResolvedValue({ user: { id: '1', name: 'Quang' } });
+        authAPI.login.mockResolvedValue({ user: { id: '1', name: 'Quang', email: 'q@fit.vn' } });
 
         const { result } = renderHook(() => useAuth(), { wrapper });
+        await waitFor(() => expect(result.current).not.toBeNull());
 
         await act(async () => {
             await result.current.login({ email: 'a@b.com', password: 'secret' });
         });
 
         expect(authAPI.login).toHaveBeenCalledWith({ email: 'a@b.com', password: 'secret' });
-        expect(result.current.user).toEqual({ id: '1', name: 'Quang' });
+        expect(result.current.user).toEqual({ id: '1', name: 'Quang', email: 'q@fit.vn' });
+        expect(result.current.isAuthenticated).toBe(true);
+        expect(localStorage.getItem('token')).toBeNull();
+        expect(localStorage.getItem('user')).toBeNull();
+    });
+
+    test('googleLogin sets the user from the API response', async () => {
+        authAPI.googleLogin.mockResolvedValue({ user: { id: '2', name: 'G User', email: 'g@fit.vn' } });
+
+        const { result } = renderHook(() => useAuth(), { wrapper });
+        await waitFor(() => expect(result.current).not.toBeNull());
+
+        await act(async () => {
+            await result.current.googleLogin('google-id-token');
+        });
+
+        expect(authAPI.googleLogin).toHaveBeenCalledWith('google-id-token');
+        expect(result.current.user).toEqual({ id: '2', name: 'G User', email: 'g@fit.vn' });
         expect(result.current.isAuthenticated).toBe(true);
     });
 
@@ -81,43 +97,67 @@ describe('AuthContext actions', () => {
         authAPI.register.mockResolvedValue({ message: 'check your email' });
 
         const { result } = renderHook(() => useAuth(), { wrapper });
+        await waitFor(() => expect(result.current).not.toBeNull());
 
         await act(async () => {
             await result.current.register({ name: 'Q', email: 'a@b.com', password: 'secret' });
         });
 
         expect(authAPI.register).toHaveBeenCalled();
-        // Registration requires email verification — no session yet.
         expect(result.current.isAuthenticated).toBe(false);
     });
 
-    test('logout clears the user and calls the API', () => {
-        localStorage.setItem('token', 'jwt-abc');
-        localStorage.setItem('user', JSON.stringify({ id: '1', name: 'Quang' }));
+    test('logout clears the user immediately and calls the API', async () => {
+        authAPI.refreshSession.mockResolvedValue({
+            token: 'jwt-abc',
+            user: { id: '1', name: 'Quang' },
+        });
+        authAPI.logout.mockResolvedValue();
 
         const { result } = renderHook(() => useAuth(), { wrapper });
+        await waitFor(() => expect(result.current?.isAuthenticated).toBe(true));
 
-        act(() => {
-            result.current.logout();
+        await act(async () => {
+            await result.current.logout();
         });
 
-        expect(authAPI.logout).toHaveBeenCalled();
+        expect(authAPI.logout).toHaveBeenCalledTimes(1);
         expect(result.current.user).toBeNull();
         expect(result.current.isAuthenticated).toBe(false);
     });
 
-    test('updateUser merges the update and persists it to localStorage', () => {
-        localStorage.setItem('token', 'jwt-abc');
-        localStorage.setItem('user', JSON.stringify({ id: '1', name: 'Quang' }));
+    test('updateUser updates in-memory state without writing to localStorage', async () => {
+        authAPI.refreshSession.mockResolvedValue({
+            token: 'jwt-abc',
+            user: { id: '1', name: 'Quang' },
+        });
 
         const { result } = renderHook(() => useAuth(), { wrapper });
+        await waitFor(() => expect(result.current?.isAuthenticated).toBe(true));
 
         act(() => {
             result.current.updateUser({ name: 'New Name' });
         });
 
         expect(result.current.user).toEqual({ id: '1', name: 'New Name' });
-        expect(JSON.parse(localStorage.getItem('user'))).toEqual({ id: '1', name: 'New Name' });
+        expect(localStorage.getItem('user')).toBeNull();
+    });
+
+    test('clears user state when tokenStore triggers auth failure', async () => {
+        authAPI.refreshSession.mockResolvedValue({
+            token: 'jwt-abc',
+            user: { id: '1', name: 'Quang' },
+        });
+
+        const { result } = renderHook(() => useAuth(), { wrapper });
+        await waitFor(() => expect(result.current?.isAuthenticated).toBe(true));
+
+        act(() => {
+            triggerAuthFailure();
+        });
+
+        expect(result.current.user).toBeNull();
+        expect(result.current.isAuthenticated).toBe(false);
     });
 });
 

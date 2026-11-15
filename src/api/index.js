@@ -1,4 +1,11 @@
-import axiosClient from './axiosClient';
+import axiosClient, { refreshAccessToken } from './axiosClient';
+import { setAccessToken, clearAccessToken } from './tokenStore';
+
+const buildUser = (data) => ({
+    id: data.userId,
+    name: data.name,
+    ...(data.email ? { email: data.email } : {}),
+});
 
 // Auth API calls
 export const authAPI = {
@@ -6,17 +13,12 @@ export const authAPI = {
         const response = await axiosClient.post('/auth/register', userData);
         return response.data;
     },
-    
+
     login: async (credentials) => {
         const response = await axiosClient.post('/auth/login', credentials);
         if (response.data.token) {
-            localStorage.setItem('token', response.data.token);
-            // Create user object from response
-            const user = {
-                id: response.data.userId,
-                name: response.data.name
-            };
-            localStorage.setItem('user', JSON.stringify(user));
+            setAccessToken(response.data.token);
+            const user = buildUser(response.data);
             return { ...response.data, user };
         }
         return response.data;
@@ -25,20 +27,28 @@ export const authAPI = {
     googleLogin: async (idToken) => {
         const response = await axiosClient.post('/auth/google', { idToken });
         if (response.data.token) {
-            localStorage.setItem('token', response.data.token);
-            const user = {
-                id: response.data.userId,
-                name: response.data.name
-            };
-            localStorage.setItem('user', JSON.stringify(user));
+            setAccessToken(response.data.token);
+            const user = buildUser(response.data);
             return { ...response.data, user };
         }
         return response.data;
     },
-    
-    logout: () => {
+
+    refreshSession: async () => {
+        const data = await refreshAccessToken();
+        const user = buildUser(data);
+        return { ...data, user };
+    },
+
+    logout: async () => {
+        clearAccessToken();
         localStorage.removeItem('token');
         localStorage.removeItem('user');
+        try {
+            await axiosClient.post('/auth/logout');
+        } catch {
+            // Cookie/DB cleanup best-effort; local in-memory state is already cleared.
+        }
     }
 };
 

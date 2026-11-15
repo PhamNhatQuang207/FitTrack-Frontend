@@ -79,7 +79,7 @@ export default function Profile() {
     }
   };
 
-  const handleLogout = () => { logout(); navigate("/login"); };
+  const handleLogout = async () => { await logout(); navigate("/login"); };
 
   if (loading) {
     return (

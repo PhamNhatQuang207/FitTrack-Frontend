@@ -1,5 +1,6 @@
 import React, { createContext, useState, useEffect } from 'react';
 import { authAPI } from '../api';
+import { setOnAuthFailure } from '../api/tokenStore';
 
 export const AuthContext = createContext();
 
@@ -8,20 +9,36 @@ export const AuthProvider = ({ children }) => {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        // Check if user is logged in on mount
-        const token = localStorage.getItem('token');
-        const storedUser = localStorage.getItem('user');
-        
-        if (token && storedUser) {
+        let cancelled = false;
+        setOnAuthFailure(() => setUser(null));
+
+        // Clean up any legacy credentials left in localStorage from older builds.
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+
+        const bootstrapSession = async () => {
             try {
-                setUser(JSON.parse(storedUser));
+                const data = await authAPI.refreshSession();
+                if (!cancelled && data?.user) {
+                    setUser(data.user);
+                }
             } catch {
-                // Corrupted localStorage — clear it so the app doesn't white-screen on mount.
-                localStorage.removeItem('token');
-                localStorage.removeItem('user');
+                if (!cancelled) {
+                    setUser(null);
+                }
+            } finally {
+                if (!cancelled) {
+                    setLoading(false);
+                }
             }
-        }
-        setLoading(false);
+        };
+
+        bootstrapSession();
+
+        return () => {
+            cancelled = true;
+            setOnAuthFailure(null);
+        };
     }, []);
 
     const login = async (credentials) => {
@@ -41,15 +58,13 @@ export const AuthProvider = ({ children }) => {
         return data;
     };
 
-    const logout = () => {
-        authAPI.logout();
+    const logout = async () => {
         setUser(null);
+        await authAPI.logout();
     };
 
     const updateUser = (updates) => {
-        const updatedUser = { ...user, ...updates };
-        setUser(updatedUser);
-        localStorage.setItem('user', JSON.stringify(updatedUser));
+        setUser((prev) => (prev ? { ...prev, ...updates } : updates));
     };
 
     const value = {
