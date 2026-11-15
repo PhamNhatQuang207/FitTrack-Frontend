@@ -1,16 +1,21 @@
-// In-memory store for the short-lived JWT access token.
-// Never persisted to localStorage or sessionStorage.
-let accessToken = null;
+const TOKEN_KEY = 'token';
+const USER_KEY = 'user';
+
 let onAuthFailureHandler = null;
 
-export const getAccessToken = () => accessToken;
+export const getAccessToken = () => localStorage.getItem(TOKEN_KEY);
 
 export const setAccessToken = (token) => {
-    accessToken = token || null;
+    if (token) {
+        localStorage.setItem(TOKEN_KEY, token);
+    } else {
+        localStorage.removeItem(TOKEN_KEY);
+    }
 };
 
 export const clearAccessToken = () => {
-    accessToken = null;
+    localStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem(USER_KEY);
 };
 
 export const setOnAuthFailure = (handler) => {

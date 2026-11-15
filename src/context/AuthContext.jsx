@@ -1,6 +1,6 @@
 import React, { createContext, useState, useEffect } from 'react';
 import { authAPI } from '../api';
-import { setOnAuthFailure } from '../api/tokenStore';
+import { getAccessToken, clearAccessToken, setOnAuthFailure } from '../api/tokenStore';
 
 export const AuthContext = createContext();
 
@@ -12,11 +12,26 @@ export const AuthProvider = ({ children }) => {
         let cancelled = false;
         setOnAuthFailure(() => setUser(null));
 
-        // Clean up any legacy credentials left in localStorage from older builds.
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
+        const token = getAccessToken();
+        const storedUser = localStorage.getItem('user');
 
-        const bootstrapSession = async () => {
+        if (token && storedUser) {
+            try {
+                setUser(JSON.parse(storedUser));
+                setLoading(false);
+                return () => {
+                    cancelled = true;
+                    setOnAuthFailure(null);
+                };
+            } catch {
+                // Corrupted localStorage — wipe and fall back to refresh cookie.
+                clearAccessToken();
+            }
+        } else {
+            clearAccessToken();
+        }
+
+        const bootstrapFromCookie = async () => {
             try {
                 const data = await authAPI.refreshSession();
                 if (!cancelled && data?.user) {
@@ -33,7 +48,7 @@ export const AuthProvider = ({ children }) => {
             }
         };
 
-        bootstrapSession();
+        bootstrapFromCookie();
 
         return () => {
             cancelled = true;
@@ -64,7 +79,9 @@ export const AuthProvider = ({ children }) => {
     };
 
     const updateUser = (updates) => {
-        setUser((prev) => (prev ? { ...prev, ...updates } : updates));
+        const updatedUser = { ...user, ...updates };
+        setUser(updatedUser);
+        localStorage.setItem('user', JSON.stringify(updatedUser));
     };
 
     const value = {

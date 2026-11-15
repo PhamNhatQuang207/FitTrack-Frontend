@@ -17,7 +17,7 @@ const axiosClient = axios.create({
     }
 });
 
-// Request interceptor to attach short-lived JWT access token from memory
+// Request interceptor to attach short-lived JWT access token from localStorage (via tokenStore)
 axiosClient.interceptors.request.use(
     (config) => {
         const token = getAccessToken();
@@ -86,16 +86,12 @@ axiosClient.interceptors.response.use(
                     return axiosClient.request(originalRequest);
                 } catch (refreshError) {
                     triggerAuthFailure();
-                    localStorage.removeItem('token');
-                    localStorage.removeItem('user');
                     window.location.href = '/login';
                     return Promise.reject(refreshError);
                 }
             }
 
             triggerAuthFailure();
-            localStorage.removeItem('token');
-            localStorage.removeItem('user');
             window.location.href = '/login';
         }
 

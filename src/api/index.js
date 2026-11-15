@@ -7,6 +7,13 @@ const buildUser = (data) => ({
     ...(data.email ? { email: data.email } : {}),
 });
 
+const persistSession = (data) => {
+    setAccessToken(data.token);
+    const user = buildUser(data);
+    localStorage.setItem('user', JSON.stringify(user));
+    return { ...data, user };
+};
+
 // Auth API calls
 export const authAPI = {
     register: async (userData) => {
@@ -17,9 +24,7 @@ export const authAPI = {
     login: async (credentials) => {
         const response = await axiosClient.post('/auth/login', credentials);
         if (response.data.token) {
-            setAccessToken(response.data.token);
-            const user = buildUser(response.data);
-            return { ...response.data, user };
+            return persistSession(response.data);
         }
         return response.data;
     },
@@ -27,27 +32,22 @@ export const authAPI = {
     googleLogin: async (idToken) => {
         const response = await axiosClient.post('/auth/google', { idToken });
         if (response.data.token) {
-            setAccessToken(response.data.token);
-            const user = buildUser(response.data);
-            return { ...response.data, user };
+            return persistSession(response.data);
         }
         return response.data;
     },
 
     refreshSession: async () => {
         const data = await refreshAccessToken();
-        const user = buildUser(data);
-        return { ...data, user };
+        return persistSession(data);
     },
 
     logout: async () => {
         clearAccessToken();
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
         try {
             await axiosClient.post('/auth/logout');
         } catch {
-            // Cookie/DB cleanup best-effort; local in-memory state is already cleared.
+            // Cookie/DB cleanup best-effort; localStorage is already cleared.
         }
     }
 };

@@ -18,23 +18,22 @@ describe('axiosClient configuration', () => {
     });
 });
 
-describe('request interceptor (in-memory token attachment)', () => {
+describe('request interceptor (localStorage access token attachment)', () => {
     beforeEach(() => {
         clearAccessToken();
         localStorage.clear();
     });
 
-    test('attaches the Bearer token from memory when one is set', () => {
-        setAccessToken('jwt-memory-123');
+    test('attaches the Bearer token from localStorage when one is stored', () => {
+        setAccessToken('jwt-local-123');
 
         const config = requestFulfilled({ headers: {} });
 
-        expect(config.headers.Authorization).toBe('Bearer jwt-memory-123');
+        expect(localStorage.getItem('token')).toBe('jwt-local-123');
+        expect(config.headers.Authorization).toBe('Bearer jwt-local-123');
     });
 
-    test('ignores any token lingering in localStorage and omits Authorization when memory is empty', () => {
-        localStorage.setItem('token', 'legacy-localstorage-token');
-
+    test('leaves the Authorization header off when no token is stored', () => {
         const config = requestFulfilled({ headers: {} });
 
         expect(config.headers.Authorization).toBeUndefined();
@@ -60,7 +59,7 @@ describe('response interceptor (401 silent refresh & redirect)', () => {
         setOnAuthFailure(null);
     });
 
-    test('401 with in-memory token silently refreshes via cookie and retries the request once', async () => {
+    test('401 with stored access token silently refreshes via cookie, updates localStorage, and retries once', async () => {
         setAccessToken('expired-jwt');
         const postSpy = jest.spyOn(axios, 'post').mockResolvedValue({
             data: { token: 'fresh-jwt', userId: '1', name: 'Quang' },
@@ -84,6 +83,7 @@ describe('response interceptor (401 silent refresh & redirect)', () => {
             { withCredentials: true }
         );
         expect(getAccessToken()).toBe('fresh-jwt');
+        expect(localStorage.getItem('token')).toBe('fresh-jwt');
         expect(requestSpy).toHaveBeenCalledWith(
             expect.objectContaining({
                 _retry: true,
@@ -115,12 +115,11 @@ describe('response interceptor (401 silent refresh & redirect)', () => {
 
         expect(postSpy).toHaveBeenCalledTimes(1);
         expect(requestSpy).toHaveBeenCalledTimes(2);
-        expect(getAccessToken()).toBe('rotated-jwt');
+        expect(localStorage.getItem('token')).toBe('rotated-jwt');
     });
 
-    test('when refresh fails, clears memory token, triggers auth failure, cleans legacy storage, and redirects', async () => {
+    test('when refresh fails, clears localStorage, triggers auth failure, and redirects', async () => {
         setAccessToken('expired-jwt');
-        localStorage.setItem('token', 'stale');
         localStorage.setItem('user', '{"id":"1"}');
         const onAuthFailure = jest.fn();
         setOnAuthFailure(onAuthFailure);
@@ -142,7 +141,7 @@ describe('response interceptor (401 silent refresh & redirect)', () => {
         expect(window.location.href).toBe('/login');
     });
 
-    test('anonymous 401 (no token in memory) does NOT call refresh or redirect', async () => {
+    test('anonymous 401 (no token) does NOT call refresh or redirect', async () => {
         const postSpy = jest.spyOn(axios, 'post');
         const error = { response: { status: 401 }, config: { url: '/workouts', headers: {} } };
 
@@ -161,7 +160,7 @@ describe('response interceptor (401 silent refresh & redirect)', () => {
 
         expect(postSpy).not.toHaveBeenCalled();
         expect(window.location.href).toBe('');
-        expect(getAccessToken()).toBe('jwt-123');
+        expect(localStorage.getItem('token')).toBe('jwt-123');
     });
 
     test('401 while already on an auth page does NOT call refresh or redirect', async () => {
@@ -174,7 +173,7 @@ describe('response interceptor (401 silent refresh & redirect)', () => {
 
         expect(postSpy).not.toHaveBeenCalled();
         expect(window.location.href).toBe('');
-        expect(getAccessToken()).toBe('jwt-123');
+        expect(localStorage.getItem('token')).toBe('jwt-123');
     });
 
     test('non-401 and network errors never trigger refresh or redirect', async () => {
@@ -189,6 +188,6 @@ describe('response interceptor (401 silent refresh & redirect)', () => {
 
         expect(postSpy).not.toHaveBeenCalled();
         expect(window.location.href).toBe('');
-        expect(getAccessToken()).toBe('jwt-123');
+        expect(localStorage.getItem('token')).toBe('jwt-123');
     });
 });
