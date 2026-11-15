@@ -272,4 +272,135 @@ describe('AiCoachWidget', () => {
       expect(aiAPI.deleteMemory).toHaveBeenCalledWith('mem1');
     });
   });
+
+  test('renders collapsible grounded citations with safe DOI links on assistant messages', async () => {
+    useAuth.mockReturnValue({
+      isAuthenticated: true,
+      user: { id: 'u1', name: 'Quang' }
+    });
+
+    aiAPI.chat.mockResolvedValue({
+      conversationId: 'conv-rag',
+      userMessage: {
+        id: 'm-u1',
+        role: 'user',
+        text: 'How much protein per day for hypertrophy?'
+      },
+      assistantMessage: {
+        id: 'm-a1',
+        role: 'assistant',
+        text: 'Aim for 1.4 to 2.0 g/kg/day [1].',
+        toolTrace: [{ name: 'search_fitness_knowledge', status: 'ok' }],
+        citations: [
+          {
+            citationNumber: 1,
+            chunkId: 'issn-protein#0',
+            sourceId: 'issn-protein-and-exercise-2017',
+            title: 'Protein and Macronutrient Guidelines',
+            topic: 'nutrition',
+            authors: 'Jager et al.',
+            year: 2017,
+            section: 'Daily Protein Targets',
+            excerpt: 'Overall daily protein intake of 1.4 to 2.0 g/kg/day is sufficient.',
+            references: [
+              {
+                label: 'ISSN Position Stand (2017)',
+                doi: '10.1186/s12970-017-0177-8',
+                url: 'https://jissn.biomedcentral.com/articles/10.1186/s12970-017-0177-8'
+              }
+            ]
+          },
+          {
+            citationNumber: 2,
+            chunkId: 'unsafe#0',
+            sourceId: 'unsafe-src',
+            title: 'Fallback Unlinked Study',
+            topic: 'training',
+            authors: 'ACSM',
+            year: 2009,
+            section: 'Volume',
+            excerpt: 'Volume guideline snippet.',
+            references: [
+              {
+                label: 'Blocked Bad Scheme',
+                url: 'javascript:alert(1)'
+              }
+            ]
+          }
+        ]
+      },
+      memoriesUpdated: false
+    });
+
+    render(<AiCoachWidget />);
+    fireEvent.click(screen.getByLabelText(/Open AI Coach/i));
+
+    const input = screen.getByPlaceholderText(/Ask AI Coach/i);
+    fireEvent.change(input, { target: { value: 'How much protein per day for hypertrophy?' } });
+    fireEvent.submit(input.closest('form'));
+
+    const toggleBtn = await screen.findByRole('button', { name: /Sources \(2\)/i });
+    expect(screen.getByText('search_fitness_knowledge')).toBeInTheDocument();
+    expect(screen.queryByText('Daily Protein Targets')).not.toBeInTheDocument();
+
+    fireEvent.click(toggleBtn);
+
+    expect(screen.getByText('Protein and Macronutrient Guidelines')).toBeInTheDocument();
+    expect(screen.getByText('Daily Protein Targets')).toBeInTheDocument();
+    expect(screen.getByText(/Jager et al\. \(2017\)/i)).toBeInTheDocument();
+    expect(screen.getByText(/1\.4 to 2\.0 g\/kg\/day is sufficient/i)).toBeInTheDocument();
+
+    const link = screen.getByRole('link', { name: /ISSN Position Stand \(2017\)/i });
+    expect(link).toHaveAttribute('href', 'https://jissn.biomedcentral.com/articles/10.1186/s12970-017-0177-8');
+    expect(link).toHaveAttribute('target', '_blank');
+
+    expect(screen.queryByRole('link', { name: /Blocked Bad Scheme/i })).not.toBeInTheDocument();
+  });
+
+  test('renders assistant markdown (headings, bold, lists, safe links) without raw asterisks', async () => {
+    useAuth.mockReturnValue({
+      isAuthenticated: true,
+      user: { id: 'u1', name: 'Quang' }
+    });
+
+    aiAPI.chat.mockResolvedValue({
+      conversationId: 'conv-md',
+      userMessage: {
+        id: 'm-u-md',
+        role: 'user',
+        text: 'How many sets per week?'
+      },
+      assistantMessage: {
+        id: 'm-a-md',
+        role: 'assistant',
+        text: [
+          '### 1. Weekly Volume',
+          '* **Hypertrophy:** Aim for **10 to 20 sets** per muscle group [1].',
+          '1. Track `RPE 8` consistently.',
+          '2. Study DOI: [10.1080/0264](https://doi.org/10.1080/0264) and [Bad](javascript:alert(1)).'
+        ].join('\n'),
+        toolTrace: [],
+        citations: []
+      },
+      memoriesUpdated: false
+    });
+
+    render(<AiCoachWidget />);
+    fireEvent.click(screen.getByLabelText(/Open AI Coach/i));
+
+    const input = screen.getByPlaceholderText(/Ask AI Coach/i);
+    fireEvent.change(input, { target: { value: 'How many sets per week?' } });
+    fireEvent.submit(input.closest('form'));
+
+    const boldVolume = await screen.findByText('10 to 20 sets');
+    expect(boldVolume.tagName).toBe('STRONG');
+    expect(screen.queryByText(/\*\*/)).not.toBeInTheDocument();
+    expect(screen.getByText('1. Weekly Volume')).toBeInTheDocument();
+    expect(screen.queryByText(/###/)).not.toBeInTheDocument();
+    expect(screen.getByText('RPE 8').tagName).toBe('CODE');
+
+    const doiLink = screen.getByRole('link', { name: '10.1080/0264' });
+    expect(doiLink).toHaveAttribute('href', 'https://doi.org/10.1080/0264');
+    expect(screen.queryByRole('link', { name: 'Bad' })).not.toBeInTheDocument();
+  });
 });

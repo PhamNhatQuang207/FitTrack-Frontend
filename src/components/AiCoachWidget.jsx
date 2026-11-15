@@ -14,10 +14,15 @@ import {
   Sparkles,
   Key,
   Copy,
-  Check
+  Check,
+  BookOpen,
+  ChevronDown,
+  ChevronUp,
+  ExternalLink
 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { aiAPI } from '../api';
+import MarkdownMessage, { isSafeExternalUrl } from './MarkdownMessage';
 
 const QUICK_PROMPTS = [
   'Analyze my recent progress',
@@ -41,8 +46,16 @@ export default function AiCoachWidget() {
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [applyingMsgId, setApplyingMsgId] = useState(null);
+  const [expandedCitationsByMsg, setExpandedCitationsByMsg] = useState({});
   const [errorBanner, setErrorBanner] = useState('');
   const messagesEndRef = useRef(null);
+
+  const toggleCitations = (msgId) => {
+    setExpandedCitationsByMsg((prev) => ({
+      ...prev,
+      [msgId]: !prev[msgId]
+    }));
+  };
 
   useEffect(() => {
     if (isOpen && isAuthenticated) {
@@ -495,13 +508,17 @@ export default function AiCoachWidget() {
                     }`}
                   >
                     <div
-                      className={`max-w-[88%] rounded-2xl px-3.5 py-2.5 text-xs whitespace-pre-wrap ${
+                      className={`max-w-[88%] rounded-2xl px-3.5 py-2.5 text-xs ${
                         msg.role === 'user'
-                          ? 'bg-[#CCFF00] text-black font-medium'
+                          ? 'bg-[#CCFF00] text-black font-medium whitespace-pre-wrap'
                           : 'bg-neutral-900 text-gray-100 border border-neutral-800'
                       }`}
                     >
-                      {msg.text}
+                      {msg.role === 'assistant' ? (
+                        <MarkdownMessage text={msg.text} />
+                      ) : (
+                        msg.text
+                      )}
                     </div>
 
                     {/* Tool Trace Badges */}
@@ -518,6 +535,100 @@ export default function AiCoachWidget() {
                               <span>{trace.name}</span>
                             </span>
                           ))}
+                        </div>
+                      )}
+
+                    {/* Grounded Citations Panel */}
+                    {msg.role === 'assistant' &&
+                      Array.isArray(msg.citations) &&
+                      msg.citations.length > 0 && (
+                        <div className="w-full max-w-[92%] mt-1.5">
+                          <button
+                            type="button"
+                            onClick={() => toggleCitations(msg.id)}
+                            aria-expanded={Boolean(expandedCitationsByMsg[msg.id])}
+                            className="inline-flex items-center gap-1.5 text-[11px] px-2.5 py-1 rounded-lg bg-neutral-900 border border-neutral-700 hover:border-[#CCFF00] text-gray-200 transition-colors"
+                          >
+                            <BookOpen size={12} className="text-[#CCFF00]" />
+                            <span>Sources ({msg.citations.length})</span>
+                            {expandedCitationsByMsg[msg.id] ? (
+                              <ChevronUp size={12} className="text-gray-400" />
+                            ) : (
+                              <ChevronDown size={12} className="text-gray-400" />
+                            )}
+                          </button>
+
+                          {expandedCitationsByMsg[msg.id] && (
+                            <div className="mt-1.5 space-y-2">
+                              {msg.citations.map((cit, idx) => (
+                                <div
+                                  key={`${msg.id}-cit-${cit.chunkId || idx}`}
+                                  className="p-2.5 rounded-xl bg-neutral-900 border border-neutral-800 space-y-1 text-[11px]"
+                                >
+                                  <div className="flex items-start justify-between gap-2">
+                                    <div className="flex items-center gap-1.5 min-w-0">
+                                      <span
+                                        className="shrink-0 text-[10px] font-bold px-1.5 py-0.5 rounded"
+                                        style={{ backgroundColor: '#CCFF00', color: '#000' }}
+                                      >
+                                        [{cit.citationNumber || idx + 1}]
+                                      </span>
+                                      <span className="font-semibold text-white truncate">
+                                        {cit.title}
+                                      </span>
+                                    </div>
+                                    {cit.topic && (
+                                      <span className="shrink-0 text-[10px] uppercase px-1.5 py-0.5 rounded bg-neutral-800 text-gray-400">
+                                        {cit.topic}
+                                      </span>
+                                    )}
+                                  </div>
+
+                                  {cit.section && (
+                                    <div className="text-[11px] font-medium text-[#CCFF00]">
+                                      {cit.section}
+                                    </div>
+                                  )}
+
+                                  {(cit.authors || cit.year) && (
+                                    <div className="text-[10px] text-gray-400">
+                                      {[cit.authors, cit.year ? `(${cit.year})` : null]
+                                        .filter(Boolean)
+                                        .join(' ')}
+                                    </div>
+                                  )}
+
+                                  {cit.excerpt && (
+                                    <p className="text-[11px] text-gray-300 leading-relaxed line-clamp-3">
+                                      {cit.excerpt}
+                                    </p>
+                                  )}
+
+                                  {Array.isArray(cit.references) &&
+                                    cit.references.some((ref) => isSafeExternalUrl(ref?.url)) && (
+                                      <div className="flex flex-col gap-1 pt-1 border-t border-neutral-800">
+                                        {cit.references
+                                          .filter((ref) => isSafeExternalUrl(ref?.url))
+                                          .map((ref, refIdx) => (
+                                            <a
+                                              key={`${msg.id}-cit-${idx}-ref-${refIdx}`}
+                                              href={ref.url}
+                                              target="_blank"
+                                              rel="noopener noreferrer"
+                                              className="inline-flex items-center gap-1 text-[10px] text-[#CCFF00] hover:underline truncate"
+                                            >
+                                              <ExternalLink size={10} className="shrink-0" />
+                                              <span className="truncate">
+                                                {ref.label || ref.doi || ref.url}
+                                              </span>
+                                            </a>
+                                          ))}
+                                      </div>
+                                    )}
+                                </div>
+                              ))}
+                            </div>
+                          )}
                         </div>
                       )}
 
