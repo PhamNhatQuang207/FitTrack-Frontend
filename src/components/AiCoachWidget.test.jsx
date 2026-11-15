@@ -356,4 +356,51 @@ describe('AiCoachWidget', () => {
 
     expect(screen.queryByRole('link', { name: /Blocked Bad Scheme/i })).not.toBeInTheDocument();
   });
+
+  test('renders assistant markdown (headings, bold, lists, safe links) without raw asterisks', async () => {
+    useAuth.mockReturnValue({
+      isAuthenticated: true,
+      user: { id: 'u1', name: 'Quang' }
+    });
+
+    aiAPI.chat.mockResolvedValue({
+      conversationId: 'conv-md',
+      userMessage: {
+        id: 'm-u-md',
+        role: 'user',
+        text: 'How many sets per week?'
+      },
+      assistantMessage: {
+        id: 'm-a-md',
+        role: 'assistant',
+        text: [
+          '### 1. Weekly Volume',
+          '* **Hypertrophy:** Aim for **10 to 20 sets** per muscle group [1].',
+          '1. Track `RPE 8` consistently.',
+          '2. Study DOI: [10.1080/0264](https://doi.org/10.1080/0264) and [Bad](javascript:alert(1)).'
+        ].join('\n'),
+        toolTrace: [],
+        citations: []
+      },
+      memoriesUpdated: false
+    });
+
+    render(<AiCoachWidget />);
+    fireEvent.click(screen.getByLabelText(/Open AI Coach/i));
+
+    const input = screen.getByPlaceholderText(/Ask AI Coach/i);
+    fireEvent.change(input, { target: { value: 'How many sets per week?' } });
+    fireEvent.submit(input.closest('form'));
+
+    const boldVolume = await screen.findByText('10 to 20 sets');
+    expect(boldVolume.tagName).toBe('STRONG');
+    expect(screen.queryByText(/\*\*/)).not.toBeInTheDocument();
+    expect(screen.getByText('1. Weekly Volume')).toBeInTheDocument();
+    expect(screen.queryByText(/###/)).not.toBeInTheDocument();
+    expect(screen.getByText('RPE 8').tagName).toBe('CODE');
+
+    const doiLink = screen.getByRole('link', { name: '10.1080/0264' });
+    expect(doiLink).toHaveAttribute('href', 'https://doi.org/10.1080/0264');
+    expect(screen.queryByRole('link', { name: 'Bad' })).not.toBeInTheDocument();
+  });
 });

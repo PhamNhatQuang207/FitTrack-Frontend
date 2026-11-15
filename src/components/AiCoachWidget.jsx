@@ -22,9 +22,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { aiAPI } from '../api';
-
-const isSafeExternalUrl = (url) =>
-  typeof url === 'string' && /^https?:\/\//i.test(url.trim());
+import MarkdownMessage, { isSafeExternalUrl } from './MarkdownMessage';
 
 const QUICK_PROMPTS = [
   'Analyze my recent progress',
@@ -510,13 +508,17 @@ export default function AiCoachWidget() {
                     }`}
                   >
                     <div
-                      className={`max-w-[88%] rounded-2xl px-3.5 py-2.5 text-xs whitespace-pre-wrap ${
+                      className={`max-w-[88%] rounded-2xl px-3.5 py-2.5 text-xs ${
                         msg.role === 'user'
-                          ? 'bg-[#CCFF00] text-black font-medium'
+                          ? 'bg-[#CCFF00] text-black font-medium whitespace-pre-wrap'
                           : 'bg-neutral-900 text-gray-100 border border-neutral-800'
                       }`}
                     >
-                      {msg.text}
+                      {msg.role === 'assistant' ? (
+                        <MarkdownMessage text={msg.text} />
+                      ) : (
+                        msg.text
+                      )}
                     </div>
 
                     {/* Tool Trace Badges */}
