@@ -1,4 +1,18 @@
-import axiosClient from './axiosClient';
+import axiosClient, { refreshAccessToken } from './axiosClient';
+import { setAccessToken, clearAccessToken } from './tokenStore';
+
+const buildUser = (data) => ({
+    id: data.userId,
+    name: data.name,
+    ...(data.email ? { email: data.email } : {}),
+});
+
+const persistSession = (data) => {
+    setAccessToken(data.token);
+    const user = buildUser(data);
+    localStorage.setItem('user', JSON.stringify(user));
+    return { ...data, user };
+};
 
 // Auth API calls
 export const authAPI = {
@@ -6,18 +20,11 @@ export const authAPI = {
         const response = await axiosClient.post('/auth/register', userData);
         return response.data;
     },
-    
+
     login: async (credentials) => {
         const response = await axiosClient.post('/auth/login', credentials);
         if (response.data.token) {
-            localStorage.setItem('token', response.data.token);
-            // Create user object from response
-            const user = {
-                id: response.data.userId,
-                name: response.data.name
-            };
-            localStorage.setItem('user', JSON.stringify(user));
-            return { ...response.data, user };
+            return persistSession(response.data);
         }
         return response.data;
     },
@@ -25,20 +32,23 @@ export const authAPI = {
     googleLogin: async (idToken) => {
         const response = await axiosClient.post('/auth/google', { idToken });
         if (response.data.token) {
-            localStorage.setItem('token', response.data.token);
-            const user = {
-                id: response.data.userId,
-                name: response.data.name
-            };
-            localStorage.setItem('user', JSON.stringify(user));
-            return { ...response.data, user };
+            return persistSession(response.data);
         }
         return response.data;
     },
-    
-    logout: () => {
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
+
+    refreshSession: async () => {
+        const data = await refreshAccessToken();
+        return persistSession(data);
+    },
+
+    logout: async () => {
+        clearAccessToken();
+        try {
+            await axiosClient.post('/auth/logout');
+        } catch {
+            // Cookie/DB cleanup best-effort; localStorage is already cleared.
+        }
     }
 };
 
