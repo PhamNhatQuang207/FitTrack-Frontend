@@ -1,6 +1,8 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { QueryClientProvider, useQuery } from '@tanstack/react-query';
 import { AuthProvider } from './context/AuthContext';
+import { queryClient, queryKeys } from './lib/queryClient';
 
 import Login from './pages/Login';
 import Register from './pages/Register';
@@ -21,10 +23,8 @@ import AiCoachWidget from './components/AiCoachWidget';
 import axiosClient from './api/axiosClient';
 import { siteConfigAPI } from './api';
 
-export default function App() {
-  const [announcement, setAnnouncement] = React.useState('');
-
-  // Wake up Render server & load dynamic site config on initial load
+function AppContent() {
+  // Wake up Render server on initial load
   React.useEffect(() => {
     const wakeUpServer = async () => {
       try {
@@ -34,22 +34,24 @@ export default function App() {
         console.log('Server wake-up failed (it might be sleeping) 🔴', error);
       }
     };
-    const loadSiteConfig = async () => {
-      try {
-        const cfg = await siteConfigAPI.get();
-        if (cfg?.heroBackgroundUrl) {
-          document.documentElement.style.setProperty('--ft-hero-bg', `url("${cfg.heroBackgroundUrl}")`);
-        }
-        if (cfg?.announcementBanner) {
-          setAnnouncement(cfg.announcementBanner);
-        }
-      } catch {
-        // Keep default static background if site-config is unavailable
-      }
-    };
     wakeUpServer();
-    loadSiteConfig();
   }, []);
+
+  const { data: siteConfig } = useQuery({
+    queryKey: queryKeys.siteConfig,
+    queryFn: siteConfigAPI.get,
+    staleTime: 5 * 60 * 1000,
+    retry: false,
+  });
+
+  React.useEffect(() => {
+    if (siteConfig?.heroBackgroundUrl) {
+      document.documentElement.style.setProperty('--ft-hero-bg', `url("${siteConfig.heroBackgroundUrl}")`);
+    }
+  }, [siteConfig]);
+
+  const announcement = siteConfig?.announcementBanner || '';
+
   return (
     <AuthProvider>
       {announcement && (
@@ -154,5 +156,13 @@ export default function App() {
         <AiCoachWidget />
       </Router>
     </AuthProvider>
+  );
+}
+
+export default function App() {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <AppContent />
+    </QueryClientProvider>
   );
 }

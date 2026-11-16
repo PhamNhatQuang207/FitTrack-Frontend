@@ -1,7 +1,9 @@
-import React, { useState, useEffect } from "react";
+import React, { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "../hooks/useAuth";
-import axiosClient from "../api/axiosClient";
+import { userAPI, weeklyScheduleAPI, workoutSessionAPI } from "../api";
+import { queryKeys } from "../lib/queryClient";
 import { Dumbbell, TrendingUp, Calendar, Zap, User, ClipboardList, Play, Bell } from "lucide-react";
 
 // ── Mini stat card ─────────────────────────────────────────
@@ -156,69 +158,67 @@ function FeatureCard({ icon: Icon, title, description, extra, onClick, accent = 
 export default function Dashboard() {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const [stats, setStats] = useState({
-    totalWorkouts: 0,
-    currentWeight: null,
-    weeklyWorkouts: 0,
-    streak: 0,
-    plannedSessions: 0,
-    totalVolume: 0,
-    avgExercises: 0,
+
+  const { data: scheduleData, isLoading: scheduleLoading, isError: scheduleError } = useQuery({
+    queryKey: queryKeys.weeklySchedule.current,
+    queryFn: weeklyScheduleAPI.getCurrent,
+    retry: false,
   });
-  const [activeSchedule, setActiveSchedule] = useState(null);
-  const [plannedWorkouts, setPlannedWorkouts] = useState([]);
-  const [loading, setLoading] = useState(true);
 
-  useEffect(() => { fetchDashboardData(); }, []);
+  const { data: progressData = {}, isLoading: progressLoading } = useQuery({
+    queryKey: queryKeys.userProgress,
+    queryFn: userAPI.getProgress,
+  });
 
-  const fetchDashboardData = async () => {
-    try {
-      const [scheduleRes, progressRes, sessionsRes] = await Promise.allSettled([
-        axiosClient.get('/weekly-schedules/current'),
-        axiosClient.get('/users/progress'),
-        axiosClient.get('/workout-sessions')
-      ]);
+  const { data: sessions = [], isLoading: sessionsLoading } = useQuery({
+    queryKey: queryKeys.workoutSessions.all,
+    queryFn: workoutSessionAPI.getAll,
+  });
 
-      if (scheduleRes.status === 'fulfilled') setActiveSchedule(scheduleRes.value.data);
-      else setActiveSchedule(null);
+  const activeSchedule = scheduleError ? null : (scheduleData ?? null);
+  const loading = scheduleLoading || progressLoading || sessionsLoading;
 
-      const progressData = progressRes.status === 'fulfilled' ? progressRes.value.data : {};
-      const sessions = sessionsRes.status === 'fulfilled' ? sessionsRes.value.data : [];
+  const { stats, plannedWorkouts } = useMemo(() => {
+    const safeSessions = Array.isArray(sessions) ? sessions : [];
+    const currentWeight = progressData?.weightHistory?.length > 0
+      ? progressData.weightHistory[progressData.weightHistory.length - 1].value
+      : null;
 
-      const currentWeight = progressData.weightHistory?.length > 0
-        ? progressData.weightHistory[progressData.weightHistory.length - 1].value
-        : null;
+    const completedSessions = safeSessions.filter(s => s.status === 'completed');
+    const weeklyWorkouts = activeSchedule
+      ? activeSchedule.completedDays
+      : completedSessions.filter(s => {
+          const oneWeekAgo = new Date();
+          oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+          return new Date(s.date) >= oneWeekAgo;
+        }).length;
 
-      const completedSessions = sessions.filter(s => s.status === 'completed');
-      const weeklyWorkouts = activeSchedule
-        ? activeSchedule.completedDays
-        : completedSessions.filter(s => {
-            const oneWeekAgo = new Date();
-            oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
-            return new Date(s.date) >= oneWeekAgo;
-          }).length;
+    const planned = safeSessions.filter(s => s.status === 'planned');
 
-      const planned = sessions.filter(s => s.status === 'planned');
-
-      // Calculate total volume
-      const totalVolume = completedSessions.reduce((total, session) => {
-        return total + (session.exercises || []).reduce((sum, ex) => {
-          return sum + (ex.actualSets || []).reduce((s2, set) => s2 + (set.weight * set.reps), 0);
-        }, 0);
+    // Calculate total volume
+    const totalVolume = completedSessions.reduce((total, session) => {
+      return total + (session.exercises || []).reduce((sum, ex) => {
+        return sum + (ex.actualSets || []).reduce((s2, set) => s2 + (set.weight * set.reps), 0);
       }, 0);
+    }, 0);
 
-      const avgExercises = completedSessions.length > 0
-        ? Math.round(completedSessions.reduce((s, sess) => s + (sess.exercises?.length || 0), 0) / completedSessions.length)
-        : 0;
+    const avgExercises = completedSessions.length > 0
+      ? Math.round(completedSessions.reduce((s, sess) => s + (sess.exercises?.length || 0), 0) / completedSessions.length)
+      : 0;
 
-      setStats({ totalWorkouts: completedSessions.length, currentWeight, weeklyWorkouts, streak: weeklyWorkouts, plannedSessions: planned.length, totalVolume, avgExercises });
-      setPlannedWorkouts(planned);
-    } catch (error) {
-      console.error("Error fetching dashboard data:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
+    return {
+      stats: {
+        totalWorkouts: completedSessions.length,
+        currentWeight,
+        weeklyWorkouts,
+        streak: weeklyWorkouts,
+        plannedSessions: planned.length,
+        totalVolume,
+        avgExercises,
+      },
+      plannedWorkouts: planned,
+    };
+  }, [activeSchedule, progressData, sessions]);
 
   const handleWeeklyActionClick = () => {
     if (activeSchedule) navigate("/weekly-schedule");

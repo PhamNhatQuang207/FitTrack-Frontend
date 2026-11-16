@@ -1,6 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axiosClient from '../api/axiosClient';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { workoutSessionAPI } from '../api';
+import { invalidateWorkoutAndAnalytics, queryKeys } from '../lib/queryClient';
 import {
   ArrowLeft,
   Calendar,
@@ -47,23 +49,34 @@ function PageHeader({ title, subtitle }) {
 
 export default function WorkoutHistory() {
   const navigate = useNavigate();
-  const [sessions, setSessions] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
   const [expandedSessions, setExpandedSessions] = useState([]);
   const [filterStatus, setFilterStatus] = useState('all');
 
-  useEffect(() => { fetchSessions(); }, []);
+  const { data: sessions = [], isLoading: loading } = useQuery({
+    queryKey: queryKeys.workoutSessions.all,
+    queryFn: workoutSessionAPI.getAll,
+  });
 
-  const fetchSessions = async () => {
-    try {
-      const response = await axiosClient.get('/workout-sessions');
-      setSessions(response.data);
-    } catch (error) {
-      console.error('Error fetching sessions:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const completeWorkoutMutation = useMutation({
+    mutationFn: (sessionId) => workoutSessionAPI.complete(sessionId),
+    onSuccess: async () => {
+      await invalidateWorkoutAndAnalytics(queryClient);
+    },
+    onError: (error) => {
+      console.error('Error completing workout:', error);
+    },
+  });
+
+  const deleteWorkoutMutation = useMutation({
+    mutationFn: (sessionId) => workoutSessionAPI.remove(sessionId),
+    onSuccess: async () => {
+      await invalidateWorkoutAndAnalytics(queryClient);
+    },
+    onError: (error) => {
+      console.error('Error deleting workout:', error);
+    },
+  });
 
   const toggleExpand = (sessionId) => {
     setExpandedSessions(prev =>
@@ -73,24 +86,14 @@ export default function WorkoutHistory() {
 
   const handleStartWorkout = (sessionId) => navigate(`/workout/${sessionId}`);
 
-  const handleCompleteWorkout = async (sessionId) => {
+  const handleCompleteWorkout = (sessionId) => {
     if (!window.confirm('Mark this workout as complete?')) return;
-    try {
-      await axiosClient.patch(`/workout-sessions/${sessionId}/complete`);
-      fetchSessions();
-    } catch (error) {
-      console.error('Error completing workout:', error);
-    }
+    completeWorkoutMutation.mutate(sessionId);
   };
 
-  const handleDeleteWorkout = async (sessionId) => {
+  const handleDeleteWorkout = (sessionId) => {
     if (!window.confirm('Delete this workout? This action cannot be undone.')) return;
-    try {
-      await axiosClient.delete(`/workout-sessions/${sessionId}`);
-      fetchSessions();
-    } catch (error) {
-      console.error('Error deleting workout:', error);
-    }
+    deleteWorkoutMutation.mutate(sessionId);
   };
 
   const getStatusBadge = (status) => {

@@ -1,8 +1,13 @@
 import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { screen, fireEvent, waitFor } from '@testing-library/react';
 import AiCoachWidget from './AiCoachWidget';
 import { useAuth } from '../hooks/useAuth';
 import { aiAPI } from '../api';
+import { queryKeys } from '../lib/queryClient';
+import {
+  createTestQueryClient,
+  renderWithQueryClient
+} from '../test-utils/queryTestUtils';
 
 jest.mock('../hooks/useAuth');
 jest.mock('../api', () => ({
@@ -39,7 +44,7 @@ describe('AiCoachWidget', () => {
 
   test('renders nothing when user is unauthenticated', () => {
     useAuth.mockReturnValue({ isAuthenticated: false, user: null });
-    const { container } = render(<AiCoachWidget />);
+    const { container } = renderWithQueryClient(<AiCoachWidget />);
     expect(container.firstChild).toBeNull();
   });
 
@@ -107,7 +112,7 @@ describe('AiCoachWidget', () => {
       scheduleId: 'sched-456'
     });
 
-    render(<AiCoachWidget />);
+    renderWithQueryClient(<AiCoachWidget />);
 
     // Open floating widget
     const triggerBtn = screen.getByLabelText(/Open AI Coach/i);
@@ -158,7 +163,7 @@ describe('AiCoachWidget', () => {
       }
     });
 
-    render(<AiCoachWidget />);
+    renderWithQueryClient(<AiCoachWidget />);
     fireEvent.click(screen.getByLabelText(/Open AI Coach/i));
 
     // Switch to memories tab
@@ -193,15 +198,20 @@ describe('AiCoachWidget', () => {
       user: { id: 'u1', name: 'Quang' }
     });
 
-    aiAPI.getMcpKeyStatus.mockResolvedValue({
-      hasKey: true,
-      keyPrefix: 'ftk_existing...'
-    });
+    aiAPI.getMcpKeyStatus
+      .mockResolvedValueOnce({
+        hasKey: true,
+        keyPrefix: 'ftk_existing...'
+      })
+      .mockResolvedValueOnce({
+        hasKey: false,
+        keyPrefix: null
+      });
     aiAPI.revokeMcpKey.mockResolvedValue({
       message: 'MCP API key revoked successfully'
     });
 
-    render(<AiCoachWidget />);
+    renderWithQueryClient(<AiCoachWidget />);
     fireEvent.click(screen.getByLabelText(/Open AI Coach/i));
 
     const memoriesTabBtn = screen.getByTitle(/Saved Fitness Memories/i);
@@ -243,7 +253,7 @@ describe('AiCoachWidget', () => {
     ]);
     aiAPI.deleteMemory.mockResolvedValue({ message: 'Deleted' });
 
-    render(<AiCoachWidget />);
+    renderWithQueryClient(<AiCoachWidget />);
     fireEvent.click(screen.getByLabelText(/Open AI Coach/i));
 
     // Open history tab
@@ -332,7 +342,7 @@ describe('AiCoachWidget', () => {
       memoriesUpdated: false
     });
 
-    render(<AiCoachWidget />);
+    renderWithQueryClient(<AiCoachWidget />);
     fireEvent.click(screen.getByLabelText(/Open AI Coach/i));
 
     const input = screen.getByPlaceholderText(/Ask AI Coach/i);
@@ -385,7 +395,7 @@ describe('AiCoachWidget', () => {
       memoriesUpdated: false
     });
 
-    render(<AiCoachWidget />);
+    renderWithQueryClient(<AiCoachWidget />);
     fireEvent.click(screen.getByLabelText(/Open AI Coach/i));
 
     const input = screen.getByPlaceholderText(/Ask AI Coach/i);
@@ -402,5 +412,75 @@ describe('AiCoachWidget', () => {
     const doiLink = screen.getByRole('link', { name: '10.1080/0264' });
     expect(doiLink).toHaveAttribute('href', 'https://doi.org/10.1080/0264');
     expect(screen.queryByRole('link', { name: 'Bad' })).not.toBeInTheDocument();
+  });
+
+  test('applyPlan invalidates weeklyPlans.all and weeklySchedule.current queries', async () => {
+    useAuth.mockReturnValue({
+      isAuthenticated: true,
+      user: { id: 'u1', name: 'Quang' }
+    });
+
+    aiAPI.chat.mockResolvedValue({
+      conversationId: 'conv-apply',
+      userMessage: {
+        id: 'm-user-apply',
+        role: 'user',
+        text: 'Create a 3-day full body plan'
+      },
+      assistantMessage: {
+        id: 'm-ai-apply',
+        role: 'assistant',
+        text: 'Here is your 3-day full body plan.',
+        toolTrace: [{ name: 'propose_weekly_plan', status: 'ok' }],
+        draftPlan: {
+          mode: 'create_schedule',
+          plan: {
+            name: 'Full Body 3-Day',
+            description: 'Balanced 3-day split',
+            days: [
+              { dayOfWeek: 0, dayName: 'Monday', isRestDay: true, workout: null },
+              { dayOfWeek: 1, dayName: 'Tuesday', isRestDay: true, workout: null },
+              { dayOfWeek: 2, dayName: 'Wednesday', isRestDay: true, workout: null },
+              { dayOfWeek: 3, dayName: 'Thursday', isRestDay: true, workout: null },
+              { dayOfWeek: 4, dayName: 'Friday', isRestDay: true, workout: null },
+              { dayOfWeek: 5, dayName: 'Saturday', isRestDay: true, workout: null },
+              { dayOfWeek: 6, dayName: 'Sunday', isRestDay: true, workout: null }
+            ]
+          },
+          appliedAt: null
+        }
+      },
+      memoriesUpdated: false
+    });
+
+    aiAPI.applyPlan.mockResolvedValue({
+      message: 'Applied',
+      mode: 'create_schedule',
+      planId: 'plan-999',
+      scheduleId: 'sched-999'
+    });
+
+    const queryClient = createTestQueryClient();
+    const invalidateSpy = jest.spyOn(queryClient, 'invalidateQueries');
+
+    renderWithQueryClient(<AiCoachWidget />, { client: queryClient });
+
+    fireEvent.click(screen.getByLabelText(/Open AI Coach/i));
+
+    const input = screen.getByPlaceholderText(/Ask AI Coach/i);
+    fireEvent.change(input, { target: { value: 'Create a 3-day full body plan' } });
+    fireEvent.submit(input.closest('form'));
+
+    await waitFor(() => {
+      expect(screen.getByText('Full Body 3-Day')).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: /Apply New Schedule/i }));
+
+    await waitFor(() => {
+      expect(aiAPI.applyPlan).toHaveBeenCalledWith('conv-apply', 'm-ai-apply', 'activate_schedule');
+      expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: queryKeys.weeklyPlans.all });
+      expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: queryKeys.weeklySchedule.current });
+    });
   });
 });

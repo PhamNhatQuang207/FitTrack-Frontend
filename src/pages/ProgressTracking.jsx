@@ -1,6 +1,8 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import axiosClient from "../api/axiosClient";
+import { useQuery } from "@tanstack/react-query";
+import { analyticsAPI, userAPI } from "../api";
+import { queryKeys } from "../lib/queryClient";
 import { ArrowLeft, TrendingUp, Dumbbell, Activity, Calendar } from "lucide-react";
 import {
   LineChart, Line, BarChart, Bar,
@@ -43,48 +45,40 @@ function MiniStatCard({ icon: Icon, value, label, accent = "lime" }) {
 export default function ProgressTracking() {
   const navigate = useNavigate();
   const [selectedExercise, setSelectedExercise] = useState("");
-  const [exercises, setExercises] = useState([]);
-  const [progressionData, setProgressionData] = useState([]);
-  const [weeklyProgress, setWeeklyProgress] = useState([]);
-  const [stats, setStats] = useState(null);
-  const [bodyMetrics, setBodyMetrics] = useState(null);
-  const [loading, setLoading] = useState(true);
 
-  useEffect(() => { fetchInitialData(); }, []);
+  const { data: exercises = [], isLoading: exercisesLoading } = useQuery({
+    queryKey: queryKeys.analytics.userExercises,
+    queryFn: analyticsAPI.getUserExercises,
+  });
 
-  const fetchProgressionData = useCallback(async () => {
-    try {
-      const response = await axiosClient.get(`/analytics/strength-progression/${encodeURIComponent(selectedExercise)}`);
-      setProgressionData(response.data);
-    } catch (error) {
-      console.error("Error fetching progression data:", error);
-    }
-  }, [selectedExercise]);
+  const { data: stats = null, isLoading: statsLoading } = useQuery({
+    queryKey: queryKeys.analytics.workoutStats,
+    queryFn: analyticsAPI.getWorkoutStats,
+  });
+
+  const { data: weeklyProgress = [], isLoading: weeklyLoading } = useQuery({
+    queryKey: queryKeys.analytics.weeklyProgress,
+    queryFn: analyticsAPI.getWeeklyProgress,
+  });
+
+  const { data: bodyMetrics = null, isLoading: metricsLoading } = useQuery({
+    queryKey: queryKeys.userProgress,
+    queryFn: userAPI.getProgress,
+  });
 
   useEffect(() => {
-    if (selectedExercise) fetchProgressionData();
-  }, [selectedExercise, fetchProgressionData]);
-
-  const fetchInitialData = async () => {
-    try {
-      const [exercisesRes, statsRes, weeklyRes, metricsRes] = await Promise.all([
-        axiosClient.get('/analytics/user-exercises'),
-        axiosClient.get('/analytics/workout-stats'),
-        axiosClient.get('/analytics/weekly-progress'),
-        axiosClient.get('/users/progress')
-      ]);
-
-      setExercises(exercisesRes.data);
-      if (exercisesRes.data.length > 0) setSelectedExercise(exercisesRes.data[0]);
-      setStats(statsRes.data);
-      setWeeklyProgress(weeklyRes.data);
-      setBodyMetrics(metricsRes.data);
-    } catch (error) {
-      console.error("Error fetching data:", error);
-    } finally {
-      setLoading(false);
+    if (!selectedExercise && exercises.length > 0) {
+      setSelectedExercise(exercises[0]);
     }
-  };
+  }, [exercises, selectedExercise]);
+
+  const { data: progressionData = [] } = useQuery({
+    queryKey: queryKeys.analytics.strengthProgression(selectedExercise),
+    queryFn: () => analyticsAPI.getStrengthProgression(selectedExercise),
+    enabled: Boolean(selectedExercise),
+  });
+
+  const loading = exercisesLoading || statsLoading || weeklyLoading || metricsLoading;
 
   const getLatestWeight = () =>
     bodyMetrics?.weightHistory?.length > 0

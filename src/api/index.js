@@ -92,6 +92,115 @@ export const siteConfigAPI = {
     }
 };
 
+export const exerciseAPI = {
+    getAll: async () => {
+        const response = await axiosClient.get('/exercises');
+        return response.data;
+    },
+    getByCategory: async (slug) => {
+        const response = await axiosClient.get(`/exercises/category/${slug}`);
+        return response.data;
+    }
+};
+
+export const workoutSessionAPI = {
+    getAll: async () => {
+        const response = await axiosClient.get('/workout-sessions');
+        return response.data;
+    },
+    getById: async (id) => {
+        const response = await axiosClient.get(`/workout-sessions/${id}`);
+        return response.data;
+    },
+    create: async (payload) => {
+        const response = await axiosClient.post('/workout-sessions', payload);
+        return response.data;
+    },
+    start: async (id) => {
+        const response = await axiosClient.patch(`/workout-sessions/${id}/start`);
+        return response.data;
+    },
+    update: async (id, payload) => {
+        const response = await axiosClient.put(`/workout-sessions/${id}`, payload);
+        return response.data;
+    },
+    complete: async (id) => {
+        const response = await axiosClient.patch(`/workout-sessions/${id}/complete`);
+        return response.data;
+    },
+    remove: async (id) => {
+        const response = await axiosClient.delete(`/workout-sessions/${id}`);
+        return response.data;
+    }
+};
+
+export const weeklyPlanAPI = {
+    getAll: async () => {
+        const response = await axiosClient.get('/weekly-plans');
+        return response.data;
+    },
+    getById: async (id) => {
+        const response = await axiosClient.get(`/weekly-plans/${id}`);
+        return response.data;
+    },
+    create: async (payload) => {
+        const response = await axiosClient.post('/weekly-plans', payload);
+        return response.data;
+    },
+    update: async (id, payload) => {
+        const response = await axiosClient.put(`/weekly-plans/${id}`, payload);
+        return response.data;
+    },
+    remove: async (id) => {
+        const response = await axiosClient.delete(`/weekly-plans/${id}`);
+        return response.data;
+    }
+};
+
+export const weeklyScheduleAPI = {
+    getCurrent: async () => {
+        const response = await axiosClient.get('/weekly-schedules/current');
+        return response.data;
+    },
+    start: async (weeklyPlanId) => {
+        const response = await axiosClient.post('/weekly-schedules/start', { weeklyPlanId });
+        return response.data;
+    },
+    complete: async (id) => {
+        const response = await axiosClient.patch(`/weekly-schedules/${id}/complete`);
+        return response.data;
+    },
+    completeDay: async (id, payload) => {
+        const response = await axiosClient.patch(`/weekly-schedules/${id}/complete-day`, payload);
+        return response.data;
+    },
+    updateDay: async (id, payload) => {
+        const response = await axiosClient.patch(`/weekly-schedules/${id}/update-day`, payload);
+        return response.data;
+    }
+};
+
+export const analyticsAPI = {
+    getUserExercises: async () => {
+        const response = await axiosClient.get('/analytics/user-exercises');
+        return response.data;
+    },
+    getWorkoutStats: async () => {
+        const response = await axiosClient.get('/analytics/workout-stats');
+        return response.data;
+    },
+    getWeeklyProgress: async () => {
+        const response = await axiosClient.get('/analytics/weekly-progress');
+        return response.data;
+    },
+    getStrengthProgression: async (exerciseName) => {
+        const response = await axiosClient.get(
+            `/analytics/strength-progression/${encodeURIComponent(exerciseName)}`
+        );
+        return response.data;
+    }
+};
+
 export const aiAPI = {
     chat: async ({ conversationId, message }) => {
         const response = await axiosClient.post('/ai/chat', { conversationId, message });
