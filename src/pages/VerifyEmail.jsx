@@ -17,9 +17,9 @@ export default function VerifyEmail() {
 
   const verifyEmail = useCallback(async () => {
     try {
-      const response = await axiosClient.get(`/auth/verify-email/${token}`);
+      await axiosClient.get(`/auth/verify-email/${token}`);
       setStatus('success');
-      setMessage(response.data.message);
+      setMessage(t('auth:verifyEmail.successMessage'));
     } catch (error) {
       setStatus('error');
       setMessage(getApiErrorMessage(error, t, t('auth:verifyEmail.failedFallback')));

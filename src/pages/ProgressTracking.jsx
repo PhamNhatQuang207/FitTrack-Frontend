@@ -53,8 +53,9 @@ export default function ProgressTracking() {
   const [selectedExercise, setSelectedExercise] = useState("");
 
   const { data: exercisesCatalog = [] } = useQuery({
-    queryKey: queryKeys.exercises.all(),
+    queryKey: queryKeys.exercises.all,
     queryFn: () => exerciseAPI.getAll(),
+    staleTime: 5 * 60 * 1000,
   });
 
   const { data: exercises = [], isLoading: exercisesLoading } = useQuery({

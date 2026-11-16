@@ -25,8 +25,8 @@ export default function ResetPassword() {
     e.preventDefault();
     setError(''); setMessage(''); setLoading(true);
     try {
-      const response = await axiosClient.post('/auth/request-password-reset', { email });
-      setMessage(response.data.message);
+      await axiosClient.post('/auth/request-password-reset', { email });
+      setMessage(t('auth:resetPassword.requestSuccess'));
       setEmail('');
     } catch (err) {
       setError(getApiErrorMessage(err, t, t('auth:resetPassword.requestFailed')));
@@ -42,8 +42,8 @@ export default function ResetPassword() {
     if (password !== confirmPassword) { setError(t('auth:resetPassword.passwordsMismatch')); return; }
     setLoading(true);
     try {
-      const response = await axiosClient.post(`/auth/reset-password/${token}`, { password });
-      setMessage(response.data.message);
+      await axiosClient.post(`/auth/reset-password/${token}`, { password });
+      setMessage(t('auth:resetPassword.resetSuccess'));
       setTimeout(() => navigate('/login'), 2000);
     } catch (err) {
       setError(getApiErrorMessage(err, t, t('auth:resetPassword.resetFailed')));

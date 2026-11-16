@@ -3,11 +3,12 @@ import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "../hooks/useAuth";
-import { userAPI, weeklyScheduleAPI, workoutSessionAPI } from "../api";
+import { userAPI, weeklyScheduleAPI, workoutSessionAPI, exerciseAPI } from "../api";
 import { queryKeys } from "../lib/queryClient";
 import { Dumbbell, TrendingUp, Calendar, Zap, User, ClipboardList, Play } from "lucide-react";
 import LanguageSwitcher from "../components/LanguageSwitcher";
 import { formatDate, formatNumber } from "../utils/formatters";
+import { getLocalizedExerciseName } from "../utils/localize";
 
 // ── Mini stat card ─────────────────────────────────────────
 function StatCard({ icon: Icon, value, label, accent = "lime", delay = "" }) {
@@ -178,6 +179,12 @@ export default function Dashboard() {
   const { data: sessions = [], isLoading: sessionsLoading } = useQuery({
     queryKey: queryKeys.workoutSessions.all,
     queryFn: workoutSessionAPI.getAll,
+  });
+
+  const { data: exercisesCatalog = [] } = useQuery({
+    queryKey: queryKeys.exercises.all,
+    queryFn: exerciseAPI.getAll,
+    staleTime: 5 * 60 * 1000,
   });
 
   const activeSchedule = scheduleError ? null : (scheduleData ?? null);
@@ -368,7 +375,7 @@ export default function Dashboard() {
                     <p className="text-xs mt-1" style={{ color: "#A0A0A0" }}>{t('dashboard:upcoming.exercisesCount', { count: workout.exercises.length })}</p>
                     <div className="flex flex-wrap gap-1 mt-2">
                       {workout.exercises.slice(0, 2).map((ex, idx) => (
-                        <span key={idx} className="ft-badge-gray">{ex.exerciseName}</span>
+                        <span key={idx} className="ft-badge-gray">{getLocalizedExerciseName(ex, exercisesCatalog, lang)}</span>
                       ))}
                     </div>
                   </div>
