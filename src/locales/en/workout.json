@@ -1,0 +1,112 @@
+{
+  "planning": {
+    "backToDashboard": "Dashboard",
+    "back": "Back",
+    "stepEyebrow": "// Step {{current}} of {{total}}",
+    "step1Title": "Create Workout",
+    "step1Subtitle": "Name your workout and select target muscle groups",
+    "workoutNameLabel": "Workout Name",
+    "workoutNamePlaceholder": "e.g. Push Day A, Full Body Strength, Leg Day...",
+    "workoutNameRequiredInline": "⚠ Workout name is required to continue.",
+    "selectMuscleGroups": "// Select Muscle Groups",
+    "selectedCount": "{{count}} selected",
+    "muscleGroupsRequiredInline": "⚠ Please select at least one target muscle group.",
+    "nextAddExercises": "Next: Add Exercises →",
+    "fromGroups": "From: {{groups}}",
+    "availableExercises": "// Available Exercises",
+    "searchExercisesPlaceholder": "Search exercises...",
+    "yourExercises": "// Your Exercises",
+    "addedCount": "{{count}} added",
+    "noExercisesTitle": "No exercises added yet",
+    "noExercisesSubtitle": "Select from the left panel",
+    "sets": "Sets",
+    "addSet": "Add Set",
+    "repsPlaceholder": "Reps",
+    "repsUnit": "reps",
+    "weightPlaceholder": "Weight",
+    "saving": "Saving...",
+    "saveWorkoutPlan": "Save Workout Plan",
+    "errors": {
+      "nameRequiredContinue": "Please enter a workout name before continuing.",
+      "muscleGroupRequired": "Please select at least one target muscle group.",
+      "nameRequiredSave": "Please enter a workout name before saving.",
+      "exerciseRequiredSave": "Please add at least one exercise before saving your workout.",
+      "saveFailed": "Failed to save workout. Please try again."
+    }
+  },
+  "active": {
+    "loading": "Loading Workout...",
+    "exercisesDone": "{{completed}}/{{total}} exercises done",
+    "manage": "Manage",
+    "exerciseCounter": "// Exercise {{current}} of {{total}}",
+    "setsDone": "sets done",
+    "repsUnit": "reps",
+    "previous": "← Previous",
+    "next": "Next →",
+    "allExercises": "// All Exercises",
+    "completeWorkout": "Complete Workout",
+    "metricsModal": {
+      "title": "Update Body Metrics",
+      "subtitle": "Track your progress! (Optional)",
+      "weightLabel": "Weight (kg)",
+      "weightPlaceholder": "Current weight",
+      "bodyFatLabel": "Body Fat (%)",
+      "bodyFatPlaceholder": "Body fat percentage",
+      "skip": "Skip",
+      "saveAndComplete": "Save & Complete"
+    },
+    "manageModal": {
+      "title": "Manage Exercises",
+      "subtitle": "Add or remove exercises from your workout",
+      "availableExercises": "// Available Exercises",
+      "searchPlaceholder": "Search...",
+      "add": "Add",
+      "currentExercises": "// Current Exercises",
+      "noExercises": "No exercises",
+      "remove": "Remove",
+      "setsLabel": "Sets:",
+      "removeSetAria": "Remove a set from {{name}}",
+      "addSetAria": "Add a set to {{name}}",
+      "cancel": "Cancel",
+      "saveChanges": "Save Changes"
+    },
+    "alerts": {
+      "loadSessionFailed": "Failed to load workout session",
+      "completeFailed": "Failed to complete workout",
+      "loadExercisesFailed": "Failed to load exercises",
+      "alreadyAdded": "Exercise already added",
+      "saveExercisesFailed": "Failed to save exercises"
+    }
+  },
+  "history": {
+    "title": "Workout History",
+    "subtitle": "View and manage your workout sessions",
+    "backToDashboard": "Dashboard",
+    "filterEyebrow": "// Filter Sessions",
+    "filters": {
+      "all": "All",
+      "completed": "Completed",
+      "in-progress": "In Progress",
+      "planned": "Planned"
+    },
+    "foundCount": "{{count}} found",
+    "emptyTitle": "No Workouts Found",
+    "emptyFiltered": "No {{status}} workouts to display",
+    "emptyAll": "Start your first workout to see it here!",
+    "status": {
+      "completed": "Completed",
+      "in-progress": "In Progress",
+      "planned": "Planned"
+    },
+    "exercisesCount": "{{count}} exercises",
+    "continue": "Continue",
+    "startWorkout": "Start Workout",
+    "markComplete": "Mark Complete",
+    "delete": "Delete",
+    "exercisesEyebrow": "// Exercises",
+    "setsCount": "{{count}} sets",
+    "noExercisesLogged": "No exercises logged",
+    "confirmComplete": "Mark this workout as complete?",
+    "confirmDelete": "Delete this workout? This action cannot be undone."
+  }
+}

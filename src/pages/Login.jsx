@@ -1,9 +1,13 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../hooks/useAuth';
 import GoogleLoginButton from '../components/GoogleLoginButton';
+import LanguageSwitcher from '../components/LanguageSwitcher';
+import { getApiErrorMessage } from '../utils/localize';
 
 export default function Login() {
+  const { t } = useTranslation(['auth', 'errors']);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -29,10 +33,10 @@ export default function Login() {
 
     try {
       await login({ email, password });
-      setMessage('Logged in successfully!');
+      setMessage(t('auth:login.success'));
       setTimeout(() => navigate('/dashboard'), 900);
     } catch (err) {
-      setError(err.response?.data?.message || 'Invalid email or password.');
+      setError(getApiErrorMessage(err, t, t('auth:login.invalidCredentials')));
     } finally {
       setLoading(false);
     }
@@ -44,21 +48,24 @@ export default function Login() {
     setLoading(true);
     try {
       await googleLogin(idToken);
-      setMessage('Logged in with Google!');
+      setMessage(t('auth:login.googleSuccess'));
       setTimeout(() => navigate('/dashboard'), 600);
     } catch (err) {
-      setError(err.response?.data?.message || 'Google sign-in failed.');
+      setError(getApiErrorMessage(err, t, t('auth:login.googleError')));
     } finally {
       setLoading(false);
     }
-  }, [googleLogin, navigate]);
+  }, [googleLogin, navigate, t]);
 
   const handleGoogleError = useCallback((err) => {
-    setError(err?.message || 'Google sign-in failed.');
-  }, []);
+    setError(err?.message || t('auth:login.googleError'));
+  }, [t]);
 
   return (
     <div className="ft-page flex items-center justify-center min-h-screen px-4">
+      <div className="absolute top-4 right-4 z-20">
+        <LanguageSwitcher />
+      </div>
       {/* Background accent blobs */}
       <div
         className="absolute top-0 left-0 w-[500px] h-[500px] rounded-full opacity-10 pointer-events-none"
@@ -80,14 +87,14 @@ export default function Login() {
             <span className="ft-title text-3xl tracking-widest text-neon-lime text-glow-lime">FitTrack</span>
           </div>
           <p className="text-xs uppercase tracking-[0.3em] text-[#A0A0A0] font-display font-semibold mt-1">
-            Train Smart. Track Hard.
+            {t('auth:brand.taglineLogin')}
           </p>
         </div>
 
         {/* Form Card */}
         <div className="ft-card ft-corner-tl ft-corner-br p-8">
-          <h1 className="ft-title text-2xl text-white mb-1">Login</h1>
-          <p className="text-[#A0A0A0] text-sm mb-6">Enter your credentials to continue</p>
+          <h1 className="ft-title text-2xl text-white mb-1">{t('auth:login.title')}</h1>
+          <p className="text-[#A0A0A0] text-sm mb-6">{t('auth:login.subtitle')}</p>
 
           {error && (
             <div className="mb-4 px-3 py-2 text-[#FF5C00] text-sm border border-[rgba(255,92,0,0.3)] bg-[rgba(255,92,0,0.06)] rounded-sm font-medium">
@@ -102,20 +109,20 @@ export default function Login() {
 
           <form onSubmit={handleLogin} className="flex flex-col gap-5">
             <div>
-              <label className="ft-label">Email</label>
+              <label className="ft-label">{t('auth:login.emailLabel')}</label>
               <input
                 id="login-email"
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@example.com"
+                placeholder={t('auth:login.emailPlaceholder')}
                 className="ft-input"
                 required
               />
             </div>
 
             <div>
-              <label className="ft-label">Password</label>
+              <label className="ft-label">{t('auth:login.passwordLabel')}</label>
               <input
                 id="login-password"
                 type="password"
@@ -133,7 +140,7 @@ export default function Login() {
                 onClick={() => navigate('/reset-password')}
                 className="text-xs text-[#A0A0A0] hover:text-neon-lime transition-colors font-display font-semibold uppercase tracking-wider"
               >
-                Forgot Password?
+                {t('auth:login.forgotPassword')}
               </button>
             </div>
 
@@ -146,9 +153,9 @@ export default function Login() {
               {loading ? (
                 <span className="flex items-center justify-center gap-2">
                   <span className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin inline-block" />
-                  Logging in...
+                  {t('auth:login.submitting')}
                 </span>
-              ) : 'Log In'}
+              ) : t('auth:login.submit')}
             </button>
           </form>
 
@@ -157,14 +164,14 @@ export default function Login() {
           <div className="ft-divider" />
 
           <p className="text-center text-sm text-[#A0A0A0]">
-            No account yet?{' '}
+            {t('auth:login.noAccount')}{' '}
             <button
               id="go-register"
               type="button"
               onClick={() => navigate('/register')}
               className="text-neon-lime hover:text-glow-lime font-display font-bold uppercase tracking-wider text-xs transition-colors"
             >
-              Register
+              {t('auth:login.registerLink')}
             </button>
           </p>
         </div>

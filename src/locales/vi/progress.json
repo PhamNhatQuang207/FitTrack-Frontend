@@ -1,0 +1,36 @@
+{
+  "title": "Theo dõi tiến độ",
+  "backToDashboard": "Bảng điều khiển",
+  "loading": "Đang tải dữ liệu tiến độ...",
+  "stats": {
+    "totalWorkouts": "Tổng buổi tập",
+    "volumeKg": "Khối lượng (kg)",
+    "avgExercises": "TB bài tập",
+    "weightKg": "Cân nặng (kg)"
+  },
+  "strength": {
+    "eyebrow": "// Tiến triển sức mạnh",
+    "selectExercise": "Chọn bài tập",
+    "weightKg": "Mức tạ (kg)",
+    "start": "Ban đầu",
+    "current": "Hiện tại",
+    "gain": "Tăng",
+    "noDataTitle": "Chưa có dữ liệu",
+    "noDataDesc": "Hoàn thành một số buổi tập với {{exercise}} để xem tiến triển!",
+    "thisExercise": "bài tập này"
+  },
+  "consistency": {
+    "eyebrow": "// Tính đều đặn hàng tuần",
+    "title": "Tỷ lệ hoàn thành",
+    "noDataTitle": "Chưa có dữ liệu tuần",
+    "noDataDesc": "Bắt đầu một kế hoạch tuần để theo dõi sự đều đặn!"
+  },
+  "bodyMetrics": {
+    "eyebrow": "// Chỉ số cơ thể",
+    "title": "Thể chất",
+    "weightTrend": "Xu hướng cân nặng",
+    "weightKg": "Cân nặng (kg)",
+    "bodyFatTrend": "Xu hướng tỷ lệ mỡ",
+    "bodyFatPct": "Tỷ lệ mỡ (%)"
+  }
+}

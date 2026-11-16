@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useAuth } from '../hooks/useAuth';
+import { AuthContext } from '../context/AuthContext';
 import { userAPI } from '../api';
 
 /**
@@ -9,14 +9,16 @@ import { userAPI } from '../api';
  */
 const LanguageSwitcher = ({ className = '' }) => {
     const { i18n } = useTranslation();
-    const { user, updateUser } = useAuth();
+    const auth = useContext(AuthContext);
+    const user = auth?.user;
+    const updateUser = auth?.updateUser;
 
     const currentLang = i18n.resolvedLanguage === 'vi' ? 'vi' : 'en';
     const nextLang = currentLang === 'en' ? 'vi' : 'en';
 
     const handleToggle = async () => {
         await i18n.changeLanguage(nextLang);
-        if (user) {
+        if (user && updateUser) {
             updateUser({ preferredLanguage: nextLang });
             try {
                 await userAPI.updateLanguage(nextLang);

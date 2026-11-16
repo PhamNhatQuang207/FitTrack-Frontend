@@ -1,0 +1,43 @@
+{
+  "header": {
+    "athlete": "Athlete",
+    "defaultUser": "User"
+  },
+  "welcome": {
+    "eyebrow": "// Dashboard",
+    "greeting": "Welcome back,",
+    "defaultAthlete": "Athlete"
+  },
+  "stats": {
+    "thisWeek": "This Week",
+    "volumeKg": "Volume (kg)",
+    "avgExercises": "Avg Exercises",
+    "weightKg": "Weight (kg)"
+  },
+  "cards": {
+    "currentSchedule": "Current Schedule",
+    "weeklyPlanning": "Weekly Planning",
+    "currentScheduleDesc": "Continue \"{{name}}\" — {{completed}}/{{total}} sessions done.",
+    "weeklyPlanningDesc": "Create or start a weekly workout plan to stay consistent.",
+    "percentComplete": "{{percent}}% complete",
+    "singleWorkout": "Single Workout",
+    "singleWorkoutDesc": "Plan a one-time workout session for today.",
+    "sessionsPlanned_one": "{{count}} session planned",
+    "sessionsPlanned_other": "{{count}} sessions planned",
+    "workoutHistory": "Workout History",
+    "workoutHistoryDesc": "View your past workout sessions and track progress.",
+    "workoutsLogged_one": "{{count}} workout logged",
+    "workoutsLogged_other": "{{count}} workouts logged",
+    "progressTracking": "Progress Tracking",
+    "progressTrackingDesc": "Monitor your fitness journey and track measurements.",
+    "sessionsAnalyzed_one": "{{count}} session analyzed",
+    "sessionsAnalyzed_other": "{{count}} sessions analyzed"
+  },
+  "upcoming": {
+    "eyebrow": "// Upcoming Sessions",
+    "exercisesCount_one": "{{count}} exercise",
+    "exercisesCount_other": "{{count}} exercises",
+    "start": "Start"
+  },
+  "footerQuote": "\"Today's effort is tomorrow's result!\""
+}

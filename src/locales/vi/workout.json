@@ -1,0 +1,112 @@
+{
+  "planning": {
+    "backToDashboard": "Bảng điều khiển",
+    "back": "Quay lại",
+    "stepEyebrow": "// Bước {{current}} / {{total}}",
+    "step1Title": "Tạo buổi tập",
+    "step1Subtitle": "Đặt tên buổi tập và chọn nhóm cơ mục tiêu",
+    "workoutNameLabel": "Tên buổi tập",
+    "workoutNamePlaceholder": "vd. Buổi Đẩy A, Toàn thân, Tập chân...",
+    "workoutNameRequiredInline": "⚠ Vui lòng nhập tên buổi tập để tiếp tục.",
+    "selectMuscleGroups": "// Chọn nhóm cơ",
+    "selectedCount": "Đã chọn {{count}}",
+    "muscleGroupsRequiredInline": "⚠ Vui lòng chọn ít nhất một nhóm cơ mục tiêu.",
+    "nextAddExercises": "Tiếp theo: Thêm bài tập →",
+    "fromGroups": "Từ: {{groups}}",
+    "availableExercises": "// Bài tập hiện có",
+    "searchExercisesPlaceholder": "Tìm kiếm bài tập...",
+    "yourExercises": "// Bài tập của bạn",
+    "addedCount": "Đã thêm {{count}}",
+    "noExercisesTitle": "Chưa thêm bài tập nào",
+    "noExercisesSubtitle": "Chọn từ bảng bên trái",
+    "sets": "Hiệp",
+    "addSet": "Thêm hiệp",
+    "repsPlaceholder": "Lần",
+    "repsUnit": "lần",
+    "weightPlaceholder": "Tạ",
+    "saving": "Đang lưu...",
+    "saveWorkoutPlan": "Lưu kế hoạch tập",
+    "errors": {
+      "nameRequiredContinue": "Vui lòng nhập tên buổi tập trước khi tiếp tục.",
+      "muscleGroupRequired": "Vui lòng chọn ít nhất một nhóm cơ mục tiêu.",
+      "nameRequiredSave": "Vui lòng nhập tên buổi tập trước khi lưu.",
+      "exerciseRequiredSave": "Vui lòng thêm ít nhất một bài tập trước khi lưu buổi tập.",
+      "saveFailed": "Không thể lưu buổi tập. Vui lòng thử lại."
+    }
+  },
+  "active": {
+    "loading": "Đang tải buổi tập...",
+    "exercisesDone": "Đã xong {{completed}}/{{total}} bài tập",
+    "manage": "Quản lý",
+    "exerciseCounter": "// Bài tập {{current}} / {{total}}",
+    "setsDone": "hiệp đã xong",
+    "repsUnit": "lần",
+    "previous": "← Trước",
+    "next": "Tiếp →",
+    "allExercises": "// Tất cả bài tập",
+    "completeWorkout": "Hoàn thành buổi tập",
+    "metricsModal": {
+      "title": "Cập nhật chỉ số cơ thể",
+      "subtitle": "Theo dõi tiến độ của bạn! (Không bắt buộc)",
+      "weightLabel": "Cân nặng (kg)",
+      "weightPlaceholder": "Cân nặng hiện tại",
+      "bodyFatLabel": "Tỷ lệ mỡ (%)",
+      "bodyFatPlaceholder": "Phần trăm mỡ cơ thể",
+      "skip": "Bỏ qua",
+      "saveAndComplete": "Lưu & Hoàn thành"
+    },
+    "manageModal": {
+      "title": "Quản lý bài tập",
+      "subtitle": "Thêm hoặc xóa bài tập khỏi buổi tập của bạn",
+      "availableExercises": "// Bài tập hiện có",
+      "searchPlaceholder": "Tìm kiếm...",
+      "add": "Thêm",
+      "currentExercises": "// Bài tập hiện tại",
+      "noExercises": "Không có bài tập",
+      "remove": "Xóa",
+      "setsLabel": "Số hiệp:",
+      "removeSetAria": "Bớt 1 hiệp khỏi {{name}}",
+      "addSetAria": "Thêm 1 hiệp cho {{name}}",
+      "cancel": "Hủy",
+      "saveChanges": "Lưu thay đổi"
+    },
+    "alerts": {
+      "loadSessionFailed": "Không thể tải buổi tập",
+      "completeFailed": "Không thể hoàn thành buổi tập",
+      "loadExercisesFailed": "Không thể tải danh sách bài tập",
+      "alreadyAdded": "Bài tập đã được thêm",
+      "saveExercisesFailed": "Không thể lưu bài tập"
+    }
+  },
+  "history": {
+    "title": "Lịch sử tập luyện",
+    "subtitle": "Xem và quản lý các buổi tập của bạn",
+    "backToDashboard": "Bảng điều khiển",
+    "filterEyebrow": "// Lọc buổi tập",
+    "filters": {
+      "all": "Tất cả",
+      "completed": "Hoàn thành",
+      "in-progress": "Đang tập",
+      "planned": "Đã lên lịch"
+    },
+    "foundCount": "Tìm thấy {{count}}",
+    "emptyTitle": "Không tìm thấy buổi tập nào",
+    "emptyFiltered": "Không có buổi tập {{status}} nào để hiển thị",
+    "emptyAll": "Bắt đầu buổi tập đầu tiên để xem tại đây!",
+    "status": {
+      "completed": "Hoàn thành",
+      "in-progress": "Đang tập",
+      "planned": "Đã lên lịch"
+    },
+    "exercisesCount": "{{count}} bài tập",
+    "continue": "Tiếp tục",
+    "startWorkout": "Bắt đầu tập",
+    "markComplete": "Đánh dấu hoàn thành",
+    "delete": "Xóa",
+    "exercisesEyebrow": "// Bài tập",
+    "setsCount": "{{count}} hiệp",
+    "noExercisesLogged": "Chưa ghi nhận bài tập nào",
+    "confirmComplete": "Đánh dấu buổi tập này là hoàn thành?",
+    "confirmDelete": "Xóa buổi tập này? Hành động này không thể hoàn tác."
+  }
+}

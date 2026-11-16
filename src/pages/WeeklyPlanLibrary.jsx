@@ -1,11 +1,15 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import { weeklyPlanAPI, weeklyScheduleAPI } from "../api";
 import { queryKeys } from "../lib/queryClient";
 import { ArrowLeft, Play, Plus, Calendar } from "lucide-react";
+import LanguageSwitcher from "../components/LanguageSwitcher";
+import { getApiErrorMessage } from "../utils/localize";
 
 export default function WeeklyPlanLibrary() {
+  const { t } = useTranslation(['plan', 'errors']);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
@@ -22,7 +26,7 @@ export default function WeeklyPlanLibrary() {
     },
     onError: (error) => {
       console.error("Error starting plan:", error);
-      alert(error.response?.data?.message || "Failed to start plan");
+      alert(getApiErrorMessage(error, t, t('plan:library.startFailed')));
     },
   });
 
@@ -44,19 +48,22 @@ export default function WeeklyPlanLibrary() {
             onMouseLeave={e => e.currentTarget.style.color = '#A0A0A0'}
           >
             <ArrowLeft size={18} className="group-hover:-translate-x-1 transition-transform" />
-            <span className="hidden md:inline font-display font-bold uppercase tracking-widest text-xs">Dashboard</span>
+            <span className="hidden md:inline font-display font-bold uppercase tracking-widest text-xs">{t('plan:library.backToDashboard')}</span>
           </button>
 
-          <h1 className="ft-title text-2xl md:text-3xl text-neon-lime">Weekly Plans</h1>
+          <h1 className="ft-title text-2xl md:text-3xl text-neon-lime">{t('plan:library.title')}</h1>
 
-          <button
-            id="new-plan-btn"
-            onClick={() => navigate('/weekly-planning')}
-            className="ft-btn-primary flex items-center gap-2 text-xs"
-            style={{ padding: '8px 16px' }}
-          >
-            <Plus size={14} /> New Plan
-          </button>
+          <div className="flex items-center gap-2">
+            <LanguageSwitcher />
+            <button
+              id="new-plan-btn"
+              onClick={() => navigate('/weekly-planning')}
+              className="ft-btn-primary flex items-center gap-2 text-xs"
+              style={{ padding: '8px 16px' }}
+            >
+              <Plus size={14} /> {t('plan:library.newPlan')}
+            </button>
+          </div>
         </div>
       </div>
 
@@ -73,20 +80,20 @@ export default function WeeklyPlanLibrary() {
             style={{ border: '1px dashed rgba(204,255,0,0.15)', borderRadius: '2px' }}
           >
             <Calendar size={40} style={{ color: '#1A1A1A', margin: '0 auto 16px' }} />
-            <h2 className="ft-title text-3xl text-white mb-2">No Plans Yet</h2>
-            <p className="text-sm mb-6" style={{ color: '#A0A0A0' }}>Create your first weekly workout plan</p>
+            <h2 className="ft-title text-3xl text-white mb-2">{t('plan:library.noPlansTitle')}</h2>
+            <p className="text-sm mb-6" style={{ color: '#A0A0A0' }}>{t('plan:library.noPlansSubtitle')}</p>
             <button
               onClick={() => navigate('/weekly-planning')}
               className="ft-btn-primary inline-flex items-center gap-2"
             >
-              <Plus size={16} /> Create Plan
+              <Plus size={16} /> {t('plan:library.createPlan')}
             </button>
           </div>
         )}
 
         {!loading && plans.length > 0 && (
           <>
-            <p className="ft-label mb-4">// {plans.length} Plan{plans.length !== 1 ? 's' : ''} Available</p>
+            <p className="ft-label mb-4">{t('plan:library.availableCount', { count: plans.length })}</p>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {plans.map((plan, idx) => {
                 const workoutDays = plan.days.filter(d => !d.isRestDay).length;
@@ -116,11 +123,11 @@ export default function WeeklyPlanLibrary() {
                     {/* Stats row */}
                     <div className="flex items-center gap-4 mb-4">
                       <span className="font-mono-sport text-sm" style={{ color: '#CCFF00', fontFamily: "'JetBrains Mono', monospace" }}>
-                        {workoutDays} <span className="text-xs" style={{ color: '#A0A0A0', fontFamily: 'Inter, sans-serif' }}>workout days</span>
+                        {workoutDays} <span className="text-xs" style={{ color: '#A0A0A0', fontFamily: 'Inter, sans-serif' }}>{t('plan:library.workoutDays')}</span>
                       </span>
                       <span style={{ color: '#1A1A1A' }}>|</span>
                       <span className="font-mono-sport text-sm" style={{ color: '#A0A0A0', fontFamily: "'JetBrains Mono', monospace" }}>
-                        {restDays} <span className="text-xs" style={{ fontFamily: 'Inter, sans-serif' }}>rest days</span>
+                        {restDays} <span className="text-xs" style={{ fontFamily: 'Inter, sans-serif' }}>{t('plan:library.restDays')}</span>
                       </span>
                     </div>
 
@@ -128,7 +135,7 @@ export default function WeeklyPlanLibrary() {
                     <div className="flex flex-wrap gap-1.5 mb-5">
                       {plan.days.filter(d => !d.isRestDay).map((day, i) => (
                         <span key={i} className="ft-badge-lime text-[10px]">
-                          {day.dayName.slice(0, 3)}: {day.workout.name}
+                          {t(`plan:daysShort.${day.dayName}`, { defaultValue: day.dayName.slice(0, 3) })}: {day.workout.name}
                         </span>
                       ))}
                     </div>
@@ -143,14 +150,14 @@ export default function WeeklyPlanLibrary() {
                         onClick={() => navigate(`/weekly-planning/${plan.id}`)}
                         className="ft-btn-ghost flex-1 py-2.5 text-xs"
                       >
-                        Edit
+                        {t('plan:library.edit')}
                       </button>
                       <button
                         id={`start-plan-${plan.id}`}
                         onClick={() => handleStartPlan(plan.id)}
                         className="ft-btn-primary flex-1 flex items-center justify-center gap-2 py-2.5 text-xs"
                       >
-                        <Play size={12} /> Start This Week
+                        <Play size={12} /> {t('plan:library.startThisWeek')}
                       </button>
                     </div>
                   </div>

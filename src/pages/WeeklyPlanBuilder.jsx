@@ -1,11 +1,14 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import axiosClient from "../api/axiosClient";
 import { exerciseAPI, muscleGroupAPI } from "../api";
 import { queryKeys } from "../lib/queryClient";
 import { ArrowLeft, Save, Plus, Trash2, X, Check, Search, Trash, ChevronDown, AlertCircle, RefreshCcw } from "lucide-react";
 import ErrorBoundary from "../components/ErrorBoundary";
+import LanguageSwitcher from "../components/LanguageSwitcher";
+import { getApiErrorMessage, getLocalizedExerciseName, getLocalizedField, getLocalizedMuscleGroupName } from "../utils/localize";
 
 const DAYS = [
   { id: 0, name: 'Monday' }, { id: 1, name: 'Tuesday' }, { id: 2, name: 'Wednesday' },
@@ -24,6 +27,8 @@ const DEFAULT_MUSCLE_GROUPS = [
 ];
 
 function WeeklyPlanBuilderContent() {
+  const { t, i18n } = useTranslation(['plan', 'errors']);
+  const lang = i18n.resolvedLanguage || 'en';
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { id } = useParams();
@@ -51,7 +56,7 @@ function WeeklyPlanBuilderContent() {
     if (!Array.isArray(rawMuscleGroups) || rawMuscleGroups.length === 0) {
       return DEFAULT_MUSCLE_GROUPS;
     }
-    return rawMuscleGroups.map((g) => ({ id: g.slug, name: g.name }));
+    return rawMuscleGroups.map((g) => ({ id: g.slug, name: g.name, translations: g.translations }));
   }, [rawMuscleGroups]);
 
   const planQuery = useQuery({
@@ -87,10 +92,10 @@ function WeeklyPlanBuilderContent() {
 
   useEffect(() => {
     if (planQuery.isError) {
-      alert("Failed to load plan");
+      alert(getApiErrorMessage(planQuery.error, t, t('plan:builder.errors.loadFailed')));
       navigate('/weekly-plan-library');
     }
-  }, [planQuery.isError, navigate]);
+  }, [planQuery.isError, planQuery.error, navigate, t]);
 
   const exercisesQuery = useQuery({
     queryKey: selectedMuscleGroup === 'all'
@@ -101,7 +106,14 @@ function WeeklyPlanBuilderContent() {
     staleTime: 5 * 60 * 1000,
   });
 
+  const allExercisesQuery = useQuery({
+    queryKey: queryKeys.exercises.all,
+    queryFn: exerciseAPI.getAll,
+    staleTime: 5 * 60 * 1000,
+  });
+
   const availableExercises = exercisesQuery.data ?? [];
+  const allExercisesCatalog = Array.isArray(allExercisesQuery.data) ? allExercisesQuery.data : availableExercises;
 
   const savePlanMutation = useMutation({
     mutationFn: ({ isEdit, planId, payload }) =>
@@ -116,7 +128,7 @@ function WeeklyPlanBuilderContent() {
       navigate('/weekly-plan-library');
     },
     onError: (error) => {
-      setErrorMessage("Failed to save plan: " + (error.response?.data?.message || error.message));
+      setErrorMessage(t('plan:builder.errors.saveFailed', { message: getApiErrorMessage(error, t, error.message) }));
     },
   });
 
@@ -129,8 +141,8 @@ function WeeklyPlanBuilderContent() {
       }
       navigate('/weekly-plan-library');
     },
-    onError: () => {
-      alert("Failed to delete plan");
+    onError: (err) => {
+      alert(getApiErrorMessage(err, t, t('plan:builder.errors.deleteFailed')));
     },
   });
 
@@ -181,7 +193,7 @@ function WeeklyPlanBuilderContent() {
   const handleAddExercise = (exercise) => {
     const newSchedule = [...schedule];
     const dayExercises = newSchedule[activeDayIndex].workout.exercises;
-    if (dayExercises.find(ex => ex.exerciseId === exercise.id)) { alert("Exercise already added"); return; }
+    if (dayExercises.find(ex => ex.exerciseId === exercise.id)) { alert(t('plan:builder.errors.alreadyAdded')); return; }
     dayExercises.push({ exerciseId: exercise.id, exerciseName: exercise.name, category: exercise.category, sets: [{ setNumber: 1, targetReps: 10, targetWeight: 0 }, { setNumber: 2, targetReps: 10, targetWeight: 0 }, { setNumber: 3, targetReps: 10, targetWeight: 0 }] });
     setSchedule(newSchedule);
   };
@@ -220,14 +232,14 @@ function WeeklyPlanBuilderContent() {
 
   const handleSavePlan = () => {
     if (!planName.trim()) {
-      setErrorMessage("Please enter a plan name before saving.");
+      setErrorMessage(t('plan:builder.errors.planNameRequired'));
       return;
     }
     const unnamedDayWithExercises = schedule.find(
       (day) => !day.isRestDay && day.workout.exercises.length > 0 && !day.workout.name.trim()
     );
     if (unnamedDayWithExercises) {
-      setErrorMessage(`Please enter a workout name for ${unnamedDayWithExercises.name}.`);
+      setErrorMessage(t('plan:builder.errors.dayWorkoutNameRequired', { day: t(`plan:days.${unnamedDayWithExercises.name}`) }));
       return;
     }
     setErrorMessage("");
@@ -240,11 +252,17 @@ function WeeklyPlanBuilderContent() {
   };
 
   const handleDeletePlan = () => {
-    if (!window.confirm(`Delete "${planName}"? This cannot be undone.`)) return;
+    if (!window.confirm(t('plan:builder.confirmDelete', { name: planName }))) return;
     deletePlanMutation.mutate(id);
   };
 
-  const filteredExercises = availableExercises.filter(ex => ex.name.toLowerCase().includes(searchTerm.toLowerCase()));
+  const filteredExercises = availableExercises.filter(ex => {
+    const q = searchTerm.toLowerCase();
+    return (
+      ex.name.toLowerCase().includes(q) ||
+      (ex.translations?.vi?.name || '').toLowerCase().includes(q)
+    );
+  });
   const activeDay = activeDayIndex !== null ? schedule[activeDayIndex] : null;
 
   return (
@@ -261,14 +279,15 @@ function WeeklyPlanBuilderContent() {
             onMouseLeave={e => e.currentTarget.style.color = '#A0A0A0'}
           >
             <ArrowLeft size={18} className="group-hover:-translate-x-1 transition-transform" />
-            <span className="hidden md:inline font-display font-bold uppercase tracking-widest text-xs">Dashboard</span>
+            <span className="hidden md:inline font-display font-bold uppercase tracking-widest text-xs">{t('plan:builder.backToDashboard')}</span>
           </button>
 
           <h1 className="ft-title text-xl md:text-2xl text-neon-lime">
-            {isEditMode ? 'Edit Plan' : 'New Weekly Plan'}
+            {isEditMode ? t('plan:builder.editTitle') : t('plan:builder.newTitle')}
           </h1>
 
           <div className="flex items-center gap-2">
+            <LanguageSwitcher />
             {isEditMode && (
               <button
                 id="delete-plan-btn"
@@ -277,7 +296,7 @@ function WeeklyPlanBuilderContent() {
                 className="flex items-center gap-2 text-xs font-display font-bold uppercase tracking-wider px-3 py-2 transition-colors disabled:opacity-50"
                 style={{ border: '1px solid rgba(255,92,0,0.3)', borderRadius: '2px', color: '#FF5C00', background: 'rgba(255,92,0,0.06)' }}
               >
-                <Trash size={13} /> <span className="hidden md:inline">Delete</span>
+                <Trash size={13} /> <span className="hidden md:inline">{t('plan:builder.delete')}</span>
               </button>
             )}
             <button
@@ -287,7 +306,7 @@ function WeeklyPlanBuilderContent() {
               className="ft-btn-primary flex items-center gap-2 text-xs disabled:opacity-50"
               style={{ padding: '8px 16px' }}
             >
-              <Save size={13} /> <span className="hidden md:inline">{isEditMode ? 'Update Plan' : 'Save Plan'}</span>
+              <Save size={13} /> <span className="hidden md:inline">{isEditMode ? t('plan:builder.updatePlan') : t('plan:builder.savePlan')}</span>
             </button>
           </div>
         </div>
@@ -315,25 +334,25 @@ function WeeklyPlanBuilderContent() {
           className="p-5 mb-6 animate-slide-up"
           style={{ background: 'rgba(10,10,10,0.95)', border: '1px solid rgba(204,255,0,0.15)', borderRadius: '2px' }}
         >
-          <p className="ft-label mb-4">// Plan Details</p>
+          <p className="ft-label mb-4">{t('plan:builder.planDetailsEyebrow')}</p>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="ft-label">Plan Name</label>
+              <label className="ft-label">{t('plan:builder.planNameLabel')}</label>
               <input
                 id="plan-name-input"
                 type="text"
-                placeholder="e.g. PPL Split, Push/Pull/Legs..."
+                placeholder={t('plan:builder.planNamePlaceholder')}
                 value={planName}
                 onChange={(e) => setPlanName(e.target.value)}
                 className="ft-input font-display font-bold italic uppercase"
               />
             </div>
             <div>
-              <label className="ft-label">Description (Optional)</label>
+              <label className="ft-label">{t('plan:builder.descriptionLabel')}</label>
               <input
                 id="plan-desc-input"
                 type="text"
-                placeholder="Goal: Hypertrophy, Strength..."
+                placeholder={t('plan:builder.descriptionPlaceholder')}
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 className="ft-input"
@@ -343,7 +362,7 @@ function WeeklyPlanBuilderContent() {
         </div>
 
         {/* Weekly schedule */}
-        <p className="ft-label mb-3">// Weekly Schedule</p>
+        <p className="ft-label mb-3">{t('plan:builder.weeklyScheduleEyebrow')}</p>
         <div className="space-y-3 animate-slide-up">
           {schedule.map((day, index) => {
             const isSwapSelected = swapSourceIndex === index;
@@ -369,14 +388,14 @@ function WeeklyPlanBuilderContent() {
                     color: day.isRestDay ? '#333' : '#CCFF00',
                   }}
                 >
-                  {day.name.slice(0, 3)}
+                  {t(`plan:daysShort.${day.name}`)}
                 </div>
 
                 {/* Workout name input */}
                 {!day.isRestDay && (
                   <input
                     type="text"
-                    placeholder="Workout Name (e.g. Push Day)"
+                    placeholder={t('plan:builder.workoutNamePlaceholder')}
                     value={day.workout.name}
                     onChange={(e) => handleDayUpdate(index, 'workoutName', e.target.value)}
                     className="ft-input flex-1 font-display font-bold italic uppercase"
@@ -385,7 +404,7 @@ function WeeklyPlanBuilderContent() {
                 )}
 
                 {day.isRestDay && (
-                  <span className="flex-1 font-display font-bold uppercase text-sm" style={{ color: '#333' }}>Rest Day</span>
+                  <span className="flex-1 font-display font-bold uppercase text-sm" style={{ color: '#333' }}>{t('plan:builder.restDay')}</span>
                 )}
 
                 {/* Rest toggle */}
@@ -410,7 +429,7 @@ function WeeklyPlanBuilderContent() {
                     checked={day.isRestDay}
                     onChange={(e) => handleDayUpdate(index, 'isRestDay', e.target.checked)}
                   />
-                  <span className="text-xs font-display font-bold uppercase tracking-wider" style={{ color: '#555' }}>Rest</span>
+                  <span className="text-xs font-display font-bold uppercase tracking-wider" style={{ color: '#555' }}>{t('plan:builder.rest')}</span>
                 </label>
 
                 {/* Swap button */}
@@ -427,7 +446,7 @@ function WeeklyPlanBuilderContent() {
                   }}
                 >
                   <RefreshCcw size={12} />
-                  {isSwapSelected ? 'Selected' : isSwapTarget ? 'Swap Here' : 'Swap Day'}
+                  {isSwapSelected ? t('plan:builder.selected') : isSwapTarget ? t('plan:builder.swapHere') : t('plan:builder.swapDay')}
                 </button>
 
                 {/* Configure button */}
@@ -438,7 +457,7 @@ function WeeklyPlanBuilderContent() {
                     className="flex items-center gap-1.5 text-xs font-display font-bold uppercase tracking-wider px-3 py-2 transition-colors flex-shrink-0"
                     style={{ border: '1px solid rgba(204,255,0,0.3)', borderRadius: '2px', color: '#CCFF00', background: 'rgba(204,255,0,0.06)' }}
                   >
-                    <Plus size={12} /> Exercises ({day.workout.exercises.length})
+                    <Plus size={12} /> {t('plan:builder.exercisesCount', { count: day.workout.exercises.length })}
                   </button>
                 )}
               </div>
@@ -447,7 +466,9 @@ function WeeklyPlanBuilderContent() {
               {!day.isRestDay && day.workout.exercises.length > 0 && (
                 <div className="flex flex-wrap gap-1.5 mt-3 ml-[4.5rem]">
                   {day.workout.exercises.map((ex, idx) => (
-                    <span key={idx} className="ft-badge-lime text-[10px]">{ex.exerciseName}</span>
+                    <span key={idx} className="ft-badge-lime text-[10px]">
+                      {getLocalizedExerciseName(ex, allExercisesCatalog, lang)}
+                    </span>
                   ))}
                 </div>
               )}
@@ -471,9 +492,9 @@ function WeeklyPlanBuilderContent() {
             >
               <div>
                 <h2 className="ft-title text-2xl text-white">
-                  {activeDay.name} — {activeDay.workout.name || 'Configure Exercises'}
+                  {t(`plan:days.${activeDay.name}`)} — {activeDay.workout.name || t('plan:builder.modal.configureExercises')}
                 </h2>
-                <p className="text-xs mt-0.5" style={{ color: '#A0A0A0' }}>Add and configure exercises for this day</p>
+                <p className="text-xs mt-0.5" style={{ color: '#A0A0A0' }}>{t('plan:builder.modal.subtitle')}</p>
               </div>
               <button
                 onClick={() => setShowExerciseModal(false)}
@@ -491,13 +512,13 @@ function WeeklyPlanBuilderContent() {
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
                 {/* Available exercises */}
                 <div>
-                  <p className="ft-label mb-3">// Available Exercises</p>
+                  <p className="ft-label mb-3">{t('plan:builder.modal.availableExercises')}</p>
                   <div className="space-y-2 mb-4">
                     <div className="relative">
                       <Search size={13} style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: '#555' }} />
                       <input
                         type="text"
-                        placeholder="Search exercises..."
+                        placeholder={t('plan:builder.modal.searchPlaceholder')}
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                         className="ft-input"
@@ -510,7 +531,11 @@ function WeeklyPlanBuilderContent() {
                         onClick={() => setShowMuscleGroupDropdown(!showMuscleGroupDropdown)}
                         className="ft-input w-full flex items-center justify-between cursor-pointer"
                       >
-                        <span>{selectedMuscleGroup === 'all' ? 'All Muscle Groups' : muscleGroups.find(g => g.id === selectedMuscleGroup)?.name || 'Select Group'}</span>
+                        <span>
+                          {selectedMuscleGroup === 'all'
+                            ? t('plan:builder.modal.allMuscleGroups')
+                            : getLocalizedField(muscleGroups.find(g => g.id === selectedMuscleGroup), 'name', lang) || t('plan:builder.modal.selectGroup')}
+                        </span>
                         <ChevronDown size={14} style={{ color: '#555', transform: showMuscleGroupDropdown ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
                       </button>
                       {showMuscleGroupDropdown && (
@@ -518,7 +543,7 @@ function WeeklyPlanBuilderContent() {
                           className="absolute z-50 w-full mt-1 max-h-56 overflow-y-auto"
                           style={{ background: '#0A0A0A', border: '1px solid rgba(204,255,0,0.2)', borderRadius: '2px' }}
                         >
-                          {[{ id: 'all', name: 'All Muscle Groups' }, ...muscleGroups].map(group => (
+                          {[{ id: 'all', name: t('plan:builder.modal.allMuscleGroups') }, ...muscleGroups].map(group => (
                             <button
                               key={group.id}
                               onClick={() => { setSelectedMuscleGroup(group.id); setShowMuscleGroupDropdown(false); }}
@@ -528,7 +553,7 @@ function WeeklyPlanBuilderContent() {
                                 background: selectedMuscleGroup === group.id ? 'rgba(204,255,0,0.08)' : 'transparent',
                               }}
                             >
-                              {group.name}
+                              {group.id === 'all' ? group.name : getLocalizedField(group, 'name', lang)}
                             </button>
                           ))}
                         </div>
@@ -546,8 +571,8 @@ function WeeklyPlanBuilderContent() {
                         onMouseLeave={e => e.currentTarget.style.borderColor = '#111'}
                       >
                         <div>
-                          <p className="font-display font-bold italic uppercase text-sm text-white">{exercise.name}</p>
-                          <p className="text-xs mt-0.5" style={{ color: '#555' }}>{exercise.category}</p>
+                          <p className="font-display font-bold italic uppercase text-sm text-white">{getLocalizedField(exercise, 'name', lang)}</p>
+                          <p className="text-xs mt-0.5" style={{ color: '#555' }}>{getLocalizedMuscleGroupName(exercise.category, rawMuscleGroups, lang)}</p>
                         </div>
                         <Plus size={14} style={{ color: '#CCFF00', flexShrink: 0 }} />
                       </button>
@@ -558,15 +583,15 @@ function WeeklyPlanBuilderContent() {
                 {/* Selected exercises */}
                 <div>
                   <div className="flex items-center justify-between mb-3">
-                    <p className="ft-label mb-0">// Your Exercises</p>
+                    <p className="ft-label mb-0">{t('plan:builder.modal.yourExercises')}</p>
                     <span className="font-mono-sport text-xs" style={{ color: '#CCFF00', fontFamily: "'JetBrains Mono', monospace" }}>
-                      {activeDay.workout.exercises.length} added
+                      {t('plan:builder.modal.addedCount', { count: activeDay.workout.exercises.length })}
                     </span>
                   </div>
                   {activeDay.workout.exercises.length === 0 ? (
                     <div className="text-center py-16" style={{ border: '1px dashed rgba(204,255,0,0.1)', borderRadius: '2px' }}>
-                      <p className="ft-label">No exercises added</p>
-                      <p className="text-xs mt-1" style={{ color: '#555' }}>Click exercises from the left</p>
+                      <p className="ft-label">{t('plan:builder.modal.noExercisesTitle')}</p>
+                      <p className="text-xs mt-1" style={{ color: '#555' }}>{t('plan:builder.modal.noExercisesSubtitle')}</p>
                     </div>
                   ) : (
                     <div className="space-y-3 max-h-[420px] overflow-y-auto pr-1">
@@ -574,8 +599,8 @@ function WeeklyPlanBuilderContent() {
                         <div key={exercise.exerciseId} className="p-4" style={{ background: 'rgba(204,255,0,0.04)', border: '1px solid rgba(204,255,0,0.12)', borderRadius: '2px' }}>
                           <div className="flex items-start justify-between mb-3">
                             <div>
-                              <h3 className="font-display font-black italic uppercase text-white text-sm">{exercise.exerciseName}</h3>
-                              <p className="text-xs" style={{ color: '#A0A0A0' }}>{exercise.category}</p>
+                              <h3 className="font-display font-black italic uppercase text-white text-sm">{getLocalizedExerciseName(exercise, allExercisesCatalog, lang)}</h3>
+                              <p className="text-xs" style={{ color: '#A0A0A0' }}>{getLocalizedMuscleGroupName(exercise.category, rawMuscleGroups, lang)}</p>
                             </div>
                             <button onClick={() => handleRemoveExercise(exercise.exerciseId)} className="p-1 transition-colors" style={{ color: '#FF5C00' }}>
                               <Trash2 size={14} />
@@ -583,9 +608,9 @@ function WeeklyPlanBuilderContent() {
                           </div>
                           <div>
                             <div className="flex items-center justify-between mb-2">
-                              <p className="ft-label mb-0">Sets</p>
+                              <p className="ft-label mb-0">{t('plan:builder.modal.sets')}</p>
                               <button onClick={() => handleAddSet(exercise.exerciseId)} className="flex items-center gap-1 text-xs font-display font-bold uppercase tracking-wider" style={{ color: '#CCFF00' }}>
-                                <Plus size={11} /> Add Set
+                                <Plus size={11} /> {t('plan:builder.modal.addSet')}
                               </button>
                             </div>
                             <div className="space-y-1.5">
@@ -593,8 +618,8 @@ function WeeklyPlanBuilderContent() {
                                 <div key={setIdx} className="flex items-center gap-2 px-2 py-1.5" style={{ background: 'rgba(255,255,255,0.03)', borderRadius: '2px' }}>
                                   <span className="font-mono-sport text-xs w-8 flex-shrink-0" style={{ color: '#555', fontFamily: "'JetBrains Mono', monospace" }}>S{set.setNumber}</span>
                                   <div className="flex-1">
-                                    <input type="number" min="1" value={set.targetReps} onChange={(e) => handleSetChange(exercise.exerciseId, setIdx, 'targetReps', e.target.value)} className="ft-input text-center text-xs py-1 px-1" placeholder="Reps" />
-                                    <p className="text-[9px] text-center mt-0.5" style={{ color: '#555' }}>reps</p>
+                                    <input type="number" min="1" value={set.targetReps} onChange={(e) => handleSetChange(exercise.exerciseId, setIdx, 'targetReps', e.target.value)} className="ft-input text-center text-xs py-1 px-1" placeholder={t('plan:builder.modal.repsPlaceholder')} />
+                                    <p className="text-[9px] text-center mt-0.5" style={{ color: '#555' }}>{t('plan:builder.modal.repsUnit')}</p>
                                   </div>
                                   <div className="flex-1">
                                     <input type="number" min="0" step="0.5" value={set.targetWeight || ''} onChange={(e) => handleSetChange(exercise.exerciseId, setIdx, 'targetWeight', e.target.value)} className="ft-input text-center text-xs py-1 px-1" placeholder="kg" />
@@ -620,7 +645,7 @@ function WeeklyPlanBuilderContent() {
             {/* Modal footer */}
             <div className="p-5 flex justify-end" style={{ borderTop: '1px solid rgba(204,255,0,0.1)' }}>
               <button onClick={() => setShowExerciseModal(false)} className="ft-btn-primary px-8 py-2.5 text-sm">
-                Done
+                {t('plan:builder.modal.done')}
               </button>
             </div>
           </div>

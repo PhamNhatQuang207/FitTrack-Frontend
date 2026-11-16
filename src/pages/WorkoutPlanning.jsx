@@ -1,11 +1,14 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useMutation, useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import axiosClient from "../api/axiosClient";
 import { exerciseAPI, muscleGroupAPI } from "../api";
 import { invalidateWorkoutAndAnalytics, queryKeys } from "../lib/queryClient";
 import { ArrowLeft, Search, Save, Plus, Trash2, CheckCircle2, AlertCircle } from "lucide-react";
 import ErrorBoundary from "../components/ErrorBoundary";
+import LanguageSwitcher from "../components/LanguageSwitcher";
+import { getApiErrorMessage, getLocalizedExerciseName, getLocalizedField, getLocalizedMuscleGroupName } from "../utils/localize";
 
 // Muscle group data (icons kept, colors removed)
 import chestIcon from "../assets/icons/muscle/chest.png";
@@ -73,6 +76,8 @@ function StepIndicator({ current, total = 2 }) {
 }
 
 function WorkoutPlanningContent() {
+  const { t, i18n } = useTranslation(['workout', 'errors']);
+  const lang = i18n.resolvedLanguage || 'en';
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const workoutNameInputRef = useRef(null);
@@ -100,6 +105,7 @@ function WorkoutPlanningContent() {
     return rawMuscleGroups.map((g) => ({
       id: g.slug,
       name: g.name,
+      translations: g.translations,
       icon: g.iconUrl || LOCAL_ICON_BY_SLUG[g.slug] || chestIcon,
     }));
   }, [rawMuscleGroups]);
@@ -127,7 +133,7 @@ function WorkoutPlanningContent() {
       navigate('/dashboard');
     },
     onError: (error) => {
-      setErrorMessage(error.response?.data?.message || "Failed to save workout. Please try again.");
+      setErrorMessage(getApiErrorMessage(error, t, t('workout:planning.errors.saveFailed')));
     },
   });
 
@@ -233,7 +239,7 @@ function WorkoutPlanningContent() {
   const handleNextToExercises = () => {
     unlockScroll();
     if (!workoutName.trim()) {
-      setErrorMessage("Please enter a workout name before continuing.");
+      setErrorMessage(t('workout:planning.errors.nameRequiredContinue'));
       setErrorField("workoutName");
       workoutNameInputRef.current?.focus({ preventScroll: true });
       requestAnimationFrame(() => {
@@ -242,7 +248,7 @@ function WorkoutPlanningContent() {
       return;
     }
     if (selectedMuscleGroups.length === 0) {
-      setErrorMessage("Please select at least one target muscle group.");
+      setErrorMessage(t('workout:planning.errors.muscleGroupRequired'));
       setErrorField("muscleGroups");
       requestAnimationFrame(() => {
         muscleGroupsSectionRef.current?.scrollIntoView?.({ behavior: 'smooth', block: 'center' });
@@ -258,12 +264,12 @@ function WorkoutPlanningContent() {
   const handleSaveWorkout = () => {
     if (!workoutName.trim()) {
       setStep(1);
-      setErrorMessage("Please enter a workout name before saving.");
+      setErrorMessage(t('workout:planning.errors.nameRequiredSave'));
       setErrorField("workoutName");
       return;
     }
     if (workoutExercises.length === 0) {
-      setErrorMessage("Please add at least one exercise before saving your workout.");
+      setErrorMessage(t('workout:planning.errors.exerciseRequiredSave'));
       setErrorField("exercises");
       return;
     }
@@ -272,9 +278,13 @@ function WorkoutPlanningContent() {
     createWorkoutMutation.mutate({ name: workoutName.trim(), exercises: workoutExercises, notes: "" });
   };
 
-  const filteredExercises = availableExercises.filter(ex =>
-    ex.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredExercises = availableExercises.filter(ex => {
+    const q = searchTerm.toLowerCase();
+    return (
+      ex.name.toLowerCase().includes(q) ||
+      (ex.translations?.vi?.name || '').toLowerCase().includes(q)
+    );
+  });
 
   return (
     <div className="ft-page min-h-screen">
@@ -302,13 +312,13 @@ function WorkoutPlanningContent() {
           >
             <ArrowLeft size={18} className="group-hover:-translate-x-1 transition-transform" />
             <span className="hidden md:inline font-display font-bold uppercase tracking-widest text-xs">
-              {step === 1 ? 'Dashboard' : 'Back'}
+              {step === 1 ? t('workout:planning.backToDashboard') : t('workout:planning.back')}
             </span>
           </button>
 
           <StepIndicator current={step} />
 
-          <div className="w-20 hidden md:block" />
+          <LanguageSwitcher />
         </div>
       </div>
 
@@ -334,9 +344,9 @@ function WorkoutPlanningContent() {
         {/* ── STEP 1: Name + Muscle Groups ── */}
         {step === 1 && (
           <div className="animate-slide-up">
-            <p className="ft-label mb-1">// Step 1 of 2</p>
-            <h1 className="ft-title text-4xl md:text-5xl text-white mb-1">Create Workout</h1>
-            <p className="text-sm mb-8" style={{ color: '#A0A0A0' }}>Name your workout and select target muscle groups</p>
+            <p className="ft-label mb-1">{t('workout:planning.stepEyebrow', { current: 1, total: 2 })}</p>
+            <h1 className="ft-title text-4xl md:text-5xl text-white mb-1">{t('workout:planning.step1Title')}</h1>
+            <p className="text-sm mb-8" style={{ color: '#A0A0A0' }}>{t('workout:planning.step1Subtitle')}</p>
 
             {/* Workout Name */}
             <div
@@ -351,13 +361,13 @@ function WorkoutPlanningContent() {
               }}
             >
               <label className="ft-label" htmlFor="workout-name-input">
-                Workout Name <span style={{ color: '#FF5C00' }}>*</span>
+                {t('workout:planning.workoutNameLabel')} <span style={{ color: '#FF5C00' }}>*</span>
               </label>
               <input
                 ref={workoutNameInputRef}
                 id="workout-name-input"
                 type="text"
-                placeholder="e.g. Push Day A, Full Body Strength, Leg Day..."
+                placeholder={t('workout:planning.workoutNamePlaceholder')}
                 value={workoutName}
                 onChange={(e) => {
                   setWorkoutName(e.target.value);
@@ -384,7 +394,7 @@ function WorkoutPlanningContent() {
               />
               {errorField === 'workoutName' && (
                 <p className="text-xs mt-2 font-medium" style={{ color: '#FF5C00' }}>
-                  ⚠ Workout name is required to continue.
+                  {t('workout:planning.workoutNameRequiredInline')}
                 </p>
               )}
             </div>
@@ -396,19 +406,20 @@ function WorkoutPlanningContent() {
               style={{ scrollMarginTop: '96px' }}
             >
               <div className="flex items-center justify-between mb-4">
-                <p className="ft-label">// Select Muscle Groups <span style={{ color: '#FF5C00' }}>*</span></p>
+                <p className="ft-label">{t('workout:planning.selectMuscleGroups')} <span style={{ color: '#FF5C00' }}>*</span></p>
                 <span className="font-mono-sport text-xs" style={{ color: '#CCFF00', fontFamily: "'JetBrains Mono', monospace" }}>
-                  {selectedMuscleGroups.length} selected
+                  {t('workout:planning.selectedCount', { count: selectedMuscleGroups.length })}
                 </span>
               </div>
               {errorField === 'muscleGroups' && (
                 <p className="text-xs mb-3 font-medium" style={{ color: '#FF5C00' }}>
-                  ⚠ Please select at least one target muscle group.
+                  {t('workout:planning.muscleGroupsRequiredInline')}
                 </p>
               )}
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
                 {muscleGroupData.map((group) => {
                   const isSelected = !!selectedMuscleGroups.find(g => g.id === group.id);
+                  const localizedGroupName = getLocalizedField(group, 'name', lang);
                   return (
                     <button
                       key={group.id}
@@ -425,14 +436,14 @@ function WorkoutPlanningContent() {
                         transform: isSelected ? 'translateY(-2px)' : 'none',
                       }}
                     >
-                      <img src={group.icon} alt={group.name} className="w-10 h-10 object-contain mb-2"
+                      <img src={group.icon} alt={localizedGroupName} className="w-10 h-10 object-contain mb-2"
                         style={{ filter: isSelected ? 'none' : 'grayscale(0.4) brightness(0.7)' }}
                       />
                       <span
                         className="font-display font-bold uppercase text-xs text-center leading-tight"
                         style={{ color: isSelected ? '#CCFF00' : '#A0A0A0' }}
                       >
-                        {group.name}
+                        {localizedGroupName}
                       </span>
                       {isSelected && (
                         <div
@@ -472,7 +483,7 @@ function WorkoutPlanningContent() {
               onClick={handleNextToExercises}
               className="ft-btn-primary w-full py-4 text-base"
             >
-              Next: Add Exercises →
+              {t('workout:planning.nextAddExercises')}
             </button>
           </div>
         )}
@@ -480,21 +491,21 @@ function WorkoutPlanningContent() {
         {/* ── STEP 2: Exercise Selection ── */}
         {step === 2 && (
           <div className="animate-slide-up">
-            <p className="ft-label mb-1">// Step 2 of 2</p>
+            <p className="ft-label mb-1">{t('workout:planning.stepEyebrow', { current: 2, total: 2 })}</p>
             <h1 className="ft-title text-3xl md:text-4xl text-white mb-1">{workoutName}</h1>
             <p className="text-sm mb-6" style={{ color: '#A0A0A0' }}>
-              From: {selectedMuscleGroups.map(g => g.name).join(', ')}
+              {t('workout:planning.fromGroups', { groups: selectedMuscleGroups.map(g => getLocalizedField(g, 'name', lang)).join(', ') })}
             </p>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
               {/* Available exercises */}
               <div>
-                <p className="ft-label mb-3">// Available Exercises</p>
+                <p className="ft-label mb-3">{t('workout:planning.availableExercises')}</p>
                 <div className="relative mb-3">
                   <Search size={14} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: '#555' }} />
                   <input
                     type="text"
-                    placeholder="Search exercises..."
+                    placeholder={t('workout:planning.searchExercisesPlaceholder')}
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="ft-input"
@@ -524,8 +535,8 @@ function WorkoutPlanningContent() {
                           }}
                         >
                           <div>
-                            <p className="font-display font-bold italic uppercase text-sm text-white">{exercise.name}</p>
-                            <p className="text-xs mt-0.5" style={{ color: '#555' }}>{exercise.category} • {exercise.equipment}</p>
+                            <p className="font-display font-bold italic uppercase text-sm text-white">{getLocalizedField(exercise, 'name', lang)}</p>
+                            <p className="text-xs mt-0.5" style={{ color: '#555' }}>{getLocalizedMuscleGroupName(exercise.category, rawMuscleGroups, lang)} • {exercise.equipment}</p>
                           </div>
                           {isAdded
                             ? <CheckCircle2 size={16} style={{ color: '#CCFF00', flexShrink: 0 }} />
@@ -541,9 +552,9 @@ function WorkoutPlanningContent() {
               {/* Selected exercises */}
               <div>
                 <div className="flex items-center justify-between mb-3">
-                  <p className="ft-label">// Your Exercises</p>
+                  <p className="ft-label">{t('workout:planning.yourExercises')}</p>
                   <span className="font-mono-sport text-xs" style={{ color: '#CCFF00', fontFamily: "'JetBrains Mono', monospace" }}>
-                    {workoutExercises.length} added
+                    {t('workout:planning.addedCount', { count: workoutExercises.length })}
                   </span>
                 </div>
 
@@ -553,8 +564,8 @@ function WorkoutPlanningContent() {
                       className="text-center py-16"
                       style={{ border: '1px dashed rgba(204,255,0,0.1)', borderRadius: '2px' }}
                     >
-                      <p className="ft-label">No exercises added yet</p>
-                      <p className="text-xs mt-1" style={{ color: '#555' }}>Select from the left panel</p>
+                      <p className="ft-label">{t('workout:planning.noExercisesTitle')}</p>
+                      <p className="text-xs mt-1" style={{ color: '#555' }}>{t('workout:planning.noExercisesSubtitle')}</p>
                     </div>
                   )}
                   {workoutExercises.map((exercise, index) => (
@@ -565,8 +576,8 @@ function WorkoutPlanningContent() {
                     >
                       <div className="flex items-start justify-between mb-3">
                         <div>
-                          <h3 className="font-display font-black italic uppercase text-white">{exercise.exerciseName}</h3>
-                          <p className="text-xs" style={{ color: '#A0A0A0' }}>{exercise.category}</p>
+                          <h3 className="font-display font-black italic uppercase text-white">{getLocalizedExerciseName(exercise, availableExercises, lang)}</h3>
+                          <p className="text-xs" style={{ color: '#A0A0A0' }}>{getLocalizedMuscleGroupName(exercise.category, rawMuscleGroups, lang)}</p>
                         </div>
                         <button
                           onClick={() => handleRemoveExercise(index)}
@@ -582,13 +593,13 @@ function WorkoutPlanningContent() {
                       {/* Sets config */}
                       <div>
                         <div className="flex items-center justify-between mb-2">
-                          <p className="ft-label mb-0">Sets</p>
+                          <p className="ft-label mb-0">{t('workout:planning.sets')}</p>
                           <button
                             onClick={() => handleAddSet(index)}
                             className="flex items-center gap-1 text-xs font-display font-bold uppercase tracking-wider transition-colors"
                             style={{ color: '#CCFF00' }}
                           >
-                            <Plus size={11} /> Add Set
+                            <Plus size={11} /> {t('workout:planning.addSet')}
                           </button>
                         </div>
                         <div className="space-y-1.5">
@@ -608,9 +619,9 @@ function WorkoutPlanningContent() {
                                   onChange={(e) => handleSetChange(index, setIdx, 'targetReps', e.target.value)}
                                   className="ft-input text-center text-xs py-1"
                                   style={{ paddingLeft: '4px', paddingRight: '4px' }}
-                                  placeholder="Reps"
+                                  placeholder={t('workout:planning.repsPlaceholder')}
                                 />
-                                <p className="text-[9px] text-center mt-0.5" style={{ color: '#555' }}>reps</p>
+                                <p className="text-[9px] text-center mt-0.5" style={{ color: '#555' }}>{t('workout:planning.repsUnit')}</p>
                               </div>
                               <div className="flex-1">
                                 <input
@@ -619,7 +630,7 @@ function WorkoutPlanningContent() {
                                   onChange={(e) => handleSetChange(index, setIdx, 'targetWeight', e.target.value)}
                                   className="ft-input text-center text-xs py-1"
                                   style={{ paddingLeft: '4px', paddingRight: '4px' }}
-                                  placeholder="Weight"
+                                  placeholder={t('workout:planning.weightPlaceholder')}
                                 />
                                 <p className="text-[9px] text-center mt-0.5" style={{ color: '#555' }}>kg</p>
                               </div>
@@ -647,7 +658,7 @@ function WorkoutPlanningContent() {
                   className="ft-btn-primary w-full mt-4 py-3.5 flex items-center justify-center gap-2 disabled:opacity-60"
                 >
                   <Save size={16} />
-                  {createWorkoutMutation.isPending ? 'Saving...' : 'Save Workout Plan'}
+                  {createWorkoutMutation.isPending ? t('workout:planning.saving') : t('workout:planning.saveWorkoutPlan')}
                 </button>
               </div>
             </div>

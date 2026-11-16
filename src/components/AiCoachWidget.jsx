@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import {
   Bot,
   X,
@@ -25,14 +26,10 @@ import { useAuth } from '../hooks/useAuth';
 import { aiAPI } from '../api';
 import { queryKeys } from '../lib/queryClient';
 import MarkdownMessage, { isSafeExternalUrl } from './MarkdownMessage';
-
-const QUICK_PROMPTS = [
-  'Analyze my recent progress',
-  'Build a new weekly workout schedule',
-  "Edit my current week's schedule"
-];
+import { getApiErrorMessage } from '../utils/localize';
 
 export default function AiCoachWidget() {
+  const { t } = useTranslation(['ai', 'plan', 'errors']);
   const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -91,9 +88,7 @@ export default function AiCoachWidget() {
     },
     onError: (err, variables) => {
       setMessages((prev) => prev.filter((m) => m.id !== variables.optimisticId));
-      setErrorBanner(
-        err.response?.data?.message || 'Unable to reach AI Coach right now.'
-      );
+      setErrorBanner(getApiErrorMessage(err, t, t('ai:errors.chatFailed')));
     }
   });
 
@@ -105,8 +100,8 @@ export default function AiCoachWidget() {
         handleNewChat();
       }
     },
-    onError: () => {
-      setErrorBanner('Failed to delete conversation.');
+    onError: (err) => {
+      setErrorBanner(getApiErrorMessage(err, t, t('ai:errors.deleteConversationFailed')));
     }
   });
 
@@ -115,8 +110,8 @@ export default function AiCoachWidget() {
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: queryKeys.ai.memories });
     },
-    onError: () => {
-      setErrorBanner('Failed to delete memory item.');
+    onError: (err) => {
+      setErrorBanner(getApiErrorMessage(err, t, t('ai:errors.deleteMemoryFailed')));
     }
   });
 
@@ -132,7 +127,7 @@ export default function AiCoachWidget() {
       await queryClient.invalidateQueries({ queryKey: queryKeys.ai.mcpKey });
     },
     onError: (err) => {
-      setErrorBanner(err.response?.data?.message || 'Failed to generate MCP key.');
+      setErrorBanner(getApiErrorMessage(err, t, t('ai:errors.generateKeyFailed')));
     }
   });
 
@@ -147,7 +142,7 @@ export default function AiCoachWidget() {
       await queryClient.invalidateQueries({ queryKey: queryKeys.ai.mcpKey });
     },
     onError: (err) => {
-      setErrorBanner(err.response?.data?.message || 'Failed to revoke MCP key.');
+      setErrorBanner(getApiErrorMessage(err, t, t('ai:errors.revokeKeyFailed')));
     }
   });
 
@@ -176,9 +171,7 @@ export default function AiCoachWidget() {
       ]);
     },
     onError: (err) => {
-      setErrorBanner(
-        err.response?.data?.message || 'Failed to apply schedule changes.'
-      );
+      setErrorBanner(getApiErrorMessage(err, t, t('ai:errors.applyPlanFailed')));
     },
     onSettled: () => {
       setApplyingMsgId(null);
@@ -220,8 +213,8 @@ export default function AiCoachWidget() {
       setConversationId(data.id);
       setMessages(data.messages || []);
       setActiveTab('chat');
-    } catch {
-      setErrorBanner('Failed to load conversation.');
+    } catch (err) {
+      setErrorBanner(getApiErrorMessage(err, t, t('ai:errors.loadConversationFailed')));
     } finally {
       setLoading(false);
     }
@@ -299,7 +292,7 @@ export default function AiCoachWidget() {
     <div className="fixed bottom-5 right-5 z-50">
       {!isOpen ? (
         <button
-          aria-label="Open AI Coach"
+          aria-label={t('ai:openButtonAria')}
           onClick={() => setIsOpen(true)}
           className="flex items-center gap-2 px-4 py-3 rounded-full shadow-2xl font-bold text-sm transition-transform hover:scale-105"
           style={{
@@ -309,7 +302,7 @@ export default function AiCoachWidget() {
           }}
         >
           <Bot size={20} />
-          <span>AI Coach</span>
+          <span>{t('ai:triggerLabel')}</span>
         </button>
       ) : (
         <div
@@ -333,21 +326,21 @@ export default function AiCoachWidget() {
                 <Bot size={18} />
               </div>
               <div>
-                <div className="font-bold text-sm leading-tight">FitTrack AI Coach</div>
-                <div className="text-[11px] text-gray-400">MCP Powered • Grounded</div>
+                <div className="font-bold text-sm leading-tight">{t('ai:header.title')}</div>
+                <div className="text-[11px] text-gray-400">{t('ai:header.subtitle')}</div>
               </div>
             </div>
 
             <div className="flex items-center gap-1">
               <button
-                title="New Chat"
+                title={t('ai:header.newChat')}
                 onClick={handleNewChat}
                 className="p-1.5 rounded-lg hover:bg-neutral-800 text-gray-300"
               >
                 <Plus size={16} />
               </button>
               <button
-                title="Conversation History"
+                title={t('ai:header.history')}
                 onClick={() =>
                   setActiveTab(activeTab === 'history' ? 'chat' : 'history')
                 }
@@ -358,7 +351,7 @@ export default function AiCoachWidget() {
                 <History size={16} />
               </button>
               <button
-                title="Saved Fitness Memories"
+                title={t('ai:header.memories')}
                 onClick={() =>
                   setActiveTab(activeTab === 'memories' ? 'chat' : 'memories')
                 }
@@ -369,7 +362,7 @@ export default function AiCoachWidget() {
                 <Brain size={16} />
               </button>
               <button
-                aria-label="Close AI Coach"
+                aria-label={t('ai:closeButtonAria')}
                 onClick={() => setIsOpen(false)}
                 className="p-1.5 rounded-lg hover:bg-neutral-800 text-gray-400"
               >
@@ -388,10 +381,10 @@ export default function AiCoachWidget() {
           {activeTab === 'history' ? (
             <div className="flex-1 overflow-y-auto p-3 space-y-2">
               <div className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-2">
-                Past Conversations
+                {t('ai:history.title')}
               </div>
               {conversations.length === 0 ? (
-                <p className="text-xs text-gray-500">No conversations yet.</p>
+                <p className="text-xs text-gray-500">{t('ai:history.empty')}</p>
               ) : (
                 conversations.map((c) => (
                   <div
@@ -404,11 +397,11 @@ export default function AiCoachWidget() {
                         {c.title}
                       </div>
                       <div className="text-[10px] text-gray-400">
-                        {c.messageCount} messages
+                        {t('ai:history.messagesCount', { count: c.messageCount })}
                       </div>
                     </div>
                     <button
-                      aria-label={`Delete conversation ${c.title}`}
+                      aria-label={t('ai:history.deleteAria', { title: c.title })}
                       onClick={(e) => handleDeleteConversation(c.id, e)}
                       className="p-1 text-gray-400 hover:text-red-400"
                     >
@@ -425,26 +418,26 @@ export default function AiCoachWidget() {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-1.5 text-xs font-semibold text-white">
                     <Key size={14} className="text-[#CCFF00]" />
-                    <span>MCP Access Key</span>
+                    <span>{t('ai:memories.mcpTitle')}</span>
                   </div>
                   {mcpKeyStatus.hasKey ? (
                     <span className="text-[10px] px-2 py-0.5 rounded font-medium bg-green-950 text-green-400 border border-green-800">
-                      Active
+                      {t('ai:memories.mcpActive')}
                     </span>
                   ) : (
                     <span className="text-[10px] px-2 py-0.5 rounded font-medium bg-neutral-800 text-gray-400">
-                      No Key
+                      {t('ai:memories.mcpNoKey')}
                     </span>
                   )}
                 </div>
                 <p className="text-[11px] text-gray-400">
-                  Connect your FitTrack data to external MCP tools (Claude Desktop, Cursor, AI agents).
+                  {t('ai:memories.mcpDescription')}
                 </p>
 
                 {generatedRawKey ? (
                   <div className="p-2.5 rounded-lg bg-black/60 border border-[#CCFF00]/40 space-y-2">
                     <div className="text-[11px] text-[#CCFF00] font-semibold">
-                      New Key Generated (copy now, it won't be shown again):
+                      {t('ai:memories.mcpNewKeyNotice')}
                     </div>
                     <div className="flex items-center justify-between gap-2">
                       <code className="text-[11px] font-mono text-gray-200 truncate select-all flex-1 bg-neutral-950 p-1.5 rounded border border-neutral-800">
@@ -453,12 +446,12 @@ export default function AiCoachWidget() {
                       <button
                         type="button"
                         onClick={handleCopyKey}
-                        aria-label="Copy MCP Key"
+                        aria-label={t('ai:memories.copyKeyAria')}
                         className="px-2.5 py-1.5 text-xs rounded font-bold flex items-center gap-1 shrink-0"
                         style={{ backgroundColor: '#CCFF00', color: '#000' }}
                       >
                         {copied ? <Check size={13} /> : <Copy size={13} />}
-                        <span>{copied ? 'Copied' : 'Copy'}</span>
+                        <span>{copied ? t('ai:memories.copied') : t('ai:memories.copy')}</span>
                       </button>
                     </div>
                   </div>
@@ -473,7 +466,7 @@ export default function AiCoachWidget() {
                       onClick={handleRevokeMcpKey}
                       className="px-2.5 py-1 text-xs rounded border border-red-800/80 text-red-400 hover:bg-red-950/40 disabled:opacity-50"
                     >
-                      {mcpKeyLoading ? 'Revoking...' : 'Revoke'}
+                      {mcpKeyLoading ? t('ai:memories.revoking') : t('ai:memories.revoke')}
                     </button>
                   </div>
                 ) : (
@@ -484,7 +477,7 @@ export default function AiCoachWidget() {
                     className="w-full py-1.5 rounded-lg text-xs font-bold transition-opacity disabled:opacity-50"
                     style={{ backgroundColor: '#CCFF00', color: '#000' }}
                   >
-                    {mcpKeyLoading ? 'Generating...' : 'Generate MCP Key'}
+                    {mcpKeyLoading ? t('ai:memories.generating') : t('ai:memories.generateKey')}
                   </button>
                 )}
               </div>
@@ -492,11 +485,11 @@ export default function AiCoachWidget() {
               {/* Coach Memories List */}
               <div className="space-y-2">
                 <div className="text-xs font-semibold uppercase tracking-wider text-gray-400">
-                  Coach Memory ({memories.length}/25)
+                  {t('ai:memories.coachMemoryTitle', { count: memories.length })}
                 </div>
                 {memories.length === 0 ? (
                   <p className="text-xs text-gray-500">
-                    No saved memories yet. Share your goals, schedule, equipment, or injuries in chat!
+                    {t('ai:memories.coachMemoryEmpty')}
                   </p>
                 ) : (
                   memories.map((m) => (
@@ -517,7 +510,7 @@ export default function AiCoachWidget() {
                         <p className="text-xs text-gray-200 mt-1">{m.value}</p>
                       </div>
                       <button
-                        aria-label={`Delete memory ${m.key}`}
+                        aria-label={t('ai:memories.deleteMemoryAria', { key: m.key })}
                         onClick={() => handleDeleteMemory(m.id)}
                         className="p-1 text-gray-400 hover:text-red-400"
                       >
@@ -537,12 +530,16 @@ export default function AiCoachWidget() {
                     <div className="p-3 rounded-xl bg-neutral-900 border border-neutral-800 text-xs text-gray-300">
                       <div className="flex items-center gap-1.5 font-semibold text-white mb-1">
                         <Sparkles size={14} className="text-[#CCFF00]" />
-                        <span>How can I help your training today?</span>
+                        <span>{t('ai:welcome.title')}</span>
                       </div>
-                      Ask me to analyze your workout history, build a new weekly schedule, or adjust your current week&apos;s schedule.
+                      {t('ai:welcome.subtitle')}
                     </div>
                     <div className="flex flex-wrap gap-1.5">
-                      {QUICK_PROMPTS.map((prompt) => (
+                      {[
+                        t('ai:quickPrompts.analyze'),
+                        t('ai:quickPrompts.buildPlan'),
+                        t('ai:quickPrompts.editSchedule')
+                      ].map((prompt) => (
                         <button
                           key={prompt}
                           type="button"
@@ -606,7 +603,7 @@ export default function AiCoachWidget() {
                             className="inline-flex items-center gap-1.5 text-[11px] px-2.5 py-1 rounded-lg bg-neutral-900 border border-neutral-700 hover:border-[#CCFF00] text-gray-200 transition-colors"
                           >
                             <BookOpen size={12} className="text-[#CCFF00]" />
-                            <span>Sources ({msg.citations.length})</span>
+                            <span>{t('ai:citations.sourcesCount', { count: msg.citations.length })}</span>
                             {expandedCitationsByMsg[msg.id] ? (
                               <ChevronUp size={12} className="text-gray-400" />
                             ) : (
@@ -697,10 +694,10 @@ export default function AiCoachWidget() {
                             style={{ backgroundColor: '#CCFF00', color: '#000' }}
                           >
                             {msg.draftPlan.mode === 'edit_schedule'
-                              ? 'Edit Active Schedule'
+                              ? t('ai:draftPlan.modeEditSchedule')
                               : msg.draftPlan.mode === 'update_plan'
-                              ? 'Edit Library Plan'
-                              : 'New Weekly Plan'}
+                              ? t('ai:draftPlan.modeUpdatePlan')
+                              : t('ai:draftPlan.modeNewPlan')}
                           </span>
                           <Calendar size={14} className="text-[#CCFF00]" />
                         </div>
@@ -723,13 +720,13 @@ export default function AiCoachWidget() {
                               className="text-[11px] flex items-center justify-between py-1 border-b border-neutral-800"
                             >
                               <span className="font-semibold text-gray-300">
-                                {d.dayName}
+                                {t(`plan:days.${d.dayName}`, { defaultValue: d.dayName })}
                               </span>
                               {d.isRestDay ? (
-                                <span className="text-gray-500">Rest Day</span>
+                                <span className="text-gray-500">{t('ai:draftPlan.restDay')}</span>
                               ) : (
                                 <span className="text-[#CCFF00] truncate max-w-[180px]">
-                                  {d.workout?.name} ({d.workout?.exercises?.length || 0} ex)
+                                  {d.workout?.name} ({t('ai:draftPlan.exercisesShort', { count: d.workout?.exercises?.length || 0 })})
                                 </span>
                               )}
                             </div>
@@ -742,8 +739,8 @@ export default function AiCoachWidget() {
                               <CheckCircle2 size={14} />
                               <span>
                                 {msg.draftPlan.appliedScheduleId
-                                  ? 'Applied to Schedule'
-                                  : 'Saved to Plan Library'}
+                                  ? t('ai:draftPlan.appliedSchedule')
+                                  : t('ai:draftPlan.savedLibrary')}
                               </span>
                             </span>
                             <button
@@ -758,8 +755,8 @@ export default function AiCoachWidget() {
                               className="text-xs underline text-gray-200 hover:text-[#CCFF00]"
                             >
                               {msg.draftPlan.appliedScheduleId
-                                ? 'View Weekly Schedule'
-                                : 'View Plan Library'}
+                                ? t('ai:draftPlan.viewSchedule')
+                                : t('ai:draftPlan.viewLibrary')}
                             </button>
                           </div>
                         ) : msg.draftPlan.mode === 'update_plan' ? (
@@ -771,8 +768,8 @@ export default function AiCoachWidget() {
                             style={{ backgroundColor: '#CCFF00', color: '#000' }}
                           >
                             {applyingMsgId === msg.id
-                              ? 'Updating...'
-                              : 'Update Plan in Library'}
+                              ? t('ai:draftPlan.updating')
+                              : t('ai:draftPlan.updateLibraryPlan')}
                           </button>
                         ) : msg.draftPlan.mode === 'edit_schedule' ? (
                           msg.draftPlan.targetPlanId ? (
@@ -786,8 +783,8 @@ export default function AiCoachWidget() {
                                 className="w-full py-2 px-2 rounded-lg font-bold text-xs border border-[#CCFF00] text-[#CCFF00] hover:bg-[#CCFF00]/10 transition-colors disabled:opacity-50"
                               >
                                 {applyingMsgId === msg.id
-                                  ? 'Updating...'
-                                  : 'This Week Only'}
+                                  ? t('ai:draftPlan.updating')
+                                  : t('ai:draftPlan.thisWeekOnly')}
                               </button>
                               <button
                                 type="button"
@@ -799,8 +796,8 @@ export default function AiCoachWidget() {
                                 style={{ backgroundColor: '#CCFF00', color: '#000' }}
                               >
                                 {applyingMsgId === msg.id
-                                  ? 'Updating...'
-                                  : 'Week & Template'}
+                                  ? t('ai:draftPlan.updating')
+                                  : t('ai:draftPlan.weekAndTemplate')}
                               </button>
                             </div>
                           ) : (
@@ -814,8 +811,8 @@ export default function AiCoachWidget() {
                               style={{ backgroundColor: '#CCFF00', color: '#000' }}
                             >
                               {applyingMsgId === msg.id
-                                ? 'Applying...'
-                                : 'Apply Schedule Changes'}
+                                ? t('ai:draftPlan.applying')
+                                : t('ai:draftPlan.applyScheduleChanges')}
                             </button>
                           )
                         ) : (
@@ -827,8 +824,8 @@ export default function AiCoachWidget() {
                               className="w-full py-2 px-2 rounded-lg font-bold text-xs border border-[#CCFF00] text-[#CCFF00] hover:bg-[#CCFF00]/10 transition-colors disabled:opacity-50"
                             >
                               {applyingMsgId === msg.id
-                                ? 'Saving...'
-                                : 'Save to Library'}
+                                ? t('ai:draftPlan.saving')
+                                : t('ai:draftPlan.saveToLibrary')}
                             </button>
                             <button
                               type="button"
@@ -838,8 +835,8 @@ export default function AiCoachWidget() {
                               style={{ backgroundColor: '#CCFF00', color: '#000' }}
                             >
                               {applyingMsgId === msg.id
-                                ? 'Applying...'
-                                : 'Apply New Schedule'}
+                                ? t('ai:draftPlan.applying')
+                                : t('ai:draftPlan.applyNewSchedule')}
                             </button>
                           </div>
                         )}
@@ -850,7 +847,7 @@ export default function AiCoachWidget() {
 
                 {isBusy && (
                   <div className="text-xs text-gray-400 italic">
-                    AI Coach is thinking...
+                    {t('ai:chat.thinking')}
                   </div>
                 )}
                 <div ref={messagesEndRef} />
@@ -866,14 +863,14 @@ export default function AiCoachWidget() {
                   type="text"
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
-                  placeholder="Ask AI Coach..."
+                  placeholder={t('ai:chat.placeholder')}
                   maxLength={1500}
                   className="flex-1 bg-neutral-900 text-xs text-white rounded-xl px-3 py-2.5 border border-neutral-800 focus:outline-none focus:border-[#CCFF00]"
                 />
                 <button
                   type="submit"
                   disabled={isBusy || !input.trim()}
-                  aria-label="Send message"
+                  aria-label={t('ai:chat.sendAria')}
                   className="p-2.5 rounded-xl disabled:opacity-40"
                   style={{ backgroundColor: '#CCFF00', color: '#000' }}
                 >

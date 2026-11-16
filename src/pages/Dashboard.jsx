@@ -1,10 +1,13 @@
 import React, { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "../hooks/useAuth";
 import { userAPI, weeklyScheduleAPI, workoutSessionAPI } from "../api";
 import { queryKeys } from "../lib/queryClient";
 import { Dumbbell, TrendingUp, Calendar, Zap, User, ClipboardList, Play, Bell } from "lucide-react";
+import LanguageSwitcher from "../components/LanguageSwitcher";
+import { formatDate, formatNumber } from "../utils/formatters";
 
 // ── Mini stat card ─────────────────────────────────────────
 function StatCard({ icon: Icon, value, label, accent = "lime", delay = "" }) {
@@ -156,6 +159,8 @@ function FeatureCard({ icon: Icon, title, description, extra, onClick, accent = 
 
 // ── Main Dashboard ─────────────────────────────────────────
 export default function Dashboard() {
+  const { t, i18n } = useTranslation(['dashboard']);
+  const lang = i18n.resolvedLanguage || 'en';
   const navigate = useNavigate();
   const { user } = useAuth();
 
@@ -242,7 +247,8 @@ export default function Dashboard() {
           </div>
 
           {/* User info */}
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
+            <LanguageSwitcher />
             <button
               id="notification-btn"
               className="w-9 h-9 flex items-center justify-center transition-colors"
@@ -264,8 +270,8 @@ export default function Dashboard() {
                 <User size={16} style={{ color: "#CCFF00" }} />
               </div>
               <div className="hidden md:block text-left">
-                <p className="text-xs uppercase tracking-widest font-display font-bold" style={{ color: "#A0A0A0" }}>Athlete</p>
-                <p className="text-sm font-semibold text-white leading-none">{user?.name || 'User'}</p>
+                <p className="text-xs uppercase tracking-widest font-display font-bold" style={{ color: "#A0A0A0" }}>{t('dashboard:header.athlete')}</p>
+                <p className="text-sm font-semibold text-white leading-none">{user?.name || t('dashboard:header.defaultUser')}</p>
               </div>
             </button>
           </div>
@@ -278,24 +284,24 @@ export default function Dashboard() {
         {/* Welcome banner */}
         <div className="mb-8 animate-slide-up">
           <p className="text-xs uppercase tracking-[0.3em] font-display font-bold mb-1" style={{ color: "#CCFF00" }}>
-            // Dashboard
+            {t('dashboard:welcome.eyebrow')}
           </p>
           <h1 className="ft-title text-5xl md:text-6xl text-white leading-none mb-2">
-            Welcome back,{" "}
-            <span className="text-neon-lime text-glow-lime">{user?.name?.split(" ")[0] || "Athlete"}</span>
+            {t('dashboard:welcome.greeting')}{" "}
+            <span className="text-neon-lime text-glow-lime">{user?.name?.split(" ")[0] || t('dashboard:welcome.defaultAthlete')}</span>
           </h1>
           <p style={{ color: "#A0A0A0" }} className="text-sm">
-            {new Date().toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}
+            {formatDate(new Date(), lang, { weekday: "long", year: "numeric", month: "long", day: "numeric" })}
           </p>
         </div>
 
         {/* ── Stats row ── */}
         {!loading && (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8">
-            <StatCard icon={Dumbbell} value={stats.weeklyWorkouts} label="This Week" accent="lime" delay="ft-stagger-1" />
-            <StatCard icon={TrendingUp} value={formatVolume(stats.totalVolume)} label="Volume (kg)" accent="orange" delay="ft-stagger-2" />
-            <StatCard icon={Zap} value={stats.avgExercises || '--'} label="Avg Exercises" accent="lime" delay="ft-stagger-3" />
-            <StatCard icon={Calendar} value={stats.currentWeight ? `${stats.currentWeight}` : '--'} label="Weight (kg)" accent="orange" delay="ft-stagger-4" />
+            <StatCard icon={Dumbbell} value={formatNumber(stats.weeklyWorkouts, lang)} label={t('dashboard:stats.thisWeek')} accent="lime" delay="ft-stagger-1" />
+            <StatCard icon={TrendingUp} value={formatVolume(stats.totalVolume)} label={t('dashboard:stats.volumeKg')} accent="orange" delay="ft-stagger-2" />
+            <StatCard icon={Zap} value={stats.avgExercises ? formatNumber(stats.avgExercises, lang) : '--'} label={t('dashboard:stats.avgExercises')} accent="lime" delay="ft-stagger-3" />
+            <StatCard icon={Calendar} value={stats.currentWeight ? formatNumber(stats.currentWeight, lang) : '--'} label={t('dashboard:stats.weightKg')} accent="orange" delay="ft-stagger-4" />
           </div>
         )}
 
@@ -310,40 +316,44 @@ export default function Dashboard() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
             <FeatureCard
               icon={ClipboardList}
-              title={activeSchedule ? "Current Schedule" : "Weekly Planning"}
+              title={activeSchedule ? t('dashboard:cards.currentSchedule') : t('dashboard:cards.weeklyPlanning')}
               description={
                 activeSchedule
-                  ? `Continue "${activeSchedule.weeklyPlanName}" — ${activeSchedule.completedDays}/${activeSchedule.totalWorkoutDays} sessions done.`
-                  : "Create or start a weekly workout plan to stay consistent."
+                  ? t('dashboard:cards.currentScheduleDesc', {
+                      name: activeSchedule.weeklyPlanName,
+                      completed: activeSchedule.completedDays,
+                      total: activeSchedule.totalWorkoutDays,
+                    })
+                  : t('dashboard:cards.weeklyPlanningDesc')
               }
-              extra={activeSchedule ? `${Math.round((activeSchedule.completedDays / activeSchedule.totalWorkoutDays) * 100)}% complete` : null}
+              extra={activeSchedule ? t('dashboard:cards.percentComplete', { percent: Math.round((activeSchedule.completedDays / activeSchedule.totalWorkoutDays) * 100) }) : null}
               onClick={handleWeeklyActionClick}
               accent="lime"
               delay="ft-stagger-1"
             />
             <FeatureCard
               icon={Dumbbell}
-              title="Single Workout"
-              description="Plan a one-time workout session for today."
-              extra={stats.plannedSessions > 0 ? `${stats.plannedSessions} session${stats.plannedSessions !== 1 ? 's' : ''} planned` : null}
+              title={t('dashboard:cards.singleWorkout')}
+              description={t('dashboard:cards.singleWorkoutDesc')}
+              extra={stats.plannedSessions > 0 ? t('dashboard:cards.sessionsPlanned', { count: stats.plannedSessions }) : null}
               onClick={() => navigate('/workout-planning')}
               accent="orange"
               delay="ft-stagger-2"
             />
             <FeatureCard
               icon={Calendar}
-              title="Workout History"
-              description="View your past workout sessions and track progress."
-              extra={stats.totalWorkouts > 0 ? `${stats.totalWorkouts} workout${stats.totalWorkouts !== 1 ? 's' : ''} logged` : null}
+              title={t('dashboard:cards.workoutHistory')}
+              description={t('dashboard:cards.workoutHistoryDesc')}
+              extra={stats.totalWorkouts > 0 ? t('dashboard:cards.workoutsLogged', { count: stats.totalWorkouts }) : null}
               onClick={() => navigate('/workout-history')}
               accent="orange"
               delay="ft-stagger-3"
             />
             <FeatureCard
               icon={TrendingUp}
-              title="Progress Tracking"
-              description="Monitor your fitness journey and track measurements."
-              extra={stats.totalWorkouts > 0 ? `${stats.totalWorkouts} sessions analyzed` : null}
+              title={t('dashboard:cards.progressTracking')}
+              description={t('dashboard:cards.progressTrackingDesc')}
+              extra={stats.totalWorkouts > 0 ? t('dashboard:cards.sessionsAnalyzed', { count: stats.totalWorkouts }) : null}
               onClick={() => navigate('/progress-tracking')}
               accent="lime"
               delay="ft-stagger-4"
@@ -354,7 +364,7 @@ export default function Dashboard() {
         {/* ── Planned Workouts (legacy) ── */}
         {plannedWorkouts.length > 0 && (
           <div className="mt-4">
-            <p className="ft-label mb-4">// Upcoming Sessions</p>
+            <p className="ft-label mb-4">{t('dashboard:upcoming.eyebrow')}</p>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {plannedWorkouts.map((workout) => (
                 <div
@@ -364,7 +374,7 @@ export default function Dashboard() {
                 >
                   <div>
                     <h3 className="font-display font-bold italic uppercase text-white text-lg leading-tight">{workout.name}</h3>
-                    <p className="text-xs mt-1" style={{ color: "#A0A0A0" }}>{workout.exercises.length} exercise{workout.exercises.length !== 1 ? 's' : ''}</p>
+                    <p className="text-xs mt-1" style={{ color: "#A0A0A0" }}>{t('dashboard:upcoming.exercisesCount', { count: workout.exercises.length })}</p>
                     <div className="flex flex-wrap gap-1 mt-2">
                       {workout.exercises.slice(0, 2).map((ex, idx) => (
                         <span key={idx} className="ft-badge-gray">{ex.exerciseName}</span>
@@ -376,7 +386,7 @@ export default function Dashboard() {
                     className="ft-btn-primary flex items-center gap-2 text-xs flex-shrink-0"
                     style={{ padding: "8px 16px" }}
                   >
-                    <Play size={14} /> Start
+                    <Play size={14} /> {t('dashboard:upcoming.start')}
                   </button>
                 </div>
               ))}
@@ -391,7 +401,7 @@ export default function Dashboard() {
           className="text-center italic text-sm font-display font-semibold"
           style={{ color: "rgba(160,160,160,0.7)", letterSpacing: "0.05em" }}
         >
-          "Today's effort is tomorrow's result!"
+          {t('dashboard:footerQuote')}
         </p>
       </footer>
     </div>

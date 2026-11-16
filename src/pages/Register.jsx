@@ -1,8 +1,12 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
+import LanguageSwitcher from '../components/LanguageSwitcher';
+import { getApiErrorMessage } from '../utils/localize';
 
 export default function Register() {
+  const { t } = useTranslation(['auth', 'errors']);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -25,24 +29,27 @@ export default function Register() {
     setMessage('');
 
     if (password !== confirm) {
-      setError('Passwords do not match.');
+      setError(t('auth:register.passwordsMismatch'));
       return;
     }
     if (password.length < 6) {
-      setError('Password must be at least 6 characters long.');
+      setError(t('auth:register.passwordTooShort'));
       return;
     }
 
     try {
       await register({ name, email, password });
-      setMessage('Registration successful! Check your email to verify your account.');
+      setMessage(t('auth:register.success'));
     } catch (err) {
-      setError(err.response?.data?.message || 'Registration failed. Please try again.');
+      setError(getApiErrorMessage(err, t, t('auth:register.failed')));
     }
   };
 
   return (
     <div className="ft-page flex items-center justify-center min-h-screen px-4 py-10">
+      <div className="absolute top-4 right-4 z-20">
+        <LanguageSwitcher />
+      </div>
       {/* Background accent blobs */}
       <div
         className="absolute top-0 right-0 w-[500px] h-[500px] rounded-full opacity-8 pointer-events-none"
@@ -64,14 +71,14 @@ export default function Register() {
             <span className="ft-title text-3xl tracking-widest text-neon-lime text-glow-lime">FitTrack</span>
           </div>
           <p className="text-xs uppercase tracking-[0.3em] text-[#A0A0A0] font-display font-semibold mt-1">
-            Begin Your Journey
+            {t('auth:brand.taglineRegister')}
           </p>
         </div>
 
         {/* Form Card */}
         <div className="ft-card ft-corner-tl ft-corner-br p-8">
-          <h1 className="ft-title text-2xl text-white mb-1">Create Account</h1>
-          <p className="text-[#A0A0A0] text-sm mb-6">Join the elite. Start tracking today.</p>
+          <h1 className="ft-title text-2xl text-white mb-1">{t('auth:register.title')}</h1>
+          <p className="text-[#A0A0A0] text-sm mb-6">{t('auth:register.subtitle')}</p>
 
           {error && (
             <div className="mb-4 px-3 py-2 text-[#FF5C00] text-sm border border-[rgba(255,92,0,0.3)] bg-[rgba(255,92,0,0.06)] rounded-sm font-medium">
@@ -86,39 +93,39 @@ export default function Register() {
 
           <form onSubmit={handleRegister} className="flex flex-col gap-4">
             <div>
-              <label className="ft-label">Full Name</label>
+              <label className="ft-label">{t('auth:register.fullNameLabel')}</label>
               <input
                 id="reg-name"
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="John Doe"
+                placeholder={t('auth:register.fullNamePlaceholder')}
                 className="ft-input"
                 required
               />
             </div>
 
             <div>
-              <label className="ft-label">Email</label>
+              <label className="ft-label">{t('auth:register.emailLabel')}</label>
               <input
                 id="reg-email"
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@example.com"
+                placeholder={t('auth:register.emailPlaceholder')}
                 className="ft-input"
                 required
               />
             </div>
 
             <div>
-              <label className="ft-label">Password</label>
+              <label className="ft-label">{t('auth:register.passwordLabel')}</label>
               <input
                 id="reg-password"
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="Min. 6 characters"
+                placeholder={t('auth:register.passwordPlaceholder')}
                 className="ft-input"
                 required
                 minLength={6}
@@ -126,13 +133,13 @@ export default function Register() {
             </div>
 
             <div>
-              <label className="ft-label">Confirm Password</label>
+              <label className="ft-label">{t('auth:register.confirmPasswordLabel')}</label>
               <input
                 id="reg-confirm"
                 type="password"
                 value={confirm}
                 onChange={(e) => setConfirm(e.target.value)}
-                placeholder="Re-enter password"
+                placeholder={t('auth:register.confirmPasswordPlaceholder')}
                 className="ft-input"
                 required
                 minLength={6}
@@ -144,21 +151,21 @@ export default function Register() {
               type="submit"
               className="ft-btn-primary w-full text-sm py-3 mt-2"
             >
-              Create Account
+              {t('auth:register.submit')}
             </button>
           </form>
 
           <div className="ft-divider" />
 
           <p className="text-center text-sm text-[#A0A0A0]">
-            Already have an account?{' '}
+            {t('auth:register.hasAccount')}{' '}
             <button
               id="go-login"
               type="button"
               onClick={() => navigate('/login')}
               className="text-neon-lime font-display font-bold uppercase tracking-wider text-xs transition-colors hover:text-glow-lime"
             >
-              Login
+              {t('auth:register.loginLink')}
             </button>
           </p>
         </div>

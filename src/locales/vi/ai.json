@@ -1,0 +1,81 @@
+{
+  "openButtonAria": "Mở Huấn luyện viên AI",
+  "closeButtonAria": "Đóng Huấn luyện viên AI",
+  "triggerLabel": "AI Coach",
+  "header": {
+    "title": "FitTrack AI Coach",
+    "subtitle": "Hỗ trợ MCP • Dữ liệu thực tế",
+    "newChat": "Cuộc trò chuyện mới",
+    "history": "Lịch sử trò chuyện",
+    "memories": "Ghi nhớ thể lực đã lưu"
+  },
+  "quickPrompts": {
+    "analyze": "Phân tích tiến độ gần đây của tôi",
+    "buildPlan": "Tạo lịch tập luyện hàng tuần mới",
+    "editSchedule": "Chỉnh sửa lịch tập tuần hiện tại"
+  },
+  "welcome": {
+    "title": "Hôm nay tôi có thể giúp gì cho việc tập luyện của bạn?",
+    "subtitle": "Hãy yêu cầu tôi phân tích lịch sử tập luyện, tạo lịch tập tuần mới hoặc điều chỉnh lịch tuần hiện tại của bạn."
+  },
+  "history": {
+    "title": "Cuộc trò chuyện trước đây",
+    "empty": "Chưa có cuộc trò chuyện nào.",
+    "messagesCount": "{{count}} tin nhắn",
+    "deleteAria": "Xóa cuộc trò chuyện {{title}}"
+  },
+  "memories": {
+    "mcpTitle": "Khóa truy cập MCP",
+    "mcpActive": "Đang hoạt động",
+    "mcpNoKey": "Chưa có khóa",
+    "mcpDescription": "Kết nối dữ liệu FitTrack của bạn với các công cụ MCP bên ngoài (Claude Desktop, Cursor, AI agents).",
+    "mcpNewKeyNotice": "Đã tạo khóa mới (sao chép ngay, khóa sẽ không hiển thị lại):",
+    "copyKeyAria": "Sao chép khóa MCP",
+    "copied": "Đã chép",
+    "copy": "Sao chép",
+    "revoking": "Đang thu hồi...",
+    "revoke": "Thu hồi",
+    "generating": "Đang tạo...",
+    "generateKey": "Tạo khóa MCP",
+    "coachMemoryTitle": "Ghi nhớ của Coach ({{count}}/25)",
+    "coachMemoryEmpty": "Chưa có ghi nhớ nào. Hãy chia sẻ mục tiêu, lịch trình, dụng cụ hoặc chấn thương của bạn trong khung chat!",
+    "deleteMemoryAria": "Xóa ghi nhớ {{key}}"
+  },
+  "citations": {
+    "sourcesCount": "Nguồn ({{count}})"
+  },
+  "draftPlan": {
+    "modeEditSchedule": "Sửa lịch đang chạy",
+    "modeUpdatePlan": "Sửa kế hoạch thư viện",
+    "modeNewPlan": "Kế hoạch tuần mới",
+    "restDay": "Ngày nghỉ",
+    "exercisesShort": "{{count}} bài",
+    "appliedSchedule": "Đã áp dụng vào lịch",
+    "savedLibrary": "Đã lưu vào thư viện kế hoạch",
+    "viewSchedule": "Xem lịch tuần",
+    "viewLibrary": "Xem thư viện kế hoạch",
+    "updating": "Đang cập nhật...",
+    "updateLibraryPlan": "Cập nhật kế hoạch trong thư viện",
+    "thisWeekOnly": "Chỉ tuần này",
+    "weekAndTemplate": "Tuần này & Mẫu",
+    "applying": "Đang áp dụng...",
+    "applyScheduleChanges": "Áp dụng thay đổi lịch",
+    "saving": "Đang lưu...",
+    "saveToLibrary": "Lưu vào thư viện",
+    "applyNewSchedule": "Áp dụng lịch mới"
+  },
+  "chat": {
+    "thinking": "AI Coach đang suy nghĩ...",
+    "placeholder": "Hỏi AI Coach...",
+    "sendAria": "Gửi tin nhắn"
+  },
+  "errors": {
+    "chatFailed": "Hiện không thể kết nối với AI Coach.",
+    "deleteConversationFailed": "Không thể xóa cuộc trò chuyện.",
+    "deleteMemoryFailed": "Không thể xóa mục ghi nhớ.",
+    "generateKeyFailed": "Không thể tạo khóa MCP.",
+    "revokeKeyFailed": "Không thể thu hồi khóa MCP.",
+    "applyPlanFailed": "Không thể áp dụng thay đổi lịch.",
+    "loadConversationFailed": "Không thể tải cuộc trò chuyện."
+  }
+}
