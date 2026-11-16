@@ -1,0 +1,18 @@
+{
+  "AUTH_INVALID_CREDENTIALS": "Sai email hoặc mật khẩu.",
+  "AUTH_EMAIL_EXISTS": "Tài khoản với email này đã tồn tại.",
+  "AUTH_EMAIL_NOT_VERIFIED": "Vui lòng xác minh địa chỉ email trước khi đăng nhập.",
+  "AUTH_INVALID_TOKEN": "Phiên đăng nhập hoặc mã xác minh không hợp lệ hoặc đã hết hạn.",
+  "AUTH_UNAUTHORIZED": "Bạn không có quyền thực hiện thao tác này.",
+  "USER_INVALID_LANGUAGE": "Ngôn ngữ được chọn không được hỗ trợ.",
+  "USER_NOT_FOUND": "Không tìm thấy người dùng.",
+  "WORKOUT_NOT_FOUND": "Không tìm thấy buổi tập.",
+  "PLAN_NOT_FOUND": "Không tìm thấy kế hoạch tập luyện.",
+  "SCHEDULE_NOT_FOUND": "Không tìm thấy lịch tập.",
+  "VALIDATION_ERROR": "Vui lòng kiểm tra lại thông tin đã nhập.",
+  "AI_RATE_LIMITED": "Đã đạt giới hạn yêu cầu AI. Vui lòng đợi một lát rồi thử lại.",
+  "AI_UNAVAILABLE": "Dịch vụ AI hiện không khả dụng. Vui lòng thử lại sau.",
+  "RATE_LIMIT_EXCEEDED": "Quá nhiều yêu cầu. Vui lòng chậm lại và thử lại.",
+  "INTERNAL_ERROR": "Đã xảy ra lỗi máy chủ nội bộ. Vui lòng thử lại sau.",
+  "UNKNOWN_ERROR": "Đã xảy ra lỗi không xác định."
+}

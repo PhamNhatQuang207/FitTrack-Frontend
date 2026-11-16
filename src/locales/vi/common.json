@@ -1,0 +1,25 @@
+{
+  "appName": "FitTrack",
+  "actions": {
+    "save": "Lưu",
+    "cancel": "Hủy",
+    "delete": "Xóa",
+    "edit": "Chỉnh sửa",
+    "close": "Đóng",
+    "confirm": "Xác nhận",
+    "retry": "Thử lại",
+    "back": "Quay lại",
+    "search": "Tìm kiếm"
+  },
+  "status": {
+    "loading": "Đang tải...",
+    "saving": "Đang lưu...",
+    "error": "Đã xảy ra lỗi",
+    "empty": "Không có dữ liệu"
+  },
+  "language": {
+    "label": "Ngôn ngữ",
+    "en": "English",
+    "vi": "Tiếng Việt"
+  }
+}

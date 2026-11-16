@@ -1,0 +1,18 @@
+{
+  "AUTH_INVALID_CREDENTIALS": "Invalid email or password.",
+  "AUTH_EMAIL_EXISTS": "An account with this email already exists.",
+  "AUTH_EMAIL_NOT_VERIFIED": "Please verify your email address before signing in.",
+  "AUTH_INVALID_TOKEN": "Your session or verification token is invalid or expired.",
+  "AUTH_UNAUTHORIZED": "You are not authorized to perform this action.",
+  "USER_INVALID_LANGUAGE": "Unsupported language selection.",
+  "USER_NOT_FOUND": "User not found.",
+  "WORKOUT_NOT_FOUND": "Workout not found.",
+  "PLAN_NOT_FOUND": "Workout plan not found.",
+  "SCHEDULE_NOT_FOUND": "Schedule not found.",
+  "VALIDATION_ERROR": "Please check your input and try again.",
+  "AI_RATE_LIMITED": "AI request limit reached. Please wait a moment and try again.",
+  "AI_UNAVAILABLE": "AI service is currently unavailable. Please try again later.",
+  "RATE_LIMIT_EXCEEDED": "Too many requests. Please slow down and try again.",
+  "INTERNAL_ERROR": "An internal server error occurred. Please try again later.",
+  "UNKNOWN_ERROR": "An unexpected error occurred."
+}

@@ -1,0 +1,25 @@
+{
+  "appName": "FitTrack",
+  "actions": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "close": "Close",
+    "confirm": "Confirm",
+    "retry": "Retry",
+    "back": "Back",
+    "search": "Search"
+  },
+  "status": {
+    "loading": "Loading...",
+    "saving": "Saving...",
+    "error": "Something went wrong",
+    "empty": "No data available"
+  },
+  "language": {
+    "label": "Language",
+    "en": "English",
+    "vi": "Tiếng Việt"
+  }
+}
