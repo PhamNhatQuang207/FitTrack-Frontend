@@ -1,6 +1,7 @@
 import React, { createContext, useState, useEffect } from 'react';
 import { authAPI } from '../api';
 import { getAccessToken, clearAccessToken, setOnAuthFailure } from '../api/tokenStore';
+import { queryClient } from '../lib/queryClient';
 
 export const AuthContext = createContext();
 
@@ -10,7 +11,10 @@ export const AuthProvider = ({ children }) => {
 
     useEffect(() => {
         let cancelled = false;
-        setOnAuthFailure(() => setUser(null));
+        setOnAuthFailure(() => {
+            queryClient.clear();
+            setUser(null);
+        });
 
         const token = getAccessToken();
         const storedUser = localStorage.getItem('user');
@@ -58,12 +62,14 @@ export const AuthProvider = ({ children }) => {
 
     const login = async (credentials) => {
         const data = await authAPI.login(credentials);
+        queryClient.clear();
         setUser(data.user);
         return data;
     };
 
     const googleLogin = async (idToken) => {
         const data = await authAPI.googleLogin(idToken);
+        queryClient.clear();
         setUser(data.user);
         return data;
     };
@@ -74,6 +80,7 @@ export const AuthProvider = ({ children }) => {
     };
 
     const logout = async () => {
+        queryClient.clear();
         setUser(null);
         await authAPI.logout();
     };

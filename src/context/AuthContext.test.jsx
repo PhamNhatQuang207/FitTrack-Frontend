@@ -4,6 +4,7 @@ import { AuthProvider } from './AuthContext';
 import { useAuth } from '../hooks/useAuth';
 import { authAPI } from '../api';
 import { triggerAuthFailure } from '../api/tokenStore';
+import { queryClient } from '../lib/queryClient';
 
 // The provider talks to the API on mount/login/logout — stub it so these are
 // pure unit tests of the context's state logic, with no network.
@@ -78,8 +79,9 @@ describe('AuthContext bootstrap (localStorage + refresh cookie fallback)', () =>
 });
 
 describe('AuthContext actions', () => {
-    test('login sets the user from the API response', async () => {
+    test('login sets the user from the API response and clears queryClient cache', async () => {
         authAPI.login.mockResolvedValue({ user: { id: '1', name: 'Quang', email: 'q@fit.vn' } });
+        const clearSpy = jest.spyOn(queryClient, 'clear');
 
         const { result } = renderHook(() => useAuth(), { wrapper });
         await waitFor(() => expect(result.current).not.toBeNull());
@@ -89,8 +91,10 @@ describe('AuthContext actions', () => {
         });
 
         expect(authAPI.login).toHaveBeenCalledWith({ email: 'a@b.com', password: 'secret' });
+        expect(clearSpy).toHaveBeenCalledTimes(1);
         expect(result.current.user).toEqual({ id: '1', name: 'Quang', email: 'q@fit.vn' });
         expect(result.current.isAuthenticated).toBe(true);
+        clearSpy.mockRestore();
     });
 
     test('googleLogin sets the user from the API response', async () => {
@@ -122,10 +126,11 @@ describe('AuthContext actions', () => {
         expect(result.current.isAuthenticated).toBe(false);
     });
 
-    test('logout clears the user immediately and calls the API', async () => {
+    test('logout clears the user immediately, calls the API, and clears queryClient cache', async () => {
         localStorage.setItem('token', 'jwt-abc');
         localStorage.setItem('user', JSON.stringify({ id: '1', name: 'Quang' }));
         authAPI.logout.mockResolvedValue();
+        const clearSpy = jest.spyOn(queryClient, 'clear');
 
         const { result } = renderHook(() => useAuth(), { wrapper });
 
@@ -134,8 +139,10 @@ describe('AuthContext actions', () => {
         });
 
         expect(authAPI.logout).toHaveBeenCalledTimes(1);
+        expect(clearSpy).toHaveBeenCalledTimes(1);
         expect(result.current.user).toBeNull();
         expect(result.current.isAuthenticated).toBe(false);
+        clearSpy.mockRestore();
     });
 
     test('updateUser merges the update and persists it to localStorage', () => {
