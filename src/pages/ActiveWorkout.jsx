@@ -1,6 +1,9 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import axiosClient from "../api/axiosClient";
+import { exerciseAPI, workoutSessionAPI } from "../api";
+import { invalidateWorkoutAndAnalytics, queryKeys } from "../lib/queryClient";
 import { ArrowLeft, Check, X, CheckCircle2, Circle, Edit3, Search, Plus, Minus } from "lucide-react";
 
 // How many sets an exercise has. `targetSets` is what the Manage modal edits, so
@@ -14,17 +17,48 @@ const getTotalSets = (exercise) =>
 export default function ActiveWorkout() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const startedRef = useRef(null);
   const [session, setSession] = useState(null);
-  const [loading, setLoading] = useState(true);
   const [currentExerciseIndex, setCurrentExerciseIndex] = useState(0);
   const [showMetricsModal, setShowMetricsModal] = useState(false);
   const [bodyMetrics, setBodyMetrics] = useState({ weight: "", bodyFat: "" });
   const [setInputs, setSetInputs] = useState({});
   const [showExerciseModal, setShowExerciseModal] = useState(false);
-  const [availableExercises, setAvailableExercises] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
 
-  useEffect(() => { fetchSession(); }, [id]);
+  const sessionQuery = useQuery({
+    queryKey: queryKeys.workoutSessions.detail(id),
+    queryFn: () => workoutSessionAPI.getById(id),
+    enabled: Boolean(id),
+  });
+
+  const exercisesQuery = useQuery({
+    queryKey: queryKeys.exercises.all,
+    queryFn: exerciseAPI.getAll,
+    enabled: showExerciseModal,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const availableExercises = exercisesQuery.data ?? [];
+  const loading = sessionQuery.isLoading && !session;
+
+  useEffect(() => {
+    if (sessionQuery.data) {
+      setSession(sessionQuery.data);
+      if (sessionQuery.data.status === 'planned' && startedRef.current !== id) {
+        startedRef.current = id;
+        axiosClient.patch(`/workout-sessions/${id}/start`).catch(() => {});
+      }
+    }
+  }, [sessionQuery.data, id]);
+
+  useEffect(() => {
+    if (sessionQuery.isError) {
+      alert("Failed to load workout session");
+      navigate('/dashboard');
+    }
+  }, [sessionQuery.isError, navigate]);
 
   useEffect(() => {
     if (session && session.exercises) {
@@ -48,21 +82,6 @@ export default function ActiveWorkout() {
     }
   }, [session]);
 
-  const fetchSession = async () => {
-    try {
-      const response = await axiosClient.get(`/workout-sessions/${id}`);
-      setSession(response.data);
-      if (response.data.status === 'planned') {
-        await axiosClient.patch(`/workout-sessions/${id}/start`);
-      }
-    } catch (error) {
-      alert("Failed to load workout session");
-      navigate('/dashboard');
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleSetInputChange = (exerciseIndex, setIndex, field, value) => {
     setSetInputs(prev => ({
       ...prev,
@@ -84,6 +103,10 @@ export default function ActiveWorkout() {
     setSession(newSession);
     try {
       await axiosClient.put(`/workout-sessions/${id}`, { exercises: newSession.exercises });
+      await Promise.all([
+        invalidateWorkoutAndAnalytics(queryClient),
+        queryClient.invalidateQueries({ queryKey: queryKeys.workoutSessions.detail(id) }),
+      ]);
     } catch (error) {
       console.error("Error updating session:", error);
     }
@@ -114,6 +137,10 @@ export default function ActiveWorkout() {
           });
         } catch (error) { /* don't fail overall */ }
       }
+      await Promise.all([
+        invalidateWorkoutAndAnalytics(queryClient),
+        queryClient.invalidateQueries({ queryKey: queryKeys.workoutSessions.detail(id) }),
+      ]);
       if (session.weeklyScheduleId) navigate('/weekly-schedule');
       else navigate('/dashboard');
     } catch (error) {
@@ -123,8 +150,11 @@ export default function ActiveWorkout() {
 
   const handleManageExercises = async () => {
     try {
-      const response = await axiosClient.get('/exercises');
-      setAvailableExercises(response.data);
+      await queryClient.ensureQueryData({
+        queryKey: queryKeys.exercises.all,
+        queryFn: exerciseAPI.getAll,
+        staleTime: 5 * 60 * 1000,
+      });
       setShowExerciseModal(true);
     } catch (error) { alert("Failed to load exercises"); }
   };
@@ -175,7 +205,10 @@ export default function ActiveWorkout() {
   const handleSaveExercises = async () => {
     try {
       await axiosClient.put(`/workout-sessions/${id}`, { exercises: session.exercises });
-      await fetchSession();
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: queryKeys.workoutSessions.detail(id) }),
+        invalidateWorkoutAndAnalytics(queryClient),
+      ]);
       setShowExerciseModal(false);
       setSearchQuery('');
     } catch (error) { alert("Failed to save exercises"); }

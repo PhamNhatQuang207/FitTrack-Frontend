@@ -1,8 +1,10 @@
 import React from 'react';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { QueryClient } from '@tanstack/react-query';
 import WorkoutPlanning from './WorkoutPlanning';
 import axiosClient from '../api/axiosClient';
+import { renderWithQueryClient } from '../test-utils/queryTestUtils';
 
 jest.mock('../api/axiosClient', () => ({
   __esModule: true,
@@ -33,7 +35,7 @@ beforeEach(() => {
 });
 
 test('warns when workout name is missing, keeps muscle selection, and advances on the first click once name is entered', async () => {
-  render(<WorkoutPlanning />);
+  renderWithQueryClient(<WorkoutPlanning />);
 
   const chestBtn = await screen.findByRole('button', { name: /chest/i });
   userEvent.click(chestBtn);
@@ -59,7 +61,7 @@ test('warns when workout name is missing, keeps muscle selection, and advances o
 });
 
 test('advances immediately when pressing Enter in workout name after selecting a muscle group', async () => {
-  render(<WorkoutPlanning />);
+  renderWithQueryClient(<WorkoutPlanning />);
 
   const chestBtn = await screen.findByRole('button', { name: /chest/i });
   userEvent.click(chestBtn);
@@ -76,7 +78,7 @@ test('advances immediately when pressing Enter in workout name after selecting a
 });
 
 test('cancels browser IME scroll jump when workout name input commits offscreen before Next click', async () => {
-  render(<WorkoutPlanning />);
+  renderWithQueryClient(<WorkoutPlanning />);
 
   const chestBtn = await screen.findByRole('button', { name: /chest/i });
   userEvent.click(chestBtn);
@@ -97,4 +99,26 @@ test('cancels browser IME scroll jump when workout name input commits offscreen 
   await waitFor(() => {
     expect(screen.getByText('// Step 2 of 2')).toBeInTheDocument();
   });
+});
+
+test('reuses cached muscle groups across two mounts sharing the same QueryClient', async () => {
+  const client = new QueryClient({
+    defaultOptions: {
+      queries: {
+        staleTime: 5 * 60 * 1000,
+        gcTime: 10 * 60 * 1000,
+        retry: false,
+      },
+    },
+  });
+
+  const { unmount } = renderWithQueryClient(<WorkoutPlanning />, { client });
+  await screen.findByRole('button', { name: /chest/i });
+  unmount();
+
+  renderWithQueryClient(<WorkoutPlanning />, { client });
+  await screen.findByRole('button', { name: /chest/i });
+
+  const muscleGroupCalls = axiosClient.get.mock.calls.filter(([url]) => url === '/muscle-groups');
+  expect(muscleGroupCalls).toHaveLength(1);
 });

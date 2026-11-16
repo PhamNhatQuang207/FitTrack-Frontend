@@ -1,7 +1,9 @@
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useNavigate } from "react-router-dom";
+import { useMutation, useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
 import axiosClient from "../api/axiosClient";
-import { muscleGroupAPI } from "../api";
+import { exerciseAPI, muscleGroupAPI } from "../api";
+import { invalidateWorkoutAndAnalytics, queryKeys } from "../lib/queryClient";
 import { ArrowLeft, Search, Save, Plus, Trash2, CheckCircle2, AlertCircle } from "lucide-react";
 import ErrorBoundary from "../components/ErrorBoundary";
 
@@ -72,58 +74,62 @@ function StepIndicator({ current, total = 2 }) {
 
 function WorkoutPlanningContent() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const workoutNameInputRef = useRef(null);
   const workoutNameCardRef = useRef(null);
   const muscleGroupsSectionRef = useRef(null);
   const scrollLockRef = useRef({ until: 0, y: 0 });
   const [step, setStep] = useState(1);
   const [workoutName, setWorkoutName] = useState("");
-  const [muscleGroupData, setMuscleGroupData] = useState(DEFAULT_MUSCLE_GROUPS);
   const [selectedMuscleGroups, setSelectedMuscleGroups] = useState([]);
-  const [availableExercises, setAvailableExercises] = useState([]);
   const [workoutExercises, setWorkoutExercises] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
-  const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [errorField, setErrorField] = useState(null);
 
-  useEffect(() => {
-    let active = true;
-    muscleGroupAPI.getAll()
-      .then((groups) => {
-        if (!active || !Array.isArray(groups) || groups.length === 0) return;
-        setMuscleGroupData(groups.map((g) => ({
-          id: g.slug,
-          name: g.name,
-          icon: g.iconUrl || LOCAL_ICON_BY_SLUG[g.slug] || chestIcon,
-        })));
-      })
-      .catch(() => {
-        // Keep DEFAULT_MUSCLE_GROUPS fallback if API fails
-      });
-    return () => { active = false; };
-  }, []);
+  const { data: rawMuscleGroups } = useQuery({
+    queryKey: queryKeys.muscleGroups,
+    queryFn: muscleGroupAPI.getAll,
+    staleTime: 5 * 60 * 1000,
+  });
 
-  const fetchExercisesForSelectedGroups = useCallback(async () => {
-    if (selectedMuscleGroups.length === 0) return;
-    setLoading(true);
-    try {
-      const allExercises = [];
-      for (const group of selectedMuscleGroups) {
-        const response = await axiosClient.get(`/exercises/category/${group.id}`);
-        allExercises.push(...response.data);
-      }
-      setAvailableExercises(allExercises);
-    } catch (error) {
-      console.error("Error fetching exercises:", error);
-    } finally {
-      setLoading(false);
+  const muscleGroupData = useMemo(() => {
+    if (!Array.isArray(rawMuscleGroups) || rawMuscleGroups.length === 0) {
+      return DEFAULT_MUSCLE_GROUPS;
     }
-  }, [selectedMuscleGroups]);
+    return rawMuscleGroups.map((g) => ({
+      id: g.slug,
+      name: g.name,
+      icon: g.iconUrl || LOCAL_ICON_BY_SLUG[g.slug] || chestIcon,
+    }));
+  }, [rawMuscleGroups]);
 
-  useEffect(() => {
-    if (step === 2) fetchExercisesForSelectedGroups();
-  }, [step, fetchExercisesForSelectedGroups]);
+  const exerciseQueries = useQueries({
+    queries: selectedMuscleGroups.map((group) => ({
+      queryKey: queryKeys.exercises.byCategory(group.id),
+      queryFn: () => exerciseAPI.getByCategory(group.id),
+      enabled: step === 2 && selectedMuscleGroups.length > 0,
+      staleTime: 5 * 60 * 1000,
+    })),
+  });
+
+  const availableExercises = useMemo(
+    () => exerciseQueries.flatMap((q) => (Array.isArray(q.data) ? q.data : [])),
+    [exerciseQueries]
+  );
+
+  const exercisesLoading = exerciseQueries.some((q) => q.isLoading);
+
+  const createWorkoutMutation = useMutation({
+    mutationFn: (payload) => axiosClient.post('/workout-sessions', payload),
+    onSuccess: async () => {
+      await invalidateWorkoutAndAnalytics(queryClient);
+      navigate('/dashboard');
+    },
+    onError: (error) => {
+      setErrorMessage(error.response?.data?.message || "Failed to save workout. Please try again.");
+    },
+  });
 
   const handleMuscleGroupToggle = (group) => {
     const isSelected = selectedMuscleGroups.find(g => g.id === group.id);
@@ -249,7 +255,7 @@ function WorkoutPlanningContent() {
     window.scrollTo?.(0, 0);
   };
 
-  const handleSaveWorkout = async () => {
+  const handleSaveWorkout = () => {
     if (!workoutName.trim()) {
       setStep(1);
       setErrorMessage("Please enter a workout name before saving.");
@@ -263,15 +269,7 @@ function WorkoutPlanningContent() {
     }
     setErrorMessage("");
     setErrorField(null);
-    setLoading(true);
-    try {
-      await axiosClient.post('/workout-sessions', { name: workoutName.trim(), exercises: workoutExercises, notes: "" });
-      navigate('/dashboard');
-    } catch (error) {
-      setErrorMessage(error.response?.data?.message || "Failed to save workout. Please try again.");
-    } finally {
-      setLoading(false);
-    }
+    createWorkoutMutation.mutate({ name: workoutName.trim(), exercises: workoutExercises, notes: "" });
   };
 
   const filteredExercises = availableExercises.filter(ex =>
@@ -503,7 +501,7 @@ function WorkoutPlanningContent() {
                     style={{ paddingLeft: '36px' }}
                   />
                 </div>
-                {loading ? (
+                {exercisesLoading ? (
                   <div className="flex items-center justify-center py-12">
                     <div className="ft-loader" />
                   </div>
@@ -645,11 +643,11 @@ function WorkoutPlanningContent() {
                 <button
                   id="save-workout-btn"
                   onClick={handleSaveWorkout}
-                  disabled={loading}
+                  disabled={createWorkoutMutation.isPending}
                   className="ft-btn-primary w-full mt-4 py-3.5 flex items-center justify-center gap-2 disabled:opacity-60"
                 >
                   <Save size={16} />
-                  {loading ? 'Saving...' : 'Save Workout Plan'}
+                  {createWorkoutMutation.isPending ? 'Saving...' : 'Save Workout Plan'}
                 </button>
               </div>
             </div>

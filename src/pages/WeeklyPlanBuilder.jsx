@@ -1,7 +1,9 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import axiosClient from "../api/axiosClient";
-import { muscleGroupAPI } from "../api";
+import { exerciseAPI, muscleGroupAPI } from "../api";
+import { queryKeys } from "../lib/queryClient";
 import { ArrowLeft, Save, Plus, Trash2, X, Check, Search, Trash, ChevronDown, AlertCircle } from "lucide-react";
 import ErrorBoundary from "../components/ErrorBoundary";
 
@@ -23,8 +25,8 @@ const DEFAULT_MUSCLE_GROUPS = [
 
 function WeeklyPlanBuilderContent() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { id } = useParams();
-  const [loading, setLoading] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const [planName, setPlanName] = useState("");
   const [description, setDescription] = useState("");
@@ -33,72 +35,105 @@ function WeeklyPlanBuilderContent() {
   );
   const [showExerciseModal, setShowExerciseModal] = useState(false);
   const [activeDayIndex, setActiveDayIndex] = useState(null);
-  const [availableExercises, setAvailableExercises] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedMuscleGroup, setSelectedMuscleGroup] = useState("all");
-  const [muscleGroups, setMuscleGroups] = useState(DEFAULT_MUSCLE_GROUPS);
   const [showMuscleGroupDropdown, setShowMuscleGroupDropdown] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
-  useEffect(() => {
-    let active = true;
-    muscleGroupAPI.getAll()
-      .then((groups) => {
-        if (!active || !Array.isArray(groups) || groups.length === 0) return;
-        setMuscleGroups(groups.map((g) => ({ id: g.slug, name: g.name })));
-      })
-      .catch(() => {});
-    return () => { active = false; };
-  }, []);
+  const { data: rawMuscleGroups } = useQuery({
+    queryKey: queryKeys.muscleGroups,
+    queryFn: muscleGroupAPI.getAll,
+    staleTime: 5 * 60 * 1000,
+  });
 
-  const loadPlan = useCallback(async (planId) => {
-    setLoading(true);
-    try {
-      const response = await axiosClient.get(`/weekly-plans/${planId}`);
-      const plan = response.data;
-      setPlanName(plan.name);
-      setDescription(plan.description || "");
-      const loadedSchedule = DAYS.map(day => {
-        const planDay = plan.days.find(d => d.dayOfWeek === day.id);
-        if (planDay && planDay.workout && planDay.workout.exercises) {
-          const normalizedExercises = planDay.workout.exercises.map(ex => {
-            if (ex.sets && Array.isArray(ex.sets)) return ex;
-            if (ex.targetSets && ex.targetReps !== undefined) {
-              const sets = [];
-              for (let i = 1; i <= ex.targetSets; i++) sets.push({ setNumber: i, targetReps: ex.targetReps, targetWeight: ex.targetWeight || 0 });
-              return { ...ex, sets };
-            }
-            return { ...ex, sets: [{ setNumber: 1, targetReps: 10, targetWeight: 0 }, { setNumber: 2, targetReps: 10, targetWeight: 0 }, { setNumber: 3, targetReps: 10, targetWeight: 0 }] };
-          });
-          return { ...day, isRestDay: planDay.isRestDay, workout: { ...planDay.workout, exercises: normalizedExercises } };
-        }
-        return { ...day, isRestDay: false, workout: { name: "", exercises: [] } };
-      });
-      setSchedule(loadedSchedule);
-      setIsEditMode(true);
-    } catch (error) {
+  const muscleGroups = useMemo(() => {
+    if (!Array.isArray(rawMuscleGroups) || rawMuscleGroups.length === 0) {
+      return DEFAULT_MUSCLE_GROUPS;
+    }
+    return rawMuscleGroups.map((g) => ({ id: g.slug, name: g.name }));
+  }, [rawMuscleGroups]);
+
+  const planQuery = useQuery({
+    queryKey: queryKeys.weeklyPlans.detail(id),
+    queryFn: () => axiosClient.get(`/weekly-plans/${id}`).then((res) => res.data),
+    enabled: Boolean(id),
+  });
+
+  useEffect(() => {
+    const plan = planQuery.data;
+    if (!plan) return;
+    setPlanName(plan.name);
+    setDescription(plan.description || "");
+    const loadedSchedule = DAYS.map(day => {
+      const planDay = plan.days.find(d => d.dayOfWeek === day.id);
+      if (planDay && planDay.workout && planDay.workout.exercises) {
+        const normalizedExercises = planDay.workout.exercises.map(ex => {
+          if (ex.sets && Array.isArray(ex.sets)) return ex;
+          if (ex.targetSets && ex.targetReps !== undefined) {
+            const sets = [];
+            for (let i = 1; i <= ex.targetSets; i++) sets.push({ setNumber: i, targetReps: ex.targetReps, targetWeight: ex.targetWeight || 0 });
+            return { ...ex, sets };
+          }
+          return { ...ex, sets: [{ setNumber: 1, targetReps: 10, targetWeight: 0 }, { setNumber: 2, targetReps: 10, targetWeight: 0 }, { setNumber: 3, targetReps: 10, targetWeight: 0 }] };
+        });
+        return { ...day, isRestDay: planDay.isRestDay, workout: { ...planDay.workout, exercises: normalizedExercises } };
+      }
+      return { ...day, isRestDay: false, workout: { name: "", exercises: [] } };
+    });
+    setSchedule(loadedSchedule);
+    setIsEditMode(true);
+  }, [planQuery.data]);
+
+  useEffect(() => {
+    if (planQuery.isError) {
       alert("Failed to load plan");
       navigate('/weekly-plan-library');
-    } finally {
-      setLoading(false);
     }
-  }, [navigate]);
+  }, [planQuery.isError, navigate]);
 
-  useEffect(() => { if (id) loadPlan(id); }, [id, loadPlan]);
+  const exercisesQuery = useQuery({
+    queryKey: selectedMuscleGroup === 'all'
+      ? queryKeys.exercises.all
+      : queryKeys.exercises.byCategory(selectedMuscleGroup),
+    queryFn: () => (selectedMuscleGroup === 'all' ? exerciseAPI.getAll() : exerciseAPI.getByCategory(selectedMuscleGroup)),
+    enabled: showExerciseModal,
+    staleTime: 5 * 60 * 1000,
+  });
 
-  const fetchExercises = useCallback(async () => {
-    try {
-      const url = selectedMuscleGroup === 'all' ? '/exercises' : `/exercises/category/${selectedMuscleGroup}`;
-      const response = await axiosClient.get(url);
-      setAvailableExercises(response.data);
-    } catch (error) {
-      console.error("Error fetching exercises:", error);
-    } finally {
-      setLoading(false);
-    }
-  }, [selectedMuscleGroup]);
+  const availableExercises = exercisesQuery.data ?? [];
 
-  useEffect(() => { if (showExerciseModal) fetchExercises(); }, [showExerciseModal, fetchExercises]);
+  const savePlanMutation = useMutation({
+    mutationFn: ({ isEdit, planId, payload }) =>
+      isEdit && planId
+        ? axiosClient.put(`/weekly-plans/${planId}`, payload)
+        : axiosClient.post('/weekly-plans', payload),
+    onSuccess: async (_, variables) => {
+      await queryClient.invalidateQueries({ queryKey: queryKeys.weeklyPlans.all });
+      if (variables.planId) {
+        await queryClient.invalidateQueries({ queryKey: queryKeys.weeklyPlans.detail(variables.planId) });
+      }
+      navigate('/weekly-plan-library');
+    },
+    onError: (error) => {
+      setErrorMessage("Failed to save plan: " + (error.response?.data?.message || error.message));
+    },
+  });
+
+  const deletePlanMutation = useMutation({
+    mutationFn: (planId) => axiosClient.delete(`/weekly-plans/${planId}`),
+    onSuccess: async (_, planId) => {
+      await queryClient.invalidateQueries({ queryKey: queryKeys.weeklyPlans.all });
+      if (planId) {
+        await queryClient.invalidateQueries({ queryKey: queryKeys.weeklyPlans.detail(planId) });
+      }
+      navigate('/weekly-plan-library');
+    },
+    onError: () => {
+      alert("Failed to delete plan");
+    },
+  });
+
+  const loading = (Boolean(id) && planQuery.isLoading) || savePlanMutation.isPending || deletePlanMutation.isPending;
 
   const handleDayUpdate = (index, field, value) => {
     const newSchedule = [...schedule];
@@ -154,7 +189,7 @@ function WeeklyPlanBuilderContent() {
     }
   };
 
-  const handleSavePlan = async () => {
+  const handleSavePlan = () => {
     if (!planName.trim()) {
       setErrorMessage("Please enter a plan name before saving.");
       return;
@@ -167,30 +202,17 @@ function WeeklyPlanBuilderContent() {
       return;
     }
     setErrorMessage("");
-    setLoading(true);
-    try {
-      const transformedDays = schedule.map(day => ({ dayOfWeek: day.id, dayName: day.name, isRestDay: day.isRestDay, workout: day.workout }));
-      if (isEditMode && id) await axiosClient.put(`/weekly-plans/${id}`, { name: planName, description, days: transformedDays });
-      else await axiosClient.post('/weekly-plans', { name: planName, description, days: transformedDays });
-      navigate('/weekly-plan-library');
-    } catch (error) {
-      setErrorMessage("Failed to save plan: " + (error.response?.data?.message || error.message));
-    } finally {
-      setLoading(false);
-    }
+    const transformedDays = schedule.map(day => ({ dayOfWeek: day.id, dayName: day.name, isRestDay: day.isRestDay, workout: day.workout }));
+    savePlanMutation.mutate({
+      isEdit: isEditMode,
+      planId: id,
+      payload: { name: planName, description, days: transformedDays },
+    });
   };
 
-  const handleDeletePlan = async () => {
+  const handleDeletePlan = () => {
     if (!window.confirm(`Delete "${planName}"? This cannot be undone.`)) return;
-    setLoading(true);
-    try {
-      await axiosClient.delete(`/weekly-plans/${id}`);
-      navigate('/weekly-plan-library');
-    } catch (error) {
-      alert("Failed to delete plan");
-    } finally {
-      setLoading(false);
-    }
+    deletePlanMutation.mutate(id);
   };
 
   const filteredExercises = availableExercises.filter(ex => ex.name.toLowerCase().includes(searchTerm.toLowerCase()));

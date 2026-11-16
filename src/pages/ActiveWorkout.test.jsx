@@ -1,10 +1,11 @@
 import React from 'react';
-import { render, screen, waitFor, within } from '@testing-library/react';
+import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 // react-router-dom is mapped to a test double (see package.json moduleNameMapper).
 import { setMockParams } from 'react-router-dom';
 import ActiveWorkout from './ActiveWorkout';
 import axiosClient from '../api/axiosClient';
+import { renderWithQueryClient } from '../test-utils/queryTestUtils';
 
 jest.mock('../api/axiosClient', () => ({
     __esModule: true,
@@ -52,7 +53,7 @@ const renderWorkout = async (session = buildSession()) => {
     axiosClient.put.mockResolvedValue({ data: {} });
     axiosClient.patch.mockResolvedValue({ data: {} });
 
-    render(<ActiveWorkout />);
+    renderWithQueryClient(<ActiveWorkout />);
     // The session title, not the exercise name -- "Bench Press" renders both in
     // the current-exercise card and in the exercise list beneath it.
     await screen.findByText('Push Day');
