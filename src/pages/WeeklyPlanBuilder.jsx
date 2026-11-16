@@ -4,7 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import axiosClient from "../api/axiosClient";
 import { exerciseAPI, muscleGroupAPI } from "../api";
 import { queryKeys } from "../lib/queryClient";
-import { ArrowLeft, Save, Plus, Trash2, X, Check, Search, Trash, ChevronDown, AlertCircle } from "lucide-react";
+import { ArrowLeft, Save, Plus, Trash2, X, Check, Search, Trash, ChevronDown, AlertCircle, RefreshCcw } from "lucide-react";
 import ErrorBoundary from "../components/ErrorBoundary";
 
 const DAYS = [
@@ -39,6 +39,7 @@ function WeeklyPlanBuilderContent() {
   const [selectedMuscleGroup, setSelectedMuscleGroup] = useState("all");
   const [showMuscleGroupDropdown, setShowMuscleGroupDropdown] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  const [swapSourceIndex, setSwapSourceIndex] = useState(null);
 
   const { data: rawMuscleGroups } = useQuery({
     queryKey: queryKeys.muscleGroups,
@@ -145,6 +146,34 @@ function WeeklyPlanBuilderContent() {
       newSchedule[index].workout.name = value;
     }
     setSchedule(newSchedule);
+  };
+
+  const handleSwapDays = (index) => {
+    if (swapSourceIndex === null) {
+      setSwapSourceIndex(index);
+      return;
+    }
+    if (swapSourceIndex === index) {
+      setSwapSourceIndex(null);
+      return;
+    }
+    setSchedule((prev) => {
+      const next = [...prev];
+      const source = next[swapSourceIndex];
+      const target = next[index];
+      next[swapSourceIndex] = {
+        ...source,
+        isRestDay: target.isRestDay,
+        workout: target.workout,
+      };
+      next[index] = {
+        ...target,
+        isRestDay: source.isRestDay,
+        workout: source.workout,
+      };
+      return next;
+    });
+    setSwapSourceIndex(null);
   };
 
   const handleConfigureDay = (dayIndex) => { setActiveDayIndex(dayIndex); setShowExerciseModal(true); setSearchTerm(""); setSelectedMuscleGroup("all"); };
@@ -316,13 +345,16 @@ function WeeklyPlanBuilderContent() {
         {/* Weekly schedule */}
         <p className="ft-label mb-3">// Weekly Schedule</p>
         <div className="space-y-3 animate-slide-up">
-          {schedule.map((day, index) => (
+          {schedule.map((day, index) => {
+            const isSwapSelected = swapSourceIndex === index;
+            const isSwapTarget = swapSourceIndex !== null && !isSwapSelected;
+            return (
             <div
               key={day.id}
               className="p-4 transition-all"
               style={{
                 background: day.isRestDay ? 'rgba(5,5,5,0.8)' : 'rgba(10,10,10,0.95)',
-                border: `1px solid ${day.isRestDay ? '#0D0D0D' : 'rgba(204,255,0,0.12)'}`,
+                border: `1px solid ${isSwapSelected ? 'rgba(204,255,0,0.65)' : day.isRestDay ? '#0D0D0D' : 'rgba(204,255,0,0.12)'}`,
                 borderRadius: '2px',
               }}
             >
@@ -381,6 +413,23 @@ function WeeklyPlanBuilderContent() {
                   <span className="text-xs font-display font-bold uppercase tracking-wider" style={{ color: '#555' }}>Rest</span>
                 </label>
 
+                {/* Swap button */}
+                <button
+                  id={`swap-day-${day.id}`}
+                  type="button"
+                  onClick={() => handleSwapDays(index)}
+                  className="flex items-center gap-1.5 text-xs font-display font-bold uppercase tracking-wider px-3 py-2 transition-colors flex-shrink-0"
+                  style={{
+                    border: '1px solid rgba(204,255,0,0.3)',
+                    borderRadius: '2px',
+                    color: '#CCFF00',
+                    background: isSwapSelected ? 'rgba(204,255,0,0.2)' : 'rgba(204,255,0,0.06)',
+                  }}
+                >
+                  <RefreshCcw size={12} />
+                  {isSwapSelected ? 'Selected' : isSwapTarget ? 'Swap Here' : 'Swap Day'}
+                </button>
+
                 {/* Configure button */}
                 {!day.isRestDay && (
                   <button
@@ -403,7 +452,8 @@ function WeeklyPlanBuilderContent() {
                 </div>
               )}
             </div>
-          ))}
+            );
+          })}
         </div>
       </main>
 
