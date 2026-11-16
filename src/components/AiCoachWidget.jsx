@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   Bot,
   X,
@@ -22,6 +23,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { aiAPI } from '../api';
+import { queryKeys } from '../lib/queryClient';
 import MarkdownMessage, { isSafeExternalUrl } from './MarkdownMessage';
 
 const QUICK_PROMPTS = [
@@ -33,15 +35,12 @@ const QUICK_PROMPTS = [
 export default function AiCoachWidget() {
   const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [isOpen, setIsOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('chat'); // 'chat' | 'history' | 'memories'
   const [conversationId, setConversationId] = useState(null);
   const [messages, setMessages] = useState([]);
-  const [conversations, setConversations] = useState([]);
-  const [memories, setMemories] = useState([]);
-  const [mcpKeyStatus, setMcpKeyStatus] = useState({ hasKey: false, keyPrefix: null });
   const [generatedRawKey, setGeneratedRawKey] = useState(null);
-  const [mcpKeyLoading, setMcpKeyLoading] = useState(false);
   const [copied, setCopied] = useState(false);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
@@ -49,6 +48,146 @@ export default function AiCoachWidget() {
   const [expandedCitationsByMsg, setExpandedCitationsByMsg] = useState({});
   const [errorBanner, setErrorBanner] = useState('');
   const messagesEndRef = useRef(null);
+
+  const queryEnabled = Boolean(isOpen && isAuthenticated);
+
+  const { data: conversations = [] } = useQuery({
+    queryKey: queryKeys.ai.conversations,
+    queryFn: () => aiAPI.getConversations(),
+    enabled: queryEnabled
+  });
+
+  const { data: memories = [] } = useQuery({
+    queryKey: queryKeys.ai.memories,
+    queryFn: () => aiAPI.getMemories(),
+    enabled: queryEnabled
+  });
+
+  const { data: mcpKeyStatus = { hasKey: false, keyPrefix: null } } = useQuery({
+    queryKey: queryKeys.ai.mcpKey,
+    queryFn: () => aiAPI.getMcpKeyStatus(),
+    enabled: queryEnabled
+  });
+
+  const chatMutation = useMutation({
+    mutationFn: ({ conversationId: convId, message }) =>
+      aiAPI.chat({ conversationId: convId, message }),
+    onSuccess: async (data, variables) => {
+      setConversationId(data.conversationId);
+      setMessages((prev) => [
+        ...prev.filter((m) => m.id !== variables.optimisticId),
+        data.userMessage,
+        data.assistantMessage
+      ]);
+      const invalidations = [
+        queryClient.invalidateQueries({ queryKey: queryKeys.ai.conversations })
+      ];
+      if (data?.memoriesUpdated) {
+        invalidations.push(
+          queryClient.invalidateQueries({ queryKey: queryKeys.ai.memories })
+        );
+      }
+      await Promise.all(invalidations);
+    },
+    onError: (err, variables) => {
+      setMessages((prev) => prev.filter((m) => m.id !== variables.optimisticId));
+      setErrorBanner(
+        err.response?.data?.message || 'Unable to reach AI Coach right now.'
+      );
+    }
+  });
+
+  const deleteConversationMutation = useMutation({
+    mutationFn: (id) => aiAPI.deleteConversation(id),
+    onSuccess: async (_data, id) => {
+      await queryClient.invalidateQueries({ queryKey: queryKeys.ai.conversations });
+      if (conversationId === id) {
+        handleNewChat();
+      }
+    },
+    onError: () => {
+      setErrorBanner('Failed to delete conversation.');
+    }
+  });
+
+  const deleteMemoryMutation = useMutation({
+    mutationFn: (id) => aiAPI.deleteMemory(id),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: queryKeys.ai.memories });
+    },
+    onError: () => {
+      setErrorBanner('Failed to delete memory item.');
+    }
+  });
+
+  const generateMcpKeyMutation = useMutation({
+    mutationFn: () => aiAPI.generateMcpKey(),
+    onSuccess: async (data) => {
+      setGeneratedRawKey(data.apiKey);
+      queryClient.setQueryData(queryKeys.ai.mcpKey, {
+        hasKey: true,
+        keyPrefix: data.keyPrefix,
+        createdAt: data.createdAt
+      });
+      await queryClient.invalidateQueries({ queryKey: queryKeys.ai.mcpKey });
+    },
+    onError: (err) => {
+      setErrorBanner(err.response?.data?.message || 'Failed to generate MCP key.');
+    }
+  });
+
+  const revokeMcpKeyMutation = useMutation({
+    mutationFn: () => aiAPI.revokeMcpKey(),
+    onSuccess: async () => {
+      queryClient.setQueryData(queryKeys.ai.mcpKey, {
+        hasKey: false,
+        keyPrefix: null
+      });
+      setGeneratedRawKey(null);
+      await queryClient.invalidateQueries({ queryKey: queryKeys.ai.mcpKey });
+    },
+    onError: (err) => {
+      setErrorBanner(err.response?.data?.message || 'Failed to revoke MCP key.');
+    }
+  });
+
+  const applyPlanMutation = useMutation({
+    mutationFn: ({ conversationId: convId, messageId, action }) =>
+      aiAPI.applyPlan(convId, messageId, action),
+    onSuccess: async (result, variables) => {
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.id === variables.messageId && m.draftPlan
+            ? {
+                ...m,
+                draftPlan: {
+                  ...m.draftPlan,
+                  appliedPlanId: result.planId,
+                  appliedScheduleId: result.scheduleId,
+                  appliedAt: new Date().toISOString()
+                }
+              }
+            : m
+        )
+      );
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: queryKeys.weeklyPlans.all }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.weeklySchedule.current })
+      ]);
+    },
+    onError: (err) => {
+      setErrorBanner(
+        err.response?.data?.message || 'Failed to apply schedule changes.'
+      );
+    },
+    onSettled: () => {
+      setApplyingMsgId(null);
+    }
+  });
+
+  const isBusy = loading || chatMutation.isPending;
+  const mcpKeyLoading =
+    generateMcpKeyMutation.isPending || revokeMcpKeyMutation.isPending;
 
   const toggleCitations = (msgId) => {
     setExpandedCitationsByMsg((prev) => ({
@@ -58,20 +197,10 @@ export default function AiCoachWidget() {
   };
 
   useEffect(() => {
-    if (isOpen && isAuthenticated) {
-      aiAPI.getConversations().then(setConversations).catch(() => {});
-      aiAPI.getMemories().then(setMemories).catch(() => {});
-      aiAPI.getMcpKeyStatus().then((status) => {
-        if (status) setMcpKeyStatus(status);
-      }).catch(() => {});
-    }
-  }, [isOpen, isAuthenticated]);
-
-  useEffect(() => {
     if (messagesEndRef.current && typeof messagesEndRef.current.scrollIntoView === 'function') {
       messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
     }
-  }, [messages, loading]);
+  }, [messages, isBusy]);
 
   if (!isAuthenticated) {
     return null;
@@ -98,58 +227,23 @@ export default function AiCoachWidget() {
     }
   };
 
-  const handleDeleteConversation = async (id, e) => {
+  const handleDeleteConversation = (id, e) => {
     e.stopPropagation();
-    try {
-      await aiAPI.deleteConversation(id);
-      setConversations((prev) => prev.filter((c) => c.id !== id));
-      if (conversationId === id) {
-        handleNewChat();
-      }
-    } catch {
-      setErrorBanner('Failed to delete conversation.');
-    }
+    deleteConversationMutation.mutate(id);
   };
 
-  const handleDeleteMemory = async (id) => {
-    try {
-      await aiAPI.deleteMemory(id);
-      setMemories((prev) => prev.filter((m) => m.id !== id));
-    } catch {
-      setErrorBanner('Failed to delete memory item.');
-    }
+  const handleDeleteMemory = (id) => {
+    deleteMemoryMutation.mutate(id);
   };
 
-  const handleGenerateMcpKey = async () => {
-    setMcpKeyLoading(true);
+  const handleGenerateMcpKey = () => {
     setErrorBanner('');
-    try {
-      const data = await aiAPI.generateMcpKey();
-      setGeneratedRawKey(data.apiKey);
-      setMcpKeyStatus({
-        hasKey: true,
-        keyPrefix: data.keyPrefix,
-        createdAt: data.createdAt
-      });
-    } catch (err) {
-      setErrorBanner(err.response?.data?.message || 'Failed to generate MCP key.');
-    } finally {
-      setMcpKeyLoading(false);
-    }
+    generateMcpKeyMutation.mutate();
   };
 
-  const handleRevokeMcpKey = async () => {
-    setMcpKeyLoading(true);
+  const handleRevokeMcpKey = () => {
     setErrorBanner('');
-    try {
-      await aiAPI.revokeMcpKey();
-      setMcpKeyStatus({ hasKey: false, keyPrefix: null });
-      setGeneratedRawKey(null);
-    } catch (err) {
-      setErrorBanner(err.response?.data?.message || 'Failed to revoke MCP key.');
-    } finally {
-      setMcpKeyLoading(false);
-    }
+    revokeMcpKeyMutation.mutate();
   };
 
   const handleCopyKey = async () => {
@@ -165,43 +259,24 @@ export default function AiCoachWidget() {
     }
   };
 
-  const sendMessage = async (textToSend) => {
+  const sendMessage = (textToSend) => {
     const trimmed = (textToSend ?? input).trim();
-    if (!trimmed || loading) return;
+    if (!trimmed || isBusy) return;
 
     setErrorBanner('');
     setInput('');
+    const optimisticId = `temp-${Date.now()}`;
     const optimisticUserMsg = {
-      id: `temp-${Date.now()}`,
+      id: optimisticId,
       role: 'user',
       text: trimmed
     };
     setMessages((prev) => [...prev, optimisticUserMsg]);
-    setLoading(true);
-
-    try {
-      const data = await aiAPI.chat({
-        conversationId,
-        message: trimmed
-      });
-      setConversationId(data.conversationId);
-      setMessages((prev) => [
-        ...prev.filter((m) => m.id !== optimisticUserMsg.id),
-        data.userMessage,
-        data.assistantMessage
-      ]);
-      if (data.memoriesUpdated) {
-        aiAPI.getMemories().then(setMemories).catch(() => {});
-      }
-      aiAPI.getConversations().then(setConversations).catch(() => {});
-    } catch (err) {
-      setMessages((prev) => prev.filter((m) => m.id !== optimisticUserMsg.id));
-      setErrorBanner(
-        err.response?.data?.message || 'Unable to reach AI Coach right now.'
-      );
-    } finally {
-      setLoading(false);
-    }
+    chatMutation.mutate({
+      conversationId,
+      message: trimmed,
+      optimisticId
+    });
   };
 
   const handleSubmit = (e) => {
@@ -209,34 +284,15 @@ export default function AiCoachWidget() {
     sendMessage(input);
   };
 
-  const handleApplyPlan = async (msgId, action = 'activate_schedule') => {
+  const handleApplyPlan = (msgId, action = 'activate_schedule') => {
     if (!conversationId || applyingMsgId) return;
     setApplyingMsgId(msgId);
     setErrorBanner('');
-    try {
-      const result = await aiAPI.applyPlan(conversationId, msgId, action);
-      setMessages((prev) =>
-        prev.map((m) =>
-          m.id === msgId && m.draftPlan
-            ? {
-                ...m,
-                draftPlan: {
-                  ...m.draftPlan,
-                  appliedPlanId: result.planId,
-                  appliedScheduleId: result.scheduleId,
-                  appliedAt: new Date().toISOString()
-                }
-              }
-            : m
-        )
-      );
-    } catch (err) {
-      setErrorBanner(
-        err.response?.data?.message || 'Failed to apply schedule changes.'
-      );
-    } finally {
-      setApplyingMsgId(null);
-    }
+    applyPlanMutation.mutate({
+      conversationId,
+      messageId: msgId,
+      action
+    });
   };
 
   return (
@@ -476,7 +532,7 @@ export default function AiCoachWidget() {
             <>
               {/* Messages List */}
               <div className="flex-1 overflow-y-auto p-3 space-y-3">
-                {messages.length === 0 && !loading && (
+                {messages.length === 0 && !isBusy && (
                   <div className="space-y-3 pt-2">
                     <div className="p-3 rounded-xl bg-neutral-900 border border-neutral-800 text-xs text-gray-300">
                       <div className="flex items-center gap-1.5 font-semibold text-white mb-1">
@@ -792,7 +848,7 @@ export default function AiCoachWidget() {
                   </div>
                 ))}
 
-                {loading && (
+                {isBusy && (
                   <div className="text-xs text-gray-400 italic">
                     AI Coach is thinking...
                   </div>
@@ -816,7 +872,7 @@ export default function AiCoachWidget() {
                 />
                 <button
                   type="submit"
-                  disabled={loading || !input.trim()}
+                  disabled={isBusy || !input.trim()}
                   aria-label="Send message"
                   className="p-2.5 rounded-xl disabled:opacity-40"
                   style={{ backgroundColor: '#CCFF00', color: '#000' }}
