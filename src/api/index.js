@@ -5,6 +5,7 @@ const buildUser = (data) => ({
     id: data.userId,
     name: data.name,
     ...(data.email ? { email: data.email } : {}),
+    preferredLanguage: data.preferredLanguage || 'en',
 });
 
 const persistSession = (data) => {
@@ -62,7 +63,10 @@ export const userAPI = {
     updateProgress: async (progressData) => {
         const response = await axiosClient.post('/users/progress', progressData);
         return response.data;
-    }
+    },
+
+    updateLanguage: async (preferredLanguage) =>
+        (await axiosClient.patch('/users/language', { preferredLanguage })).data
 };
 
 // Workout API calls

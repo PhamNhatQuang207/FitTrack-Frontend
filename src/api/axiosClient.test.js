@@ -1,4 +1,5 @@
 import axios from 'axios';
+import i18n from '../i18n';
 import axiosClient from './axiosClient';
 import {
     getAccessToken,
@@ -37,6 +38,12 @@ describe('request interceptor (localStorage access token attachment)', () => {
         const config = requestFulfilled({ headers: {} });
 
         expect(config.headers.Authorization).toBeUndefined();
+    });
+
+    test('attaches Accept-Language header from i18n', async () => {
+        await i18n.changeLanguage('vi');
+        const config = requestFulfilled({ headers: {} });
+        expect(config.headers['Accept-Language']).toBe('vi');
     });
 });
 
