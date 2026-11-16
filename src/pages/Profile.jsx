@@ -1,13 +1,14 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "../hooks/useAuth";
-import axiosClient from "../api/axiosClient";
+import { userAPI } from "../api";
+import { queryKeys } from "../lib/queryClient";
 import { ArrowLeft, User, LogOut, Save } from "lucide-react";
 
 export default function Profile() {
   const { user, logout, updateUser } = useAuth();
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
+  const queryClient = useQueryClient();
   const [formData, setFormData] = useState({
     name: "", age: "", sex: "", height: "", weight: "", bodyFat: "", email: "",
   });
@@ -15,29 +16,54 @@ export default function Profile() {
   const [message, setMessage] = useState("");
   const navigate = useNavigate();
 
-  const getUserProgress = useCallback(async () => {
-    try {
-      if (!user) { navigate("/login"); return; }
-      const response = await axiosClient.get('/users/progress');
-      const data = response.data;
-      setFormData((prev) => ({
-        ...prev,
-        name: data.name || "",
-        email: user.email || "",
-        height: data.height || "",
-        age: data.age || "",
-        sex: data.sex || "",
-        weight: data.weightHistory?.length > 0 ? data.weightHistory[data.weightHistory.length - 1].value : "",
-        bodyFat: data.bodyFatHistory?.length > 0 ? data.bodyFatHistory[data.bodyFatHistory.length - 1].value : "",
-      }));
-    } catch (error) {
-      setError(error.response?.data?.message || "Failed to load profile");
-    } finally {
-      setLoading(false);
+  useEffect(() => {
+    if (!user) {
+      navigate("/login");
     }
   }, [user, navigate]);
 
-  useEffect(() => { getUserProgress(); }, [getUserProgress]);
+  const { data: progressData, isLoading: loading, error: queryError } = useQuery({
+    queryKey: queryKeys.userProgress,
+    queryFn: userAPI.getProgress,
+    enabled: Boolean(user),
+  });
+
+  useEffect(() => {
+    if (!progressData || !user) return;
+    setFormData((prev) => ({
+      ...prev,
+      name: progressData.name || "",
+      email: user.email || "",
+      height: progressData.height || "",
+      age: progressData.age || "",
+      sex: progressData.sex || "",
+      weight: progressData.weightHistory?.length > 0 ? progressData.weightHistory[progressData.weightHistory.length - 1].value : "",
+      bodyFat: progressData.bodyFatHistory?.length > 0 ? progressData.bodyFatHistory[progressData.bodyFatHistory.length - 1].value : "",
+    }));
+  }, [progressData, user]);
+
+  useEffect(() => {
+    if (queryError) {
+      setError(queryError.response?.data?.message || "Failed to load profile");
+    }
+  }, [queryError]);
+
+  const updateProfileMutation = useMutation({
+    mutationFn: userAPI.updateProgress,
+    onSuccess: async (_data, variables) => {
+      setMessage("Profile updated successfully!");
+      if (variables.name) updateUser({ name: variables.name });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: queryKeys.userProgress }),
+        queryClient.invalidateQueries({ queryKey: ['analytics'] }),
+      ]);
+    },
+    onError: (err) => {
+      setError(err.response?.data?.message || "Failed to update profile");
+    },
+  });
+
+  const saving = updateProfileMutation.isPending;
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -55,27 +81,16 @@ export default function Profile() {
 
   const handleUpdateProfile = async () => {
     if (!validateForm()) return;
-    setSaving(true); setError(""); setMessage("");
-    try {
-      const updateData = {};
-      if (formData.name) updateData.name = formData.name;
-      if (formData.height) updateData.height = parseFloat(formData.height);
-      if (formData.age) updateData.age = parseInt(formData.age);
-      if (formData.sex) updateData.sex = formData.sex;
-      if (formData.weight) updateData.weight = parseFloat(formData.weight);
-      if (formData.bodyFat) updateData.bodyFat = parseFloat(formData.bodyFat);
-      if (Object.keys(updateData).length > 0) {
-        await axiosClient.post('/users/progress', updateData);
-        setMessage("Profile updated successfully!");
-        setTimeout(() => {
-          getUserProgress();
-          if (formData.name) updateUser({ name: formData.name });
-        }, 800);
-      }
-    } catch (error) {
-      setError(error.response?.data?.message || "Failed to update profile");
-    } finally {
-      setSaving(false);
+    setError(""); setMessage("");
+    const updateData = {};
+    if (formData.name) updateData.name = formData.name;
+    if (formData.height) updateData.height = parseFloat(formData.height);
+    if (formData.age) updateData.age = parseInt(formData.age);
+    if (formData.sex) updateData.sex = formData.sex;
+    if (formData.weight) updateData.weight = parseFloat(formData.weight);
+    if (formData.bodyFat) updateData.bodyFat = parseFloat(formData.bodyFat);
+    if (Object.keys(updateData).length > 0) {
+      updateProfileMutation.mutate(updateData);
     }
   };
 

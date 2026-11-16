@@ -1,34 +1,33 @@
-import React, { useState, useEffect } from "react";
+import React from "react";
 import { useNavigate } from "react-router-dom";
-import axiosClient from "../api/axiosClient";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { weeklyPlanAPI, weeklyScheduleAPI } from "../api";
+import { queryKeys } from "../lib/queryClient";
 import { ArrowLeft, Play, Plus, Calendar } from "lucide-react";
 
 export default function WeeklyPlanLibrary() {
   const navigate = useNavigate();
-  const [plans, setPlans] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
 
-  useEffect(() => { fetchPlans(); }, []);
+  const { data: plans = [], isLoading: loading } = useQuery({
+    queryKey: queryKeys.weeklyPlans.all,
+    queryFn: weeklyPlanAPI.getAll,
+  });
 
-  const fetchPlans = async () => {
-    try {
-      const response = await axiosClient.get('/weekly-plans');
-      setPlans(response.data);
-    } catch (error) {
-      console.error("Error fetching plans:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleStartPlan = async (planId) => {
-    try {
-      await axiosClient.post('/weekly-schedules/start', { weeklyPlanId: planId });
+  const startPlanMutation = useMutation({
+    mutationFn: (planId) => weeklyScheduleAPI.start(planId),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: queryKeys.weeklySchedule.current });
       navigate('/dashboard');
-    } catch (error) {
+    },
+    onError: (error) => {
       console.error("Error starting plan:", error);
       alert(error.response?.data?.message || "Failed to start plan");
-    }
+    },
+  });
+
+  const handleStartPlan = (planId) => {
+    startPlanMutation.mutate(planId);
   };
 
   return (

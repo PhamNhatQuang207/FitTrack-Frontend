@@ -1,6 +1,8 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import axiosClient from "../api/axiosClient";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { weeklyScheduleAPI, workoutSessionAPI } from "../api";
+import { invalidateWorkoutAndAnalytics, queryKeys } from "../lib/queryClient";
 import {
   ArrowLeft, Play, CheckCircle2, Calendar as CalendarIcon,
   Edit2, RefreshCcw, X as XIcon, Save
@@ -8,46 +10,92 @@ import {
 
 export default function WeeklyCalendar() {
   const navigate = useNavigate();
-  const [currentSchedule, setCurrentSchedule] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
   const [editMode, setEditMode] = useState(false);
   const [swapSourceDay, setSwapSourceDay] = useState(null);
   const [editingWorkoutName, setEditingWorkoutName] = useState({});
 
-  useEffect(() => { fetchCurrentSchedule(); }, []);
+  const { data: scheduleData, isLoading: loading, isError: scheduleError } = useQuery({
+    queryKey: queryKeys.weeklySchedule.current,
+    queryFn: weeklyScheduleAPI.getCurrent,
+    retry: false,
+  });
 
-  const fetchCurrentSchedule = async () => {
-    try {
-      const response = await axiosClient.get('/weekly-schedules/current');
-      setCurrentSchedule(response.data);
-    } catch (error) {
-      setCurrentSchedule(null);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const currentSchedule = scheduleError ? null : (scheduleData ?? null);
 
-  const handleStartWorkout = async (day) => {
-    try {
-      const response = await axiosClient.post('/workout-sessions', {
-        name: day.workout?.name?.trim() || `${day.dayName} Workout`,
-        date: day.date,
-        exercises: day.workout.exercises,
-        status: 'planned',
-        weeklyScheduleId: currentSchedule.id,
-        dayOfWeek: day.dayOfWeek
-      });
-      navigate(`/workout/${response.data.sessionId}`);
-    } catch (error) {
+  const startWorkoutMutation = useMutation({
+    mutationFn: (payload) => workoutSessionAPI.create(payload),
+    onSuccess: async (data) => {
+      await invalidateWorkoutAndAnalytics(queryClient);
+      navigate(`/workout/${data.sessionId}`);
+    },
+    onError: (error) => {
       alert(error.response?.data?.message || "Failed to start workout");
-    }
+    },
+  });
+
+  const completeWeekMutation = useMutation({
+    mutationFn: (scheduleId) => weeklyScheduleAPI.complete(scheduleId),
+    onSuccess: async () => {
+      await invalidateWorkoutAndAnalytics(queryClient);
+      navigate('/weekly-plan-library');
+    },
+  });
+
+  const markCompleteMutation = useMutation({
+    mutationFn: ({ scheduleId, dayOfWeek }) =>
+      weeklyScheduleAPI.completeDay(scheduleId, {
+        dayOfWeek,
+        workoutData: { exercises: [] },
+      }),
+    onSuccess: async () => {
+      await invalidateWorkoutAndAnalytics(queryClient);
+    },
+    onError: () => {
+      alert("Failed to mark workout as complete");
+    },
+  });
+
+  const swapDaysMutation = useMutation({
+    mutationFn: ({ scheduleId, dayOfWeek, targetDayOfWeek }) =>
+      weeklyScheduleAPI.updateDay(scheduleId, {
+        action: 'swap',
+        dayOfWeek,
+        targetDayOfWeek,
+      }),
+    onSuccess: async () => {
+      await invalidateWorkoutAndAnalytics(queryClient);
+      setSwapSourceDay(null);
+    },
+    onError: () => {
+      alert("Failed to swap days");
+      setSwapSourceDay(null);
+    },
+  });
+
+  const editDayMutation = useMutation({
+    mutationFn: ({ scheduleId, payload }) =>
+      weeklyScheduleAPI.updateDay(scheduleId, payload),
+    onSuccess: async () => {
+      await invalidateWorkoutAndAnalytics(queryClient);
+    },
+  });
+
+  const handleStartWorkout = (day) => {
+    startWorkoutMutation.mutate({
+      name: day.workout?.name?.trim() || `${day.dayName} Workout`,
+      date: day.date,
+      exercises: day.workout.exercises,
+      status: 'planned',
+      weeklyScheduleId: currentSchedule.id,
+      dayOfWeek: day.dayOfWeek
+    });
   };
 
   const handleCompleteWeek = async () => {
     if (!window.confirm("Mark this week as complete?")) return;
     try {
-      await axiosClient.patch(`/weekly-schedules/${currentSchedule.id}/complete`);
-      navigate('/weekly-plan-library');
+      await completeWeekMutation.mutateAsync(currentSchedule.id);
     } catch (error) {
       alert("Failed to complete week");
     }
@@ -56,43 +104,28 @@ export default function WeeklyCalendar() {
   const handleDismissWeek = async () => {
     if (!window.confirm("Dismiss this weekly schedule?")) return;
     try {
-      await axiosClient.patch(`/weekly-schedules/${currentSchedule.id}/complete`);
-      navigate('/weekly-plan-library');
+      await completeWeekMutation.mutateAsync(currentSchedule.id);
     } catch (error) {
       alert("Failed to dismiss week");
     }
   };
 
-  const handleMarkComplete = async (day) => {
-    try {
-      await axiosClient.patch(`/weekly-schedules/${currentSchedule.id}/complete-day`, {
-        dayOfWeek: day.dayOfWeek,
-        workoutData: { exercises: [] }
-      });
-      const response = await axiosClient.get('/weekly-schedules/current');
-      setCurrentSchedule(response.data);
-    } catch (error) {
-      alert("Failed to mark workout as complete");
-    }
+  const handleMarkComplete = (day) => {
+    markCompleteMutation.mutate({
+      scheduleId: currentSchedule.id,
+      dayOfWeek: day.dayOfWeek,
+    });
   };
 
-  const handleSwapDays = async (day) => {
+  const handleSwapDays = (day) => {
     if (!swapSourceDay) {
       setSwapSourceDay(day);
     } else {
-      try {
-        await axiosClient.patch(`/weekly-schedules/${currentSchedule.id}/update-day`, {
-          action: 'swap',
-          dayOfWeek: swapSourceDay.dayOfWeek,
-          targetDayOfWeek: day.dayOfWeek
-        });
-        const response = await axiosClient.get('/weekly-schedules/current');
-        setCurrentSchedule(response.data);
-        setSwapSourceDay(null);
-      } catch (error) {
-        alert("Failed to swap days");
-        setSwapSourceDay(null);
-      }
+      swapDaysMutation.mutate({
+        scheduleId: currentSchedule.id,
+        dayOfWeek: swapSourceDay.dayOfWeek,
+        targetDayOfWeek: day.dayOfWeek,
+      });
     }
   };
 
@@ -100,12 +133,13 @@ export default function WeeklyCalendar() {
     const action = day.isRestDay ? 'Converting to workout day' : 'Converting to rest day';
     if (!window.confirm(`${action}?`)) return;
     try {
-      await axiosClient.patch(`/weekly-schedules/${currentSchedule.id}/update-day`, {
-        action: 'toggleRest',
-        dayOfWeek: day.dayOfWeek
+      await editDayMutation.mutateAsync({
+        scheduleId: currentSchedule.id,
+        payload: {
+          action: 'toggleRest',
+          dayOfWeek: day.dayOfWeek,
+        },
       });
-      const response = await axiosClient.get('/weekly-schedules/current');
-      setCurrentSchedule(response.data);
     } catch (error) {
       alert("Failed to toggle rest day");
     }
@@ -139,12 +173,14 @@ export default function WeeklyCalendar() {
       return;
     }
     try {
-      await axiosClient.patch(`/weekly-schedules/${currentSchedule.id}/update-day`, {
-        action: 'updateWorkoutName',
-        dayOfWeek: day.dayOfWeek,
-        workoutName: newName
+      await editDayMutation.mutateAsync({
+        scheduleId: currentSchedule.id,
+        payload: {
+          action: 'updateWorkoutName',
+          dayOfWeek: day.dayOfWeek,
+          workoutName: newName,
+        },
       });
-      await fetchCurrentSchedule();
       setEditingWorkoutName(prev => { const u = { ...prev }; delete u[day.dayOfWeek]; return u; });
     } catch (error) {
       alert('Failed to update workout name');
