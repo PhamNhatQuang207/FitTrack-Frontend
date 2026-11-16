@@ -1,0 +1,81 @@
+{
+  "openButtonAria": "Open AI Coach",
+  "closeButtonAria": "Close AI Coach",
+  "triggerLabel": "AI Coach",
+  "header": {
+    "title": "FitTrack AI Coach",
+    "subtitle": "MCP Powered • Grounded",
+    "newChat": "New Chat",
+    "history": "Conversation History",
+    "memories": "Saved Fitness Memories"
+  },
+  "quickPrompts": {
+    "analyze": "Analyze my recent progress",
+    "buildPlan": "Build a new weekly workout schedule",
+    "editSchedule": "Edit my current week's schedule"
+  },
+  "welcome": {
+    "title": "How can I help your training today?",
+    "subtitle": "Ask me to analyze your workout history, build a new weekly schedule, or adjust your current week's schedule."
+  },
+  "history": {
+    "title": "Past Conversations",
+    "empty": "No conversations yet.",
+    "messagesCount": "{{count}} messages",
+    "deleteAria": "Delete conversation {{title}}"
+  },
+  "memories": {
+    "mcpTitle": "MCP Access Key",
+    "mcpActive": "Active",
+    "mcpNoKey": "No Key",
+    "mcpDescription": "Connect your FitTrack data to external MCP tools (Claude Desktop, Cursor, AI agents).",
+    "mcpNewKeyNotice": "New Key Generated (copy now, it won't be shown again):",
+    "copyKeyAria": "Copy MCP Key",
+    "copied": "Copied",
+    "copy": "Copy",
+    "revoking": "Revoking...",
+    "revoke": "Revoke",
+    "generating": "Generating...",
+    "generateKey": "Generate MCP Key",
+    "coachMemoryTitle": "Coach Memory ({{count}}/25)",
+    "coachMemoryEmpty": "No saved memories yet. Share your goals, schedule, equipment, or injuries in chat!",
+    "deleteMemoryAria": "Delete memory {{key}}"
+  },
+  "citations": {
+    "sourcesCount": "Sources ({{count}})"
+  },
+  "draftPlan": {
+    "modeEditSchedule": "Edit Active Schedule",
+    "modeUpdatePlan": "Edit Library Plan",
+    "modeNewPlan": "New Weekly Plan",
+    "restDay": "Rest Day",
+    "exercisesShort": "{{count}} ex",
+    "appliedSchedule": "Applied to Schedule",
+    "savedLibrary": "Saved to Plan Library",
+    "viewSchedule": "View Weekly Schedule",
+    "viewLibrary": "View Plan Library",
+    "updating": "Updating...",
+    "updateLibraryPlan": "Update Plan in Library",
+    "thisWeekOnly": "This Week Only",
+    "weekAndTemplate": "Week & Template",
+    "applying": "Applying...",
+    "applyScheduleChanges": "Apply Schedule Changes",
+    "saving": "Saving...",
+    "saveToLibrary": "Save to Library",
+    "applyNewSchedule": "Apply New Schedule"
+  },
+  "chat": {
+    "thinking": "AI Coach is thinking...",
+    "placeholder": "Ask AI Coach...",
+    "sendAria": "Send message"
+  },
+  "errors": {
+    "chatFailed": "Unable to reach AI Coach right now.",
+    "deleteConversationFailed": "Failed to delete conversation.",
+    "deleteMemoryFailed": "Failed to delete memory item.",
+    "generateKeyFailed": "Failed to generate MCP key.",
+    "revokeKeyFailed": "Failed to revoke MCP key.",
+    "applyPlanFailed": "Failed to apply schedule changes.",
+    "loadConversationFailed": "Failed to load conversation."
+  }
+}

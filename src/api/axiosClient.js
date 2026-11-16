@@ -1,4 +1,5 @@
 import axios from 'axios';
+import i18n from '../i18n';
 import {
     getAccessToken,
     setAccessToken,
@@ -18,11 +19,13 @@ const axiosClient = axios.create({
 });
 
 // Request interceptor to attach short-lived JWT access token from localStorage (via tokenStore)
+// and current i18n language as Accept-Language
 axiosClient.interceptors.request.use(
     (config) => {
+        config.headers = config.headers || {};
+        config.headers['Accept-Language'] = i18n.resolvedLanguage || 'en';
         const token = getAccessToken();
         if (token) {
-            config.headers = config.headers || {};
             config.headers.Authorization = `Bearer ${token}`;
         }
         return config;

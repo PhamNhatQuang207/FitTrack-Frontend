@@ -1,0 +1,47 @@
+{
+  "title": "Hồ sơ",
+  "backToDashboard": "Bảng điều khiển",
+  "loading": "Đang tải hồ sơ...",
+  "activeBadge": "Đang hoạt động",
+  "defaultAthlete": "Vận động viên",
+  "groups": {
+    "identity": "Thông tin cá nhân",
+    "physicalStats": "Chỉ số cơ thể"
+  },
+  "fields": {
+    "fullName": "Họ và tên",
+    "fullNamePlaceholder": "Nguyễn Văn A",
+    "email": "Email",
+    "age": "Tuổi",
+    "agePlaceholder": "vd. 25",
+    "sex": "Giới tính",
+    "selectPlaceholder": "Chọn...",
+    "sexOptions": {
+      "Male": "Nam",
+      "Female": "Nữ",
+      "Other": "Khác"
+    },
+    "height": "Chiều cao (cm)",
+    "heightPlaceholder": "vd. 175",
+    "weight": "Cân nặng (kg)",
+    "weightPlaceholder": "vd. 75",
+    "bodyFat": "Tỷ lệ mỡ (%)",
+    "bodyFatPlaceholder": "vd. 15"
+  },
+  "validation": {
+    "age": "Tuổi phải từ 13 đến 100",
+    "height": "Chiều cao phải từ 100cm đến 250cm",
+    "weight": "Cân nặng phải từ 30kg đến 300kg",
+    "bodyFat": "Tỷ lệ mỡ phải từ 3% đến 50%"
+  },
+  "messages": {
+    "loadFailed": "Không thể tải hồ sơ",
+    "updateSuccess": "Cập nhật hồ sơ thành công!",
+    "updateFailed": "Không thể cập nhật hồ sơ"
+  },
+  "actions": {
+    "saving": "Đang lưu...",
+    "saveChanges": "Lưu thay đổi",
+    "logOut": "Đăng xuất"
+  }
+}

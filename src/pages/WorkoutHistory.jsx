@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { workoutSessionAPI } from '../api';
+import { useTranslation } from 'react-i18next';
+import { exerciseAPI, muscleGroupAPI, workoutSessionAPI } from '../api';
 import { invalidateWorkoutAndAnalytics, queryKeys } from '../lib/queryClient';
 import {
   ArrowLeft,
@@ -14,9 +15,12 @@ import {
   ChevronDown,
   Filter
 } from 'lucide-react';
+import LanguageSwitcher from '../components/LanguageSwitcher';
+import { getLocalizedExerciseName, getLocalizedMuscleGroupName } from '../utils/localize';
+import { formatDate as formatIntlDate, formatNumber } from '../utils/formatters';
 
 // Shared page header
-function PageHeader({ title, subtitle }) {
+function PageHeader({ title, subtitle, backLabel }) {
   const navigate = useNavigate();
   return (
     <div className="ft-header px-4 md:px-8 py-0">
@@ -30,7 +34,7 @@ function PageHeader({ title, subtitle }) {
           onMouseLeave={e => e.currentTarget.style.color = '#A0A0A0'}
         >
           <ArrowLeft size={18} className="group-hover:-translate-x-1 transition-transform" />
-          <span className="hidden md:inline font-display font-bold uppercase tracking-widest text-xs">Dashboard</span>
+          <span className="hidden md:inline font-display font-bold uppercase tracking-widest text-xs">{backLabel}</span>
         </button>
         <div className="flex-1 text-center">
           <h1
@@ -41,13 +45,15 @@ function PageHeader({ title, subtitle }) {
           </h1>
           {subtitle && <p className="text-xs hidden md:block mt-0.5" style={{ color: '#A0A0A0' }}>{subtitle}</p>}
         </div>
-        <div className="w-20 hidden md:block" />
+        <LanguageSwitcher />
       </div>
     </div>
   );
 }
 
 export default function WorkoutHistory() {
+  const { t, i18n } = useTranslation(['workout']);
+  const lang = i18n.resolvedLanguage || 'en';
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [expandedSessions, setExpandedSessions] = useState([]);
@@ -56,6 +62,18 @@ export default function WorkoutHistory() {
   const { data: sessions = [], isLoading: loading } = useQuery({
     queryKey: queryKeys.workoutSessions.all,
     queryFn: workoutSessionAPI.getAll,
+  });
+
+  const { data: exercisesCatalog = [] } = useQuery({
+    queryKey: queryKeys.exercises.all,
+    queryFn: exerciseAPI.getAll,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const { data: muscleGroupsCatalog = [] } = useQuery({
+    queryKey: queryKeys.muscleGroups,
+    queryFn: muscleGroupAPI.getAll,
+    staleTime: 5 * 60 * 1000,
   });
 
   const completeWorkoutMutation = useMutation({
@@ -87,27 +105,27 @@ export default function WorkoutHistory() {
   const handleStartWorkout = (sessionId) => navigate(`/workout/${sessionId}`);
 
   const handleCompleteWorkout = (sessionId) => {
-    if (!window.confirm('Mark this workout as complete?')) return;
+    if (!window.confirm(t('workout:history.confirmComplete'))) return;
     completeWorkoutMutation.mutate(sessionId);
   };
 
   const handleDeleteWorkout = (sessionId) => {
-    if (!window.confirm('Delete this workout? This action cannot be undone.')) return;
+    if (!window.confirm(t('workout:history.confirmDelete'))) return;
     deleteWorkoutMutation.mutate(sessionId);
   };
 
   const getStatusBadge = (status) => {
     switch (status) {
-      case 'completed':   return <span className="ft-badge-lime">Completed</span>;
-      case 'in-progress': return <span className="ft-badge-orange">In Progress</span>;
-      default:            return <span className="ft-badge-gray">Planned</span>;
+      case 'completed':   return <span className="ft-badge-lime">{t('workout:history.status.completed')}</span>;
+      case 'in-progress': return <span className="ft-badge-orange">{t('workout:history.status.in-progress')}</span>;
+      default:            return <span className="ft-badge-gray">{t('workout:history.status.planned')}</span>;
     }
   };
 
   const formatDate = (dateString) =>
-    new Date(dateString).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    formatIntlDate(dateString, lang, { month: 'short', day: 'numeric', year: 'numeric' });
   const formatTime = (dateString) =>
-    new Date(dateString).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+    formatIntlDate(dateString, lang, { hour: '2-digit', minute: '2-digit' });
 
   const calculateTotalVolume = (session) => {
     if (!session.exercises) return 0;
@@ -125,12 +143,12 @@ export default function WorkoutHistory() {
 
   return (
     <div className="ft-page min-h-screen">
-      <PageHeader title="Workout History" subtitle="View and manage your workout sessions" />
+      <PageHeader title={t('workout:history.title')} subtitle={t('workout:history.subtitle')} backLabel={t('workout:history.backToDashboard')} />
 
       <main className="max-w-6xl mx-auto px-4 md:px-8 py-8">
         {/* Section label */}
         <div className="mb-6 animate-slide-up">
-          <p className="ft-label">// Filter Sessions</p>
+          <p className="ft-label">{t('workout:history.filterEyebrow')}</p>
           <div className="flex flex-wrap items-center gap-2 mt-3">
             <Filter size={14} style={{ color: '#A0A0A0' }} />
             {STATUS_FILTERS.map((status) => (
@@ -147,11 +165,11 @@ export default function WorkoutHistory() {
                   boxShadow: filterStatus === status ? '0 0 10px rgba(204,255,0,0.4)' : 'none',
                 }}
               >
-                {status === 'all' ? 'All' : status.replace('-', ' ')}
+                {t(`workout:history.filters.${status}`)}
               </button>
             ))}
             <span className="ml-auto text-xs font-mono-sport" style={{ color: '#A0A0A0' }}>
-              {filteredSessions.length} found
+              {t('workout:history.foundCount', { count: filteredSessions.length })}
             </span>
           </div>
         </div>
@@ -170,11 +188,11 @@ export default function WorkoutHistory() {
             style={{ border: '1px dashed rgba(204,255,0,0.15)', borderRadius: '2px' }}
           >
             <Dumbbell size={40} style={{ color: '#1A1A1A', margin: '0 auto 16px' }} />
-            <p className="ft-title text-2xl text-white mb-2">No Workouts Found</p>
+            <p className="ft-title text-2xl text-white mb-2">{t('workout:history.emptyTitle')}</p>
             <p className="text-sm" style={{ color: '#A0A0A0' }}>
               {filterStatus !== 'all'
-                ? `No ${filterStatus} workouts to display`
-                : 'Start your first workout to see it here!'}
+                ? t('workout:history.emptyFiltered', { status: t(`workout:history.filters.${filterStatus}`).toLowerCase() })
+                : t('workout:history.emptyAll')}
             </p>
           </div>
         )}
@@ -217,12 +235,12 @@ export default function WorkoutHistory() {
                           </span>
                           <span className="flex items-center gap-1">
                             <Dumbbell size={11} />
-                            {session.exercises?.length || 0} exercises
+                            {t('workout:history.exercisesCount', { count: session.exercises?.length || 0 })}
                           </span>
                           {session.status === 'completed' && volume > 0 && (
                             <span className="flex items-center gap-1">
                               <TrendingUp size={11} />
-                              {volume.toLocaleString()} kg
+                              {formatNumber(volume, lang)} kg
                             </span>
                           )}
                         </div>
@@ -247,7 +265,7 @@ export default function WorkoutHistory() {
                             className="ft-btn-secondary flex items-center gap-2 text-xs"
                             style={{ padding: '6px 14px' }}
                           >
-                            <Play size={12} /> Continue
+                            <Play size={12} /> {t('workout:history.continue')}
                           </button>
                         )}
                         {session.status === 'planned' && (
@@ -256,7 +274,7 @@ export default function WorkoutHistory() {
                             className="ft-btn-primary flex items-center gap-2 text-xs"
                             style={{ padding: '6px 14px' }}
                           >
-                            <Play size={12} /> Start Workout
+                            <Play size={12} /> {t('workout:history.startWorkout')}
                           </button>
                         )}
                         <button
@@ -266,7 +284,7 @@ export default function WorkoutHistory() {
                           onMouseEnter={e => e.currentTarget.style.background = 'rgba(204,255,0,0.12)'}
                           onMouseLeave={e => e.currentTarget.style.background = 'rgba(204,255,0,0.06)'}
                         >
-                          <CheckCircle size={12} /> <span className="hidden sm:inline">Mark Complete</span>
+                          <CheckCircle size={12} /> <span className="hidden sm:inline">{t('workout:history.markComplete')}</span>
                         </button>
                         <button
                           onClick={() => handleDeleteWorkout(session.id)}
@@ -275,7 +293,7 @@ export default function WorkoutHistory() {
                           onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,92,0,0.12)'}
                           onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,92,0,0.06)'}
                         >
-                          <Trash2 size={12} /> <span className="hidden sm:inline">Delete</span>
+                          <Trash2 size={12} /> <span className="hidden sm:inline">{t('workout:history.delete')}</span>
                         </button>
                       </div>
                     )}
@@ -287,7 +305,7 @@ export default function WorkoutHistory() {
                       className="px-4 md:px-5 pb-4 animate-slide-up"
                       style={{ borderTop: '1px solid rgba(204,255,0,0.1)' }}
                     >
-                      <p className="ft-label mt-4 mb-3">// Exercises</p>
+                      <p className="ft-label mt-4 mb-3">{t('workout:history.exercisesEyebrow')}</p>
                       {session.exercises && session.exercises.length > 0 ? (
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                           {session.exercises.map((exercise, idx) => (
@@ -296,12 +314,18 @@ export default function WorkoutHistory() {
                               className="flex items-center justify-between px-3 py-2"
                               style={{ background: 'rgba(204,255,0,0.03)', border: '1px solid rgba(204,255,0,0.08)', borderRadius: '2px' }}
                             >
-                              <span className="font-display font-bold italic uppercase text-sm text-white">{exercise.exerciseName}</span>
+                              <span className="font-display font-bold italic uppercase text-sm text-white">
+                                {getLocalizedExerciseName(exercise, exercisesCatalog, lang)}
+                              </span>
                               <div className="flex items-center gap-2">
-                                {exercise.category && <span className="ft-badge-gray" style={{ fontSize: '10px' }}>{exercise.category}</span>}
+                                {exercise.category && (
+                                  <span className="ft-badge-gray" style={{ fontSize: '10px' }}>
+                                    {getLocalizedMuscleGroupName(exercise.category, muscleGroupsCatalog, lang)}
+                                  </span>
+                                )}
                                 {exercise.actualSets?.length > 0 && (
                                   <span className="font-mono-sport text-xs" style={{ color: '#CCFF00' }}>
-                                    {exercise.actualSets.length} sets
+                                    {t('workout:history.setsCount', { count: exercise.actualSets.length })}
                                   </span>
                                 )}
                               </div>
@@ -309,7 +333,7 @@ export default function WorkoutHistory() {
                           ))}
                         </div>
                       ) : (
-                        <p className="text-sm" style={{ color: '#555' }}>No exercises logged</p>
+                        <p className="text-sm" style={{ color: '#555' }}>{t('workout:history.noExercisesLogged')}</p>
                       )}
                     </div>
                   )}

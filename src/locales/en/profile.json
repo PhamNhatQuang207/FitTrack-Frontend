@@ -1,0 +1,47 @@
+{
+  "title": "Profile",
+  "backToDashboard": "Dashboard",
+  "loading": "Loading Profile...",
+  "activeBadge": "Active",
+  "defaultAthlete": "Athlete",
+  "groups": {
+    "identity": "Identity",
+    "physicalStats": "Physical Stats"
+  },
+  "fields": {
+    "fullName": "Full Name",
+    "fullNamePlaceholder": "John Doe",
+    "email": "Email",
+    "age": "Age",
+    "agePlaceholder": "e.g. 25",
+    "sex": "Sex",
+    "selectPlaceholder": "Select...",
+    "sexOptions": {
+      "Male": "Male",
+      "Female": "Female",
+      "Other": "Other"
+    },
+    "height": "Height (cm)",
+    "heightPlaceholder": "e.g. 175",
+    "weight": "Weight (kg)",
+    "weightPlaceholder": "e.g. 75",
+    "bodyFat": "Body Fat (%)",
+    "bodyFatPlaceholder": "e.g. 15"
+  },
+  "validation": {
+    "age": "Age must be between 13 and 100",
+    "height": "Height must be between 100cm and 250cm",
+    "weight": "Weight must be between 30kg and 300kg",
+    "bodyFat": "Body fat must be between 3% and 50%"
+  },
+  "messages": {
+    "loadFailed": "Failed to load profile",
+    "updateSuccess": "Profile updated successfully!",
+    "updateFailed": "Failed to update profile"
+  },
+  "actions": {
+    "saving": "Saving...",
+    "saveChanges": "Save Changes",
+    "logOut": "Log Out"
+  }
+}

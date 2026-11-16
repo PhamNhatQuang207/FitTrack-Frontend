@@ -1,9 +1,13 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import axiosClient from '../api/axiosClient';
 import { CheckCircle2, Loader2, ArrowLeft } from 'lucide-react';
+import LanguageSwitcher from '../components/LanguageSwitcher';
+import { getApiErrorMessage } from '../utils/localize';
 
 export default function ResetPassword() {
+  const { t } = useTranslation(['auth', 'errors']);
   const { token: pathToken } = useParams();
   const [searchParams] = useSearchParams();
   const token = searchParams.get('token') || pathToken;
@@ -21,11 +25,11 @@ export default function ResetPassword() {
     e.preventDefault();
     setError(''); setMessage(''); setLoading(true);
     try {
-      const response = await axiosClient.post('/auth/request-password-reset', { email });
-      setMessage(response.data.message);
+      await axiosClient.post('/auth/request-password-reset', { email });
+      setMessage(t('auth:resetPassword.requestSuccess'));
       setEmail('');
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to send reset email.');
+      setError(getApiErrorMessage(err, t, t('auth:resetPassword.requestFailed')));
     } finally {
       setLoading(false);
     }
@@ -34,15 +38,15 @@ export default function ResetPassword() {
   const handleResetPassword = async (e) => {
     e.preventDefault();
     setError(''); setMessage('');
-    if (password.length < 6) { setError('Password must be at least 6 characters.'); return; }
-    if (password !== confirmPassword) { setError('Passwords do not match.'); return; }
+    if (password.length < 6) { setError(t('auth:resetPassword.passwordTooShort')); return; }
+    if (password !== confirmPassword) { setError(t('auth:resetPassword.passwordsMismatch')); return; }
     setLoading(true);
     try {
-      const response = await axiosClient.post(`/auth/reset-password/${token}`, { password });
-      setMessage(response.data.message);
+      await axiosClient.post(`/auth/reset-password/${token}`, { password });
+      setMessage(t('auth:resetPassword.resetSuccess'));
       setTimeout(() => navigate('/login'), 2000);
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to reset password.');
+      setError(getApiErrorMessage(err, t, t('auth:resetPassword.resetFailed')));
     } finally {
       setLoading(false);
     }
@@ -50,6 +54,9 @@ export default function ResetPassword() {
 
   return (
     <div className="ft-page flex items-center justify-center min-h-screen px-4">
+      <div className="absolute top-4 right-4 z-20">
+        <LanguageSwitcher />
+      </div>
       {/* Accent blobs */}
       <div
         className="absolute top-0 left-0 w-[400px] h-[400px] rounded-full opacity-8 pointer-events-none"
@@ -77,16 +84,16 @@ export default function ResetPassword() {
             onMouseEnter={e => e.currentTarget.style.color = '#CCFF00'}
             onMouseLeave={e => e.currentTarget.style.color = '#A0A0A0'}
           >
-            <ArrowLeft size={14} /> Back to Login
+            <ArrowLeft size={14} /> {t('auth:resetPassword.backToLogin')}
           </button>
 
           <h1 className="ft-title text-2xl text-white mb-1">
-            {isResetMode ? 'Set New Password' : 'Reset Password'}
+            {isResetMode ? t('auth:resetPassword.setNewTitle') : t('auth:resetPassword.resetTitle')}
           </h1>
           <p className="text-sm mb-6" style={{ color: '#A0A0A0' }}>
             {isResetMode
-              ? 'Enter your new password below.'
-              : "Enter your email and we'll send a reset link."}
+              ? t('auth:resetPassword.setNewSubtitle')
+              : t('auth:resetPassword.resetSubtitle')}
           </p>
 
           {error && (
@@ -103,13 +110,13 @@ export default function ResetPassword() {
           <form onSubmit={isResetMode ? handleResetPassword : handleRequestReset} className="flex flex-col gap-4">
             {!isResetMode ? (
               <div>
-                <label className="ft-label">Email Address</label>
+                <label className="ft-label">{t('auth:resetPassword.emailLabel')}</label>
                 <input
                   id="reset-email"
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="your@email.com"
+                  placeholder={t('auth:resetPassword.emailPlaceholder')}
                   className="ft-input"
                   required
                 />
@@ -117,25 +124,25 @@ export default function ResetPassword() {
             ) : (
               <>
                 <div>
-                  <label className="ft-label">New Password</label>
+                  <label className="ft-label">{t('auth:resetPassword.newPasswordLabel')}</label>
                   <input
                     id="new-password"
                     type="password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    placeholder="Min. 6 characters"
+                    placeholder={t('auth:resetPassword.passwordPlaceholder')}
                     className="ft-input"
                     required
                   />
                 </div>
                 <div>
-                  <label className="ft-label">Confirm Password</label>
+                  <label className="ft-label">{t('auth:resetPassword.confirmPasswordLabel')}</label>
                   <input
                     id="confirm-password"
                     type="password"
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
-                    placeholder="Re-enter password"
+                    placeholder={t('auth:resetPassword.confirmPasswordPlaceholder')}
                     className="ft-input"
                     required
                   />
@@ -150,9 +157,9 @@ export default function ResetPassword() {
               className="ft-btn-primary w-full py-3 mt-2 flex items-center justify-center gap-2"
             >
               {loading ? (
-                <><Loader2 size={16} className="animate-spin" /> {isResetMode ? 'Resetting...' : 'Sending...'}</>
+                <><Loader2 size={16} className="animate-spin" /> {isResetMode ? t('auth:resetPassword.resetting') : t('auth:resetPassword.sending')}</>
               ) : (
-                isResetMode ? 'Reset Password' : 'Send Reset Link'
+                isResetMode ? t('auth:resetPassword.resetSubmit') : t('auth:resetPassword.sendSubmit')
               )}
             </button>
           </form>

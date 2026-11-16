@@ -1,0 +1,43 @@
+{
+  "header": {
+    "athlete": "Vận động viên",
+    "defaultUser": "Người dùng"
+  },
+  "welcome": {
+    "eyebrow": "// Bảng điều khiển",
+    "greeting": "Chào mừng trở lại,",
+    "defaultAthlete": "Vận động viên"
+  },
+  "stats": {
+    "thisWeek": "Tuần này",
+    "volumeKg": "Khối lượng (kg)",
+    "avgExercises": "TB bài tập",
+    "weightKg": "Cân nặng (kg)"
+  },
+  "cards": {
+    "currentSchedule": "Lịch tập hiện tại",
+    "weeklyPlanning": "Kế hoạch tuần",
+    "currentScheduleDesc": "Tiếp tục \"{{name}}\" — đã xong {{completed}}/{{total}} buổi.",
+    "weeklyPlanningDesc": "Tạo hoặc bắt đầu kế hoạch tập luyện hàng tuần để duy trì đều đặn.",
+    "percentComplete": "Hoàn thành {{percent}}%",
+    "singleWorkout": "Buổi tập đơn",
+    "singleWorkoutDesc": "Lên kế hoạch một buổi tập cho hôm nay.",
+    "sessionsPlanned_one": "{{count}} buổi đã lên lịch",
+    "sessionsPlanned_other": "{{count}} buổi đã lên lịch",
+    "workoutHistory": "Lịch sử tập luyện",
+    "workoutHistoryDesc": "Xem các buổi tập trước đây và theo dõi tiến độ.",
+    "workoutsLogged_one": "Đã ghi {{count}} buổi tập",
+    "workoutsLogged_other": "Đã ghi {{count}} buổi tập",
+    "progressTracking": "Theo dõi tiến độ",
+    "progressTrackingDesc": "Theo dõi hành trình thể lực và các chỉ số cơ thể.",
+    "sessionsAnalyzed_one": "Đã phân tích {{count}} buổi",
+    "sessionsAnalyzed_other": "Đã phân tích {{count}} buổi"
+  },
+  "upcoming": {
+    "eyebrow": "// Buổi tập sắp tới",
+    "exercisesCount_one": "{{count}} bài tập",
+    "exercisesCount_other": "{{count}} bài tập",
+    "start": "Bắt đầu"
+  },
+  "footerQuote": "\"Nỗ lực hôm nay là kết quả ngày mai!\""
+}

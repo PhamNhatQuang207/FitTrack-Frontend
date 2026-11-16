@@ -1,0 +1,36 @@
+{
+  "title": "Progress Tracking",
+  "backToDashboard": "Dashboard",
+  "loading": "Loading Progress Data...",
+  "stats": {
+    "totalWorkouts": "Total Workouts",
+    "volumeKg": "Volume (kg)",
+    "avgExercises": "Avg Exercises",
+    "weightKg": "Weight (kg)"
+  },
+  "strength": {
+    "eyebrow": "// Strength Progression",
+    "selectExercise": "Select Exercise",
+    "weightKg": "Weight (kg)",
+    "start": "Start",
+    "current": "Current",
+    "gain": "Gain",
+    "noDataTitle": "No Data Yet",
+    "noDataDesc": "Complete some workouts with {{exercise}} to see progression!",
+    "thisExercise": "this exercise"
+  },
+  "consistency": {
+    "eyebrow": "// Weekly Consistency",
+    "title": "Completion Rate",
+    "noDataTitle": "No Weekly Data",
+    "noDataDesc": "Start a weekly plan to track consistency!"
+  },
+  "bodyMetrics": {
+    "eyebrow": "// Body Metrics",
+    "title": "Physical Stats",
+    "weightTrend": "Weight Trend",
+    "weightKg": "Weight (kg)",
+    "bodyFatTrend": "Body Fat Trend",
+    "bodyFatPct": "Body Fat (%)"
+  }
+}

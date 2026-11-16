@@ -1,12 +1,16 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "../hooks/useAuth";
 import { userAPI } from "../api";
 import { queryKeys } from "../lib/queryClient";
 import { ArrowLeft, User, LogOut, Save } from "lucide-react";
+import LanguageSwitcher from "../components/LanguageSwitcher";
+import { getApiErrorMessage } from "../utils/localize";
 
 export default function Profile() {
+  const { t } = useTranslation(['profile', 'errors']);
   const { user, logout, updateUser } = useAuth();
   const queryClient = useQueryClient();
   const [formData, setFormData] = useState({
@@ -44,14 +48,14 @@ export default function Profile() {
 
   useEffect(() => {
     if (queryError) {
-      setError(queryError.response?.data?.message || "Failed to load profile");
+      setError(getApiErrorMessage(queryError, t, t('profile:messages.loadFailed')));
     }
-  }, [queryError]);
+  }, [queryError, t]);
 
   const updateProfileMutation = useMutation({
     mutationFn: userAPI.updateProgress,
     onSuccess: async (_data, variables) => {
-      setMessage("Profile updated successfully!");
+      setMessage(t('profile:messages.updateSuccess'));
       if (variables.name) updateUser({ name: variables.name });
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: queryKeys.userProgress }),
@@ -59,7 +63,7 @@ export default function Profile() {
       ]);
     },
     onError: (err) => {
-      setError(err.response?.data?.message || "Failed to update profile");
+      setError(getApiErrorMessage(err, t, t('profile:messages.updateFailed')));
     },
   });
 
@@ -72,10 +76,10 @@ export default function Profile() {
   };
 
   const validateForm = () => {
-    if (formData.age && (formData.age < 13 || formData.age > 100)) { setError("Age must be between 13 and 100"); return false; }
-    if (formData.height && (formData.height < 100 || formData.height > 250)) { setError("Height must be between 100cm and 250cm"); return false; }
-    if (formData.weight && (formData.weight < 30 || formData.weight > 300)) { setError("Weight must be between 30kg and 300kg"); return false; }
-    if (formData.bodyFat && (formData.bodyFat < 3 || formData.bodyFat > 50)) { setError("Body fat must be between 3% and 50%"); return false; }
+    if (formData.age && (formData.age < 13 || formData.age > 100)) { setError(t('profile:validation.age')); return false; }
+    if (formData.height && (formData.height < 100 || formData.height > 250)) { setError(t('profile:validation.height')); return false; }
+    if (formData.weight && (formData.weight < 30 || formData.weight > 300)) { setError(t('profile:validation.weight')); return false; }
+    if (formData.bodyFat && (formData.bodyFat < 3 || formData.bodyFat > 50)) { setError(t('profile:validation.bodyFat')); return false; }
     return true;
   };
 
@@ -101,7 +105,7 @@ export default function Profile() {
       <div className="ft-page min-h-screen flex items-center justify-center">
         <div className="text-center">
           <div className="ft-loader mx-auto mb-4" />
-          <p className="ft-label">Loading Profile...</p>
+          <p className="ft-label">{t('profile:loading')}</p>
         </div>
       </div>
     );
@@ -109,20 +113,20 @@ export default function Profile() {
 
   const FIELD_GROUPS = [
     {
-      title: "Identity",
+      title: t('profile:groups.identity'),
       fields: [
-        { label: "Full Name", name: "name", type: "text", placeholder: "John Doe", full: true },
-        { label: "Email", name: "email", type: "email", placeholder: user?.email, disabled: true, full: true },
-        { label: "Age", name: "age", type: "number", placeholder: "e.g. 25" },
-        { label: "Sex", name: "sex", type: "select", options: ["", "Male", "Female", "Other"] },
+        { label: t('profile:fields.fullName'), name: "name", type: "text", placeholder: t('profile:fields.fullNamePlaceholder'), full: true },
+        { label: t('profile:fields.email'), name: "email", type: "email", placeholder: user?.email, disabled: true, full: true },
+        { label: t('profile:fields.age'), name: "age", type: "number", placeholder: t('profile:fields.agePlaceholder') },
+        { label: t('profile:fields.sex'), name: "sex", type: "select", options: ["", "Male", "Female", "Other"] },
       ],
     },
     {
-      title: "Physical Stats",
+      title: t('profile:groups.physicalStats'),
       fields: [
-        { label: "Height (cm)", name: "height", type: "number", placeholder: "e.g. 175" },
-        { label: "Weight (kg)", name: "weight", type: "number", placeholder: "e.g. 75", step: "0.1" },
-        { label: "Body Fat (%)", name: "bodyFat", type: "number", placeholder: "e.g. 15", step: "0.1", full: true },
+        { label: t('profile:fields.height'), name: "height", type: "number", placeholder: t('profile:fields.heightPlaceholder') },
+        { label: t('profile:fields.weight'), name: "weight", type: "number", placeholder: t('profile:fields.weightPlaceholder'), step: "0.1" },
+        { label: t('profile:fields.bodyFat'), name: "bodyFat", type: "number", placeholder: t('profile:fields.bodyFatPlaceholder'), step: "0.1", full: true },
       ],
     },
   ];
@@ -141,10 +145,10 @@ export default function Profile() {
             onMouseLeave={e => e.currentTarget.style.color = '#A0A0A0'}
           >
             <ArrowLeft size={18} className="group-hover:-translate-x-1 transition-transform" />
-            <span className="hidden md:inline font-display font-bold uppercase tracking-widest text-xs">Dashboard</span>
+            <span className="hidden md:inline font-display font-bold uppercase tracking-widest text-xs">{t('profile:backToDashboard')}</span>
           </button>
-          <h1 className="ft-title text-2xl md:text-3xl text-neon-lime">Profile</h1>
-          <div className="w-20 hidden md:block" />
+          <h1 className="ft-title text-2xl md:text-3xl text-neon-lime">{t('profile:title')}</h1>
+          <LanguageSwitcher />
         </div>
       </div>
 
@@ -160,11 +164,11 @@ export default function Profile() {
             <User size={24} style={{ color: '#CCFF00' }} />
           </div>
           <div>
-            <h2 className="ft-title text-xl text-white">{formData.name || user?.name || 'Athlete'}</h2>
+            <h2 className="ft-title text-xl text-white">{formData.name || user?.name || t('profile:defaultAthlete')}</h2>
             <p className="text-xs mt-0.5" style={{ color: '#A0A0A0' }}>{formData.email}</p>
           </div>
           <div className="ml-auto">
-            <span className="ft-badge-lime">Active</span>
+            <span className="ft-badge-lime">{t('profile:activeBadge')}</span>
           </div>
         </div>
 
@@ -188,9 +192,9 @@ export default function Profile() {
                       className="ft-input"
                       style={{ cursor: 'pointer' }}
                     >
-                      <option value="" style={{ background: '#0A0A0A' }}>Select...</option>
+                      <option value="" style={{ background: '#0A0A0A' }}>{t('profile:fields.selectPlaceholder')}</option>
                       {field.options.filter(Boolean).map(opt => (
-                        <option key={opt} value={opt} style={{ background: '#0A0A0A' }}>{opt}</option>
+                        <option key={opt} value={opt} style={{ background: '#0A0A0A' }}>{t(`profile:fields.sexOptions.${opt}`)}</option>
                       ))}
                     </select>
                   ) : (
@@ -233,9 +237,9 @@ export default function Profile() {
             className="ft-btn-primary flex-1 flex items-center justify-center gap-2 py-3 disabled:opacity-60"
           >
             {saving ? (
-              <><span className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin inline-block" /> Saving...</>
+              <><span className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin inline-block" /> {t('profile:actions.saving')}</>
             ) : (
-              <><Save size={16} /> Save Changes</>
+              <><Save size={16} /> {t('profile:actions.saveChanges')}</>
             )}
           </button>
           <button
@@ -246,7 +250,7 @@ export default function Profile() {
             onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,92,0,0.12)'}
             onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,92,0,0.06)'}
           >
-            <LogOut size={16} /> Log Out
+            <LogOut size={16} /> {t('profile:actions.logOut')}
           </button>
         </div>
       </main>

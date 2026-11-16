@@ -1,10 +1,13 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import axiosClient from "../api/axiosClient";
-import { exerciseAPI, workoutSessionAPI } from "../api";
+import { exerciseAPI, muscleGroupAPI, workoutSessionAPI } from "../api";
 import { invalidateWorkoutAndAnalytics, queryKeys } from "../lib/queryClient";
 import { ArrowLeft, Check, X, CheckCircle2, Circle, Edit3, Search, Plus, Minus } from "lucide-react";
+import LanguageSwitcher from "../components/LanguageSwitcher";
+import { getApiErrorMessage, getLocalizedExerciseName, getLocalizedField, getLocalizedMuscleGroupName } from "../utils/localize";
 
 // How many sets an exercise has. `targetSets` is what the Manage modal edits, so
 // it is authoritative; the plan's per-set `sets` array is only a fallback for
@@ -15,6 +18,8 @@ const getTotalSets = (exercise) =>
   exercise.targetSets || (exercise.sets ? exercise.sets.length : 3);
 
 export default function ActiveWorkout() {
+  const { t, i18n } = useTranslation(['workout', 'errors']);
+  const lang = i18n.resolvedLanguage || 'en';
   const { id } = useParams();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -36,11 +41,17 @@ export default function ActiveWorkout() {
   const exercisesQuery = useQuery({
     queryKey: queryKeys.exercises.all,
     queryFn: exerciseAPI.getAll,
-    enabled: showExerciseModal,
     staleTime: 5 * 60 * 1000,
   });
 
-  const availableExercises = exercisesQuery.data ?? [];
+  const muscleGroupsQuery = useQuery({
+    queryKey: queryKeys.muscleGroups,
+    queryFn: muscleGroupAPI.getAll,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const availableExercises = Array.isArray(exercisesQuery.data) ? exercisesQuery.data : [];
+  const muscleGroupsCatalog = Array.isArray(muscleGroupsQuery.data) ? muscleGroupsQuery.data : [];
   const loading = sessionQuery.isLoading && !session;
 
   useEffect(() => {
@@ -55,10 +66,10 @@ export default function ActiveWorkout() {
 
   useEffect(() => {
     if (sessionQuery.isError) {
-      alert("Failed to load workout session");
+      alert(getApiErrorMessage(sessionQuery.error, t, t('workout:active.alerts.loadSessionFailed')));
       navigate('/dashboard');
     }
-  }, [sessionQuery.isError, navigate]);
+  }, [sessionQuery.isError, sessionQuery.error, navigate, t]);
 
   useEffect(() => {
     if (session && session.exercises) {
@@ -144,7 +155,7 @@ export default function ActiveWorkout() {
       if (session.weeklyScheduleId) navigate('/weekly-schedule');
       else navigate('/dashboard');
     } catch (error) {
-      alert("Failed to complete workout");
+      alert(getApiErrorMessage(error, t, t('workout:active.alerts.completeFailed')));
     }
   };
 
@@ -156,7 +167,7 @@ export default function ActiveWorkout() {
         staleTime: 5 * 60 * 1000,
       });
       setShowExerciseModal(true);
-    } catch (error) { alert("Failed to load exercises"); }
+    } catch (error) { alert(getApiErrorMessage(error, t, t('workout:active.alerts.loadExercisesFailed'))); }
   };
 
   const handleAddExercise = (exercise) => {
@@ -170,7 +181,7 @@ export default function ActiveWorkout() {
       (newId && ex.exerciseId && ex.exerciseId.toString() === newId.toString()) ||
       ex.exerciseName === exercise.name
     );
-    if (isDuplicate) { alert("Exercise already added"); return; }
+    if (isDuplicate) { alert(t('workout:active.alerts.alreadyAdded')); return; }
     setSession({
       ...session,
       exercises: [...session.exercises, {
@@ -211,7 +222,7 @@ export default function ActiveWorkout() {
       ]);
       setShowExerciseModal(false);
       setSearchQuery('');
-    } catch (error) { alert("Failed to save exercises"); }
+    } catch (error) { alert(getApiErrorMessage(error, t, t('workout:active.alerts.saveExercisesFailed'))); }
   };
 
   const isSetCompleted = (exercise, setIndex) => exercise.actualSets?.some(s => s.setNumber === setIndex + 1);
@@ -227,7 +238,7 @@ export default function ActiveWorkout() {
       <div className="ft-page min-h-screen flex items-center justify-center">
         <div className="text-center">
           <div className="ft-loader mx-auto mb-4" />
-          <p className="ft-label">Loading Workout...</p>
+          <p className="ft-label">{t('workout:active.loading')}</p>
         </div>
       </div>
     );
@@ -259,18 +270,21 @@ export default function ActiveWorkout() {
           <div className="text-center flex-1">
             <h1 className="ft-title text-lg md:text-2xl text-white leading-none">{session.name}</h1>
             <p className="text-xs mt-0.5" style={{ color: '#A0A0A0' }}>
-              {completedExercises}/{totalExercises} exercises done
+              {t('workout:active.exercisesDone', { completed: completedExercises, total: totalExercises })}
             </p>
           </div>
 
-          <button
-            id="manage-exercises-btn"
-            onClick={handleManageExercises}
-            className="ft-btn-secondary flex items-center gap-2 text-xs"
-            style={{ padding: '7px 12px' }}
-          >
-            <Edit3 size={13} /> <span className="hidden sm:inline">Manage</span>
-          </button>
+          <div className="flex items-center gap-2">
+            <LanguageSwitcher />
+            <button
+              id="manage-exercises-btn"
+              onClick={handleManageExercises}
+              className="ft-btn-secondary flex items-center gap-2 text-xs"
+              style={{ padding: '7px 12px' }}
+            >
+              <Edit3 size={13} /> <span className="hidden sm:inline">{t('workout:active.manage')}</span>
+            </button>
+          </div>
         </div>
 
         {/* Progress bar */}
@@ -291,15 +305,15 @@ export default function ActiveWorkout() {
         >
           <div className="flex flex-col md:flex-row md:items-start justify-between gap-4 mb-5">
             <div>
-              <p className="ft-label mb-1">// Exercise {currentExerciseIndex + 1} of {totalExercises}</p>
-              <h2 className="ft-title text-3xl md:text-4xl text-white">{currentExercise.exerciseName}</h2>
-              <p className="text-xs mt-1" style={{ color: '#A0A0A0' }}>{currentExercise.category}</p>
+              <p className="ft-label mb-1">{t('workout:active.exerciseCounter', { current: currentExerciseIndex + 1, total: totalExercises })}</p>
+              <h2 className="ft-title text-3xl md:text-4xl text-white">{getLocalizedExerciseName(currentExercise, availableExercises, lang)}</h2>
+              <p className="text-xs mt-1" style={{ color: '#A0A0A0' }}>{getLocalizedMuscleGroupName(currentExercise.category, muscleGroupsCatalog, lang)}</p>
             </div>
             <div className="text-left md:text-right">
               <p className="font-mono-sport font-bold text-4xl leading-none" style={{ color: '#CCFF00', fontFamily: "'JetBrains Mono', monospace" }}>
                 {getExerciseProgress(currentExercise)}
               </p>
-              <p className="text-xs mt-1 ft-label">sets done</p>
+              <p className="text-xs mt-1 ft-label">{t('workout:active.setsDone')}</p>
             </div>
           </div>
 
@@ -363,7 +377,7 @@ export default function ActiveWorkout() {
                       className="ft-input w-14 text-center text-sm py-1.5 px-1 font-mono-sport"
                       style={{ fontFamily: "'JetBrains Mono', monospace", opacity: isCompleted ? 0.5 : 1 }}
                     />
-                    <span className="text-xs" style={{ color: '#555' }}>reps</span>
+                    <span className="text-xs" style={{ color: '#555' }}>{t('workout:active.repsUnit')}</span>
                     <span className="text-xs" style={{ color: '#333' }}>@</span>
                     <input
                       type="number"
@@ -391,7 +405,7 @@ export default function ActiveWorkout() {
               disabled={currentExerciseIndex === 0}
               className="ft-btn-ghost py-3 text-xs disabled:opacity-30 disabled:cursor-not-allowed"
             >
-              ← Previous
+              {t('workout:active.previous')}
             </button>
             <button
               id="next-exercise-btn"
@@ -399,7 +413,7 @@ export default function ActiveWorkout() {
               disabled={currentExerciseIndex === totalExercises - 1}
               className="ft-btn-ghost py-3 text-xs disabled:opacity-30 disabled:cursor-not-allowed"
             >
-              Next →
+              {t('workout:active.next')}
             </button>
           </div>
         </div>
@@ -409,7 +423,7 @@ export default function ActiveWorkout() {
           className="mb-5 p-5 animate-slide-up"
           style={{ background: 'rgba(10,10,10,0.95)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '2px' }}
         >
-          <p className="ft-label mb-3">// All Exercises</p>
+          <p className="ft-label mb-3">{t('workout:active.allExercises')}</p>
           <div className="space-y-1.5">
             {session.exercises.map((exercise, index) => {
               const isComplete = isExerciseComplete(exercise);
@@ -431,8 +445,8 @@ export default function ActiveWorkout() {
                       : <Circle size={16} style={{ color: isCurrent ? '#CCFF00' : '#333', flexShrink: 0 }} />
                     }
                     <div>
-                      <p className="font-display font-bold italic uppercase text-sm text-white leading-none">{exercise.exerciseName}</p>
-                      <p className="text-xs mt-0.5" style={{ color: '#555' }}>{exercise.category}</p>
+                      <p className="font-display font-bold italic uppercase text-sm text-white leading-none">{getLocalizedExerciseName(exercise, availableExercises, lang)}</p>
+                      <p className="text-xs mt-0.5" style={{ color: '#555' }}>{getLocalizedMuscleGroupName(exercise.category, muscleGroupsCatalog, lang)}</p>
                     </div>
                   </div>
                   <span className="font-mono-sport text-xs" style={{ color: isComplete ? '#CCFF00' : '#555', fontFamily: "'JetBrains Mono', monospace" }}>
@@ -450,7 +464,7 @@ export default function ActiveWorkout() {
           onClick={handleCompleteWorkout}
           className="ft-btn-primary w-full py-4 flex items-center justify-center gap-2 text-base animate-slide-up"
         >
-          <Check size={18} /> Complete Workout
+          <Check size={18} /> {t('workout:active.completeWorkout')}
         </button>
       </main>
 
@@ -461,23 +475,23 @@ export default function ActiveWorkout() {
             className="w-full max-w-sm p-6"
             style={{ background: '#050505', border: '1px solid rgba(204,255,0,0.2)', borderRadius: '2px' }}
           >
-            <h2 className="ft-title text-2xl text-white mb-1">Update Body Metrics</h2>
-            <p className="text-sm mb-5" style={{ color: '#A0A0A0' }}>Track your progress! (Optional)</p>
+            <h2 className="ft-title text-2xl text-white mb-1">{t('workout:active.metricsModal.title')}</h2>
+            <p className="text-sm mb-5" style={{ color: '#A0A0A0' }}>{t('workout:active.metricsModal.subtitle')}</p>
             <div className="space-y-4 mb-6">
               <div>
-                <label className="ft-label">Weight (kg)</label>
-                <input type="number" step="0.1" placeholder="Current weight" value={bodyMetrics.weight}
+                <label className="ft-label">{t('workout:active.metricsModal.weightLabel')}</label>
+                <input type="number" step="0.1" placeholder={t('workout:active.metricsModal.weightPlaceholder')} value={bodyMetrics.weight}
                   onChange={(e) => setBodyMetrics({ ...bodyMetrics, weight: e.target.value })} className="ft-input" />
               </div>
               <div>
-                <label className="ft-label">Body Fat (%)</label>
-                <input type="number" step="0.1" placeholder="Body fat percentage" value={bodyMetrics.bodyFat}
+                <label className="ft-label">{t('workout:active.metricsModal.bodyFatLabel')}</label>
+                <input type="number" step="0.1" placeholder={t('workout:active.metricsModal.bodyFatPlaceholder')} value={bodyMetrics.bodyFat}
                   onChange={(e) => setBodyMetrics({ ...bodyMetrics, bodyFat: e.target.value })} className="ft-input" />
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3">
-              <button onClick={handleSkipMetrics} className="ft-btn-ghost py-3 text-xs">Skip</button>
-              <button onClick={handleSaveMetrics} className="ft-btn-primary py-3 text-xs">Save & Complete</button>
+              <button onClick={handleSkipMetrics} className="ft-btn-ghost py-3 text-xs">{t('workout:active.metricsModal.skip')}</button>
+              <button onClick={handleSaveMetrics} className="ft-btn-primary py-3 text-xs">{t('workout:active.metricsModal.saveAndComplete')}</button>
             </div>
           </div>
         </div>
@@ -492,8 +506,8 @@ export default function ActiveWorkout() {
           >
             <div className="p-5 flex items-center justify-between" style={{ borderBottom: '1px solid rgba(204,255,0,0.1)' }}>
               <div>
-                <h2 className="ft-title text-2xl text-white">Manage Exercises</h2>
-                <p className="text-xs mt-0.5" style={{ color: '#A0A0A0' }}>Add or remove exercises from your workout</p>
+                <h2 className="ft-title text-2xl text-white">{t('workout:active.manageModal.title')}</h2>
+                <p className="text-xs mt-0.5" style={{ color: '#A0A0A0' }}>{t('workout:active.manageModal.subtitle')}</p>
               </div>
               <button onClick={() => setShowExerciseModal(false)} style={{ color: '#A0A0A0' }} onMouseEnter={e => e.currentTarget.style.color = '#fff'} onMouseLeave={e => e.currentTarget.style.color = '#A0A0A0'}>
                 <X size={20} />
@@ -504,24 +518,33 @@ export default function ActiveWorkout() {
               <div className="grid md:grid-cols-2 gap-5">
                 {/* Available */}
                 <div>
-                  <p className="ft-label mb-3">// Available Exercises</p>
+                  <p className="ft-label mb-3">{t('workout:active.manageModal.availableExercises')}</p>
                   <div className="relative mb-3">
                     <Search size={13} style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: '#555' }} />
-                    <input type="text" placeholder="Search..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
+                    <input type="text" placeholder={t('workout:active.manageModal.searchPlaceholder')} value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
                       className="ft-input" style={{ paddingLeft: '32px' }} />
                   </div>
                   <div className="space-y-1.5 max-h-80 overflow-y-auto">
-                    {availableExercises.filter(ex => ex.name.toLowerCase().includes(searchQuery.toLowerCase()) || ex.category.toLowerCase().includes(searchQuery.toLowerCase())).map((exercise, idx) => (
+                    {availableExercises.filter(ex => {
+                      const q = searchQuery.toLowerCase();
+                      const localizedCat = getLocalizedMuscleGroupName(ex.category, muscleGroupsCatalog, lang).toLowerCase();
+                      return (
+                        ex.name.toLowerCase().includes(q) ||
+                        (ex.translations?.vi?.name || '').toLowerCase().includes(q) ||
+                        ex.category.toLowerCase().includes(q) ||
+                        localizedCat.includes(q)
+                      );
+                    }).map((exercise, idx) => (
                       <div key={exercise.id || idx} className="flex items-center justify-between px-4 py-3 transition-all"
                         style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid #111', borderRadius: '2px' }}
                         onMouseEnter={e => e.currentTarget.style.borderColor = 'rgba(204,255,0,0.2)'}
                         onMouseLeave={e => e.currentTarget.style.borderColor = '#111'}
                       >
                         <div>
-                          <p className="font-display font-bold italic uppercase text-sm text-white">{exercise.name}</p>
-                          <p className="text-xs" style={{ color: '#555' }}>{exercise.category}</p>
+                          <p className="font-display font-bold italic uppercase text-sm text-white">{getLocalizedField(exercise, 'name', lang)}</p>
+                          <p className="text-xs" style={{ color: '#555' }}>{getLocalizedMuscleGroupName(exercise.category, muscleGroupsCatalog, lang)}</p>
                         </div>
-                        <button onClick={() => handleAddExercise(exercise)} className="ft-btn-primary text-xs" style={{ padding: '5px 12px' }}>Add</button>
+                        <button onClick={() => handleAddExercise(exercise)} className="ft-btn-primary text-xs" style={{ padding: '5px 12px' }}>{t('workout:active.manageModal.add')}</button>
                       </div>
                     ))}
                   </div>
@@ -530,37 +553,40 @@ export default function ActiveWorkout() {
                 {/* Current */}
                 <div>
                   <div className="flex items-center justify-between mb-3">
-                    <p className="ft-label mb-0">// Current Exercises</p>
+                    <p className="ft-label mb-0">{t('workout:active.manageModal.currentExercises')}</p>
                     <span className="font-mono-sport text-xs" style={{ color: '#CCFF00', fontFamily: "'JetBrains Mono', monospace" }}>{session.exercises.length}</span>
                   </div>
                   <div className="space-y-2 max-h-80 overflow-y-auto">
                     {session.exercises.length === 0
-                      ? <p className="text-center py-10 ft-label">No exercises</p>
-                      : session.exercises.map((exercise, index) => (
+                      ? <p className="text-center py-10 ft-label">{t('workout:active.manageModal.noExercises')}</p>
+                      : session.exercises.map((exercise, index) => {
+                        const localizedExName = getLocalizedExerciseName(exercise, availableExercises, lang);
+                        return (
                         <div key={index} className="p-3" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid #111', borderRadius: '2px' }}>
                           <div className="flex items-center justify-between mb-2">
                             <div>
-                              <p className="font-display font-bold italic uppercase text-sm text-white">{exercise.exerciseName}</p>
-                              <p className="text-xs" style={{ color: '#555' }}>{exercise.category}</p>
+                              <p className="font-display font-bold italic uppercase text-sm text-white">{localizedExName}</p>
+                              <p className="text-xs" style={{ color: '#555' }}>{getLocalizedMuscleGroupName(exercise.category, muscleGroupsCatalog, lang)}</p>
                             </div>
                             <button onClick={() => handleRemoveExercise(index)} style={{ color: '#FF5C00', padding: '4px 8px', fontSize: '11px', fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', border: '1px solid rgba(255,92,0,0.3)', borderRadius: '2px' }}>
-                              Remove
+                              {t('workout:active.manageModal.remove')}
                             </button>
                           </div>
                           <div className="flex items-center justify-between mt-2 px-2 py-1.5" style={{ background: 'rgba(255,255,255,0.03)', borderRadius: '2px' }}>
-                            <span className="text-xs ft-label mb-0">Sets:</span>
+                            <span className="text-xs ft-label mb-0">{t('workout:active.manageModal.setsLabel')}</span>
                             <div className="flex items-center gap-2">
-                              <button aria-label={`Remove a set from ${exercise.exerciseName}`} onClick={() => handleUpdateSets(index, -1)} className="w-6 h-6 flex items-center justify-center transition-colors" style={{ background: '#111', border: '1px solid #1A1A1A', borderRadius: '2px', color: '#A0A0A0' }}>
+                              <button aria-label={t('workout:active.manageModal.removeSetAria', { name: localizedExName })} onClick={() => handleUpdateSets(index, -1)} className="w-6 h-6 flex items-center justify-center transition-colors" style={{ background: '#111', border: '1px solid #1A1A1A', borderRadius: '2px', color: '#A0A0A0' }}>
                                 <Minus size={10} />
                               </button>
                               <span className="font-mono-sport font-bold text-sm w-6 text-center" style={{ fontFamily: "'JetBrains Mono', monospace", color: '#CCFF00' }}>{getTotalSets(exercise)}</span>
-                              <button aria-label={`Add a set to ${exercise.exerciseName}`} onClick={() => handleUpdateSets(index, 1)} className="w-6 h-6 flex items-center justify-center transition-colors" style={{ background: '#111', border: '1px solid #1A1A1A', borderRadius: '2px', color: '#A0A0A0' }}>
+                              <button aria-label={t('workout:active.manageModal.addSetAria', { name: localizedExName })} onClick={() => handleUpdateSets(index, 1)} className="w-6 h-6 flex items-center justify-center transition-colors" style={{ background: '#111', border: '1px solid #1A1A1A', borderRadius: '2px', color: '#A0A0A0' }}>
                                 <Plus size={10} />
                               </button>
                             </div>
                           </div>
                         </div>
-                      ))
+                        );
+                      })
                     }
                   </div>
                 </div>
@@ -568,8 +594,8 @@ export default function ActiveWorkout() {
             </div>
 
             <div className="p-5 flex justify-end gap-3" style={{ borderTop: '1px solid rgba(204,255,0,0.1)' }}>
-              <button onClick={() => setShowExerciseModal(false)} className="ft-btn-ghost px-6 py-2.5 text-xs">Cancel</button>
-              <button onClick={handleSaveExercises} className="ft-btn-primary px-6 py-2.5 text-xs">Save Changes</button>
+              <button onClick={() => setShowExerciseModal(false)} className="ft-btn-ghost px-6 py-2.5 text-xs">{t('workout:active.manageModal.cancel')}</button>
+              <button onClick={handleSaveExercises} className="ft-btn-primary px-6 py-2.5 text-xs">{t('workout:active.manageModal.saveChanges')}</button>
             </div>
           </div>
         </div>

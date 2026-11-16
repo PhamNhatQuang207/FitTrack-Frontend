@@ -1,14 +1,20 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import { weeklyScheduleAPI, workoutSessionAPI } from "../api";
 import { invalidateWorkoutAndAnalytics, queryKeys } from "../lib/queryClient";
 import {
   ArrowLeft, Play, CheckCircle2, Calendar as CalendarIcon,
   Edit2, RefreshCcw, X as XIcon, Save
 } from "lucide-react";
+import LanguageSwitcher from "../components/LanguageSwitcher";
+import { getApiErrorMessage } from "../utils/localize";
+import { formatDate } from "../utils/formatters";
 
 export default function WeeklyCalendar() {
+  const { t, i18n } = useTranslation(['plan', 'errors']);
+  const lang = i18n.resolvedLanguage || 'en';
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [editMode, setEditMode] = useState(false);
@@ -30,7 +36,7 @@ export default function WeeklyCalendar() {
       navigate(`/workout/${data.sessionId}`);
     },
     onError: (error) => {
-      alert(error.response?.data?.message || "Failed to start workout");
+      alert(getApiErrorMessage(error, t, t('plan:calendar.errors.startWorkoutFailed')));
     },
   });
 
@@ -51,8 +57,8 @@ export default function WeeklyCalendar() {
     onSuccess: async () => {
       await invalidateWorkoutAndAnalytics(queryClient);
     },
-    onError: () => {
-      alert("Failed to mark workout as complete");
+    onError: (err) => {
+      alert(getApiErrorMessage(err, t, t('plan:calendar.errors.markCompleteFailed')));
     },
   });
 
@@ -67,8 +73,8 @@ export default function WeeklyCalendar() {
       await invalidateWorkoutAndAnalytics(queryClient);
       setSwapSourceDay(null);
     },
-    onError: () => {
-      alert("Failed to swap days");
+    onError: (err) => {
+      alert(getApiErrorMessage(err, t, t('plan:calendar.errors.swapFailed')));
       setSwapSourceDay(null);
     },
   });
@@ -82,8 +88,9 @@ export default function WeeklyCalendar() {
   });
 
   const handleStartWorkout = (day) => {
+    const localizedDay = t(`plan:days.${day.dayName}`, { defaultValue: day.dayName });
     startWorkoutMutation.mutate({
-      name: day.workout?.name?.trim() || `${day.dayName} Workout`,
+      name: day.workout?.name?.trim() || t('plan:calendar.defaultDayWorkout', { day: localizedDay }),
       date: day.date,
       exercises: day.workout.exercises,
       status: 'planned',
@@ -93,20 +100,20 @@ export default function WeeklyCalendar() {
   };
 
   const handleCompleteWeek = async () => {
-    if (!window.confirm("Mark this week as complete?")) return;
+    if (!window.confirm(t('plan:calendar.confirmCompleteWeek'))) return;
     try {
       await completeWeekMutation.mutateAsync(currentSchedule.id);
     } catch (error) {
-      alert("Failed to complete week");
+      alert(getApiErrorMessage(error, t, t('plan:calendar.errors.completeWeekFailed')));
     }
   };
 
   const handleDismissWeek = async () => {
-    if (!window.confirm("Dismiss this weekly schedule?")) return;
+    if (!window.confirm(t('plan:calendar.confirmDismissWeek'))) return;
     try {
       await completeWeekMutation.mutateAsync(currentSchedule.id);
     } catch (error) {
-      alert("Failed to dismiss week");
+      alert(getApiErrorMessage(error, t, t('plan:calendar.errors.dismissWeekFailed')));
     }
   };
 
@@ -130,8 +137,8 @@ export default function WeeklyCalendar() {
   };
 
   const handleToggleRestDay = async (day) => {
-    const action = day.isRestDay ? 'Converting to workout day' : 'Converting to rest day';
-    if (!window.confirm(`${action}?`)) return;
+    const confirmMsg = day.isRestDay ? t('plan:calendar.confirmToWorkoutDay') : t('plan:calendar.confirmToRestDay');
+    if (!window.confirm(confirmMsg)) return;
     try {
       await editDayMutation.mutateAsync({
         scheduleId: currentSchedule.id,
@@ -141,7 +148,7 @@ export default function WeeklyCalendar() {
         },
       });
     } catch (error) {
-      alert("Failed to toggle rest day");
+      alert(getApiErrorMessage(error, t, t('plan:calendar.errors.toggleRestFailed')));
     }
   };
 
@@ -158,7 +165,7 @@ export default function WeeklyCalendar() {
       setEditMode(false);
       setEditingWorkoutName({});
     } catch (error) {
-      alert('Failed to save some changes');
+      alert(getApiErrorMessage(error, t, t('plan:calendar.errors.saveChangesFailed')));
     }
   };
 
@@ -183,7 +190,7 @@ export default function WeeklyCalendar() {
       });
       setEditingWorkoutName(prev => { const u = { ...prev }; delete u[day.dayOfWeek]; return u; });
     } catch (error) {
-      alert('Failed to update workout name');
+      alert(getApiErrorMessage(error, t, t('plan:calendar.errors.updateNameFailed')));
     }
   };
 
@@ -198,7 +205,7 @@ export default function WeeklyCalendar() {
       <div className="ft-page min-h-screen flex items-center justify-center">
         <div className="text-center">
           <div className="ft-loader mx-auto mb-4" />
-          <p className="ft-label">Loading Schedule...</p>
+          <p className="ft-label">{t('plan:calendar.loading')}</p>
         </div>
       </div>
     );
@@ -212,13 +219,13 @@ export default function WeeklyCalendar() {
           style={{ background: 'rgba(10,10,10,0.95)', border: '1px solid rgba(204,255,0,0.15)', borderRadius: '2px' }}
         >
           <CalendarIcon size={40} style={{ color: '#1A1A1A', margin: '0 auto 16px' }} />
-          <h2 className="ft-title text-2xl text-white mb-2">No Active Plan</h2>
-          <p className="text-sm mb-6" style={{ color: '#A0A0A0' }}>You haven't started a weekly schedule yet.</p>
+          <h2 className="ft-title text-2xl text-white mb-2">{t('plan:calendar.noActivePlanTitle')}</h2>
+          <p className="text-sm mb-6" style={{ color: '#A0A0A0' }}>{t('plan:calendar.noActivePlanSubtitle')}</p>
           <button onClick={() => navigate('/weekly-plan-library')} className="ft-btn-primary w-full mb-3">
-            Create or Start a Plan
+            {t('plan:calendar.createOrStart')}
           </button>
           <button onClick={() => navigate('/dashboard')} className="ft-btn-ghost w-full text-xs">
-            Back to Dashboard
+            {t('plan:calendar.backToDashboard')}
           </button>
         </div>
       </div>
@@ -241,7 +248,7 @@ export default function WeeklyCalendar() {
             onMouseLeave={e => e.currentTarget.style.color = '#A0A0A0'}
           >
             <ArrowLeft size={18} className="group-hover:-translate-x-1 transition-transform" />
-            <span className="hidden md:inline font-display font-bold uppercase tracking-widest text-xs">Dashboard</span>
+            <span className="hidden md:inline font-display font-bold uppercase tracking-widest text-xs">{t('plan:calendar.dashboard')}</span>
           </button>
 
           <div className="text-center">
@@ -249,24 +256,25 @@ export default function WeeklyCalendar() {
               {currentSchedule.weeklyPlanName}
             </h1>
             <p className="text-xs mt-0.5 uppercase tracking-widest font-display font-bold" style={{ color: '#CCFF00' }}>
-              Week {currentSchedule.weekNumber}
+              {t('plan:calendar.weekNumber', { number: currentSchedule.weekNumber })}
             </p>
           </div>
 
           <div className="flex items-center gap-2">
+            <LanguageSwitcher />
             {editMode ? (
               Object.keys(editingWorkoutName).length > 0 ? (
                 <button id="save-changes-btn" onClick={saveAllChanges} className="ft-btn-primary flex items-center gap-2 text-xs" style={{ padding: '7px 14px' }}>
-                  <Save size={13} /> Save
+                  <Save size={13} /> {t('plan:calendar.save')}
                 </button>
               ) : (
                 <button id="cancel-edit-btn" onClick={cancelEditMode} className="ft-btn-ghost flex items-center gap-2 text-xs" style={{ padding: '7px 14px' }}>
-                  <XIcon size={13} /> Cancel
+                  <XIcon size={13} /> {t('plan:calendar.cancel')}
                 </button>
               )
             ) : (
               <button id="edit-btn" onClick={() => setEditMode(true)} className="ft-btn-secondary flex items-center gap-2 text-xs" style={{ padding: '7px 14px' }}>
-                <Edit2 size={13} /> Edit
+                <Edit2 size={13} /> {t('plan:calendar.edit')}
               </button>
             )}
           </div>
@@ -280,7 +288,7 @@ export default function WeeklyCalendar() {
           style={{ background: 'rgba(10,10,10,0.95)', border: '1px solid rgba(204,255,0,0.15)', borderRadius: '2px' }}
         >
           <div className="flex items-center justify-between mb-2">
-            <p className="ft-label mb-0">// Weekly Progress</p>
+            <p className="ft-label mb-0">{t('plan:calendar.weeklyProgressEyebrow')}</p>
             <span className="font-mono-sport text-sm" style={{ color: '#CCFF00', fontFamily: "'JetBrains Mono', monospace" }}>
               {currentSchedule.completedDays} / {currentSchedule.totalWorkoutDays}
             </span>
@@ -291,7 +299,7 @@ export default function WeeklyCalendar() {
               style={{ width: `${progressPct}%`, background: '#CCFF00', boxShadow: '0 0 8px rgba(204,255,0,0.5)' }}
             />
           </div>
-          <p className="text-xs mt-1 text-right" style={{ color: '#A0A0A0' }}>{progressPct}% complete</p>
+          <p className="text-xs mt-1 text-right" style={{ color: '#A0A0A0' }}>{t('plan:calendar.percentComplete', { percent: progressPct })}</p>
         </div>
 
         {/* Days grid */}
@@ -328,11 +336,11 @@ export default function WeeklyCalendar() {
                     borderBottom: `1px solid ${borderColor}`,
                   }}
                 >
-                  <span className="font-display font-black italic uppercase text-white text-base">{day.dayName}</span>
+                  <span className="font-display font-black italic uppercase text-white text-base">{t(`plan:days.${day.dayName}`, { defaultValue: day.dayName })}</span>
                   <div className="flex items-center gap-2">
-                    {isTodayDay && <span className="ft-badge-lime" style={{ fontSize: '9px' }}>Today</span>}
+                    {isTodayDay && <span className="ft-badge-lime" style={{ fontSize: '9px' }}>{t('plan:calendar.today')}</span>}
                     <span className="text-xs font-mono-sport" style={{ color: '#A0A0A0' }}>
-                      {new Date(day.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                      {formatDate(day.date, lang, { month: 'short', day: 'numeric' })}
                     </span>
                   </div>
                 </div>
@@ -342,7 +350,7 @@ export default function WeeklyCalendar() {
                   {isRest ? (
                     <div className="flex-1 flex flex-col items-center justify-center py-6 gap-2">
                       <span style={{ fontSize: '1.5rem' }}>🛌</span>
-                      <span className="ft-label text-center">Rest Day</span>
+                      <span className="ft-label text-center">{t('plan:calendar.restDay')}</span>
                       {editMode && (
                         <div className="mt-3 w-full space-y-2">
                           <button
@@ -356,14 +364,14 @@ export default function WeeklyCalendar() {
                             }}
                           >
                             <RefreshCcw size={12} />
-                            {swapSourceDay?.dayOfWeek === day.dayOfWeek ? 'Selected' : swapSourceDay ? 'Swap Here' : 'Swap Day'}
+                            {swapSourceDay?.dayOfWeek === day.dayOfWeek ? t('plan:calendar.selected') : swapSourceDay ? t('plan:calendar.swapHere') : t('plan:calendar.swapDay')}
                           </button>
                           <button
                             onClick={() => handleToggleRestDay(day)}
                             className="w-full py-2 font-display font-bold uppercase tracking-wider text-xs transition-colors"
                             style={{ background: 'rgba(255,92,0,0.06)', border: '1px solid rgba(255,92,0,0.3)', borderRadius: '2px', color: '#FF5C00' }}
                           >
-                            Make Workout Day
+                            {t('plan:calendar.makeWorkoutDay')}
                           </button>
                         </div>
                       )}
@@ -378,13 +386,13 @@ export default function WeeklyCalendar() {
                           onBlur={() => handleSaveWorkoutName(day)}
                           onKeyDown={(e) => { if (e.key === 'Enter') e.target.blur(); }}
                           className="ft-input font-display font-black italic uppercase text-lg mb-1"
-                          placeholder="Workout name"
+                          placeholder={t('plan:calendar.workoutNamePlaceholder')}
                         />
                       ) : (
                         <h3 className="font-display font-black italic uppercase text-white text-lg leading-tight mb-1">{day.workout.name}</h3>
                       )}
                       <p className="text-xs mb-4" style={{ color: '#A0A0A0' }}>
-                        {day.workout.exercises?.length || 0} exercises
+                        {t('plan:calendar.exercisesCount', { count: day.workout.exercises?.length || 0 })}
                       </p>
 
                       <div className="mt-auto">
@@ -401,14 +409,14 @@ export default function WeeklyCalendar() {
                               }}
                             >
                               <RefreshCcw size={12} />
-                              {swapSourceDay?.dayOfWeek === day.dayOfWeek ? 'Selected' : swapSourceDay ? 'Swap Here' : 'Swap Day'}
+                              {swapSourceDay?.dayOfWeek === day.dayOfWeek ? t('plan:calendar.selected') : swapSourceDay ? t('plan:calendar.swapHere') : t('plan:calendar.swapDay')}
                             </button>
                             <button
                               onClick={() => handleToggleRestDay(day)}
                               className="w-full py-2.5 font-display font-bold uppercase tracking-wider text-xs transition-colors"
                               style={{ background: 'rgba(255,92,0,0.06)', border: '1px solid rgba(255,92,0,0.3)', borderRadius: '2px', color: '#FF5C00' }}
                             >
-                              Make Rest Day
+                              {t('plan:calendar.makeRestDay')}
                             </button>
                           </div>
                         ) : isCompleted ? (
@@ -416,7 +424,7 @@ export default function WeeklyCalendar() {
                             className="flex items-center justify-center gap-2 w-full py-2.5 font-display font-bold uppercase tracking-wider text-xs"
                             style={{ background: 'rgba(204,255,0,0.06)', border: '1px solid rgba(204,255,0,0.3)', borderRadius: '2px', color: '#CCFF00' }}
                           >
-                            <CheckCircle2 size={13} /> Completed
+                            <CheckCircle2 size={13} /> {t('plan:calendar.completed')}
                           </div>
                         ) : day.workout.exercises?.length > 0 ? (
                           <button
@@ -430,7 +438,7 @@ export default function WeeklyCalendar() {
                               boxShadow: isTodayDay ? '0 0 12px rgba(204,255,0,0.4)' : 'none',
                             }}
                           >
-                            <Play size={12} /> Start Workout
+                            <Play size={12} /> {t('plan:calendar.startWorkout')}
                           </button>
                         ) : (
                           <button
@@ -438,7 +446,7 @@ export default function WeeklyCalendar() {
                             className="w-full flex items-center justify-center gap-2 py-2.5 font-display font-bold uppercase tracking-wider text-xs transition-colors"
                             style={{ background: 'rgba(204,255,0,0.06)', border: '1px solid rgba(204,255,0,0.3)', borderRadius: '2px', color: '#CCFF00' }}
                           >
-                            <CheckCircle2 size={12} /> Mark Complete
+                            <CheckCircle2 size={12} /> {t('plan:calendar.markComplete')}
                           </button>
                         )}
                       </div>
@@ -458,14 +466,14 @@ export default function WeeklyCalendar() {
               onClick={handleDismissWeek}
               className="ft-btn-ghost flex items-center justify-center gap-2 px-8 py-3 text-xs"
             >
-              <XIcon size={14} /> Dismiss Week
+              <XIcon size={14} /> {t('plan:calendar.dismissWeek')}
             </button>
             <button
               id="complete-week-btn"
               onClick={handleCompleteWeek}
               className="ft-btn-primary flex items-center justify-center gap-2 px-8 py-3 text-xs"
             >
-              <CheckCircle2 size={14} /> Complete Week
+              <CheckCircle2 size={14} /> {t('plan:calendar.completeWeek')}
             </button>
           </div>
         )}

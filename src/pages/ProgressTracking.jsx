@@ -1,9 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { analyticsAPI, userAPI } from "../api";
+import { useTranslation } from "react-i18next";
+import { analyticsAPI, exerciseAPI, userAPI } from "../api";
 import { queryKeys } from "../lib/queryClient";
 import { ArrowLeft, TrendingUp, Dumbbell, Activity, Calendar } from "lucide-react";
+import LanguageSwitcher from "../components/LanguageSwitcher";
+import { getLocalizedExerciseName } from "../utils/localize";
+import { formatDate, formatNumber } from "../utils/formatters";
 import {
   LineChart, Line, BarChart, Bar,
   XAxis, YAxis, CartesianGrid, Tooltip,
@@ -43,8 +47,16 @@ function MiniStatCard({ icon: Icon, value, label, accent = "lime" }) {
 }
 
 export default function ProgressTracking() {
+  const { t, i18n } = useTranslation(['progress']);
+  const lang = i18n.resolvedLanguage || 'en';
   const navigate = useNavigate();
   const [selectedExercise, setSelectedExercise] = useState("");
+
+  const { data: exercisesCatalog = [] } = useQuery({
+    queryKey: queryKeys.exercises.all,
+    queryFn: () => exerciseAPI.getAll(),
+    staleTime: 5 * 60 * 1000,
+  });
 
   const { data: exercises = [], isLoading: exercisesLoading } = useQuery({
     queryKey: queryKeys.analytics.userExercises,
@@ -95,11 +107,15 @@ export default function ProgressTracking() {
       <div className="ft-page min-h-screen flex items-center justify-center">
         <div className="text-center">
           <div className="ft-loader mx-auto mb-4" />
-          <p className="ft-label">Loading Progress Data...</p>
+          <p className="ft-label">{t('progress:loading')}</p>
         </div>
       </div>
     );
   }
+
+  const localizedSelectedExercise = selectedExercise
+    ? getLocalizedExerciseName({ name: selectedExercise }, exercisesCatalog, lang)
+    : t('progress:strength.selectExercise');
 
   return (
     <div className="ft-page min-h-screen">
@@ -115,12 +131,12 @@ export default function ProgressTracking() {
             onMouseLeave={e => e.currentTarget.style.color = '#A0A0A0'}
           >
             <ArrowLeft size={18} className="group-hover:-translate-x-1 transition-transform" />
-            <span className="hidden md:inline font-display font-bold uppercase tracking-widest text-xs">Dashboard</span>
+            <span className="hidden md:inline font-display font-bold uppercase tracking-widest text-xs">{t('progress:backToDashboard')}</span>
           </button>
           <div className="flex-1 text-center">
-            <h1 className="ft-title text-2xl md:text-3xl text-neon-lime">Progress Tracking</h1>
+            <h1 className="ft-title text-2xl md:text-3xl text-neon-lime">{t('progress:title')}</h1>
           </div>
-          <div className="w-20 hidden md:block" />
+          <LanguageSwitcher />
         </div>
       </div>
 
@@ -129,15 +145,15 @@ export default function ProgressTracking() {
         {/* Stats row */}
         {stats && (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8 animate-slide-up">
-            <MiniStatCard icon={Dumbbell} value={stats.totalCompleted} label="Total Workouts" accent="lime" />
+            <MiniStatCard icon={Dumbbell} value={formatNumber(stats.totalCompleted, lang)} label={t('progress:stats.totalWorkouts')} accent="lime" />
             <MiniStatCard
               icon={TrendingUp}
-              value={stats.totalVolume >= 1000 ? `${(stats.totalVolume / 1000).toFixed(1)}k` : stats.totalVolume}
-              label="Volume (kg)"
+              value={stats.totalVolume >= 1000 ? `${(stats.totalVolume / 1000).toFixed(1)}k` : formatNumber(stats.totalVolume, lang)}
+              label={t('progress:stats.volumeKg')}
               accent="orange"
             />
-            <MiniStatCard icon={Activity} value={stats.averageExercisesPerWorkout} label="Avg Exercises" accent="lime" />
-            <MiniStatCard icon={Calendar} value={getLatestWeight() || '--'} label="Weight (kg)" accent="orange" />
+            <MiniStatCard icon={Activity} value={formatNumber(stats.averageExercisesPerWorkout, lang)} label={t('progress:stats.avgExercises')} accent="lime" />
+            <MiniStatCard icon={Calendar} value={getLatestWeight() ? formatNumber(getLatestWeight(), lang) : '--'} label={t('progress:stats.weightKg')} accent="orange" />
           </div>
         )}
 
@@ -148,9 +164,9 @@ export default function ProgressTracking() {
         >
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
             <div>
-              <p className="ft-label mb-1">// Strength Progression</p>
+              <p className="ft-label mb-1">{t('progress:strength.eyebrow')}</p>
               <h2 className="ft-title text-2xl text-white">
-                {selectedExercise || 'Select Exercise'}
+                {localizedSelectedExercise}
               </h2>
             </div>
 
@@ -164,7 +180,7 @@ export default function ProgressTracking() {
             >
               {exercises.map(exercise => (
                 <option key={exercise} value={exercise} style={{ background: '#0A0A0A', color: '#fff' }}>
-                  {exercise}
+                  {getLocalizedExerciseName({ name: exercise }, exercisesCatalog, lang)}
                 </option>
               ))}
             </select>
@@ -197,7 +213,7 @@ export default function ProgressTracking() {
                       strokeWidth={2}
                       dot={{ fill: '#CCFF00', r: 3, strokeWidth: 0 }}
                       activeDot={{ r: 5, fill: '#CCFF00', boxShadow: '0 0 8px #CCFF00' }}
-                      name="Weight (kg)"
+                      name={t('progress:strength.weightKg')}
                     />
                   </LineChart>
                 </ResponsiveContainer>
@@ -206,9 +222,9 @@ export default function ProgressTracking() {
               {/* Progression stats */}
               <div className="grid grid-cols-3 gap-2 mt-5">
                 {[
-                  { label: 'Start', value: `${progressionData[0]?.weight}kg` },
-                  { label: 'Current', value: `${progressionData[progressionData.length - 1]?.weight}kg` },
-                  { label: 'Gain', value: `+${(progressionData[progressionData.length - 1]?.weight - progressionData[0]?.weight).toFixed(1)}`, color: '#CCFF00' },
+                  { label: t('progress:strength.start'), value: `${progressionData[0]?.weight}kg` },
+                  { label: t('progress:strength.current'), value: `${progressionData[progressionData.length - 1]?.weight}kg` },
+                  { label: t('progress:strength.gain'), value: `+${(progressionData[progressionData.length - 1]?.weight - progressionData[0]?.weight).toFixed(1)}`, color: '#CCFF00' },
                 ].map(({ label, value, color }) => (
                   <div
                     key={label}
@@ -226,9 +242,9 @@ export default function ProgressTracking() {
               className="text-center py-16"
               style={{ border: '1px dashed rgba(204,255,0,0.1)', borderRadius: '2px' }}
             >
-              <p className="ft-title text-xl text-white mb-1">No Data Yet</p>
+              <p className="ft-title text-xl text-white mb-1">{t('progress:strength.noDataTitle')}</p>
               <p className="text-sm" style={{ color: '#A0A0A0' }}>
-                Complete some workouts with {selectedExercise || 'this exercise'} to see progression!
+                {t('progress:strength.noDataDesc', { exercise: selectedExercise ? localizedSelectedExercise : t('progress:strength.thisExercise') })}
               </p>
             </div>
           )}
@@ -239,8 +255,8 @@ export default function ProgressTracking() {
           className="mb-6 p-5 md:p-6 animate-slide-up"
           style={{ background: 'rgba(10,10,10,0.95)', border: '1px solid rgba(255,92,0,0.15)', borderRadius: '2px' }}
         >
-          <p className="ft-label mb-1">// Weekly Consistency</p>
-          <h2 className="ft-title text-2xl text-white mb-6">Completion Rate</h2>
+          <p className="ft-label mb-1">{t('progress:consistency.eyebrow')}</p>
+          <h2 className="ft-title text-2xl text-white mb-6">{t('progress:consistency.title')}</h2>
 
           {weeklyProgress.length > 0 ? (
             <div className="h-[260px]">
@@ -262,13 +278,13 @@ export default function ProgressTracking() {
                   />
                   <Tooltip
                     contentStyle={TOOLTIP_STYLE}
-                    formatter={(value) => [`${value}%`, 'Completion Rate']}
+                    formatter={(value) => [`${value}%`, t('progress:consistency.title')]}
                   />
                   <Bar
                     dataKey="rate"
                     fill="#FF5C00"
                     radius={[2, 2, 0, 0]}
-                    name="Completion Rate"
+                    name={t('progress:consistency.title')}
                   />
                 </BarChart>
               </ResponsiveContainer>
@@ -278,8 +294,8 @@ export default function ProgressTracking() {
               className="text-center py-12"
               style={{ border: '1px dashed rgba(255,92,0,0.1)', borderRadius: '2px' }}
             >
-              <p className="ft-title text-xl text-white mb-1">No Weekly Data</p>
-              <p className="text-sm" style={{ color: '#A0A0A0' }}>Start a weekly plan to track consistency!</p>
+              <p className="ft-title text-xl text-white mb-1">{t('progress:consistency.noDataTitle')}</p>
+              <p className="text-sm" style={{ color: '#A0A0A0' }}>{t('progress:consistency.noDataDesc')}</p>
             </div>
           )}
         </div>
@@ -290,21 +306,21 @@ export default function ProgressTracking() {
             className="p-5 md:p-6 animate-slide-up"
             style={{ background: 'rgba(10,10,10,0.95)', border: '1px solid rgba(204,255,0,0.15)', borderRadius: '2px' }}
           >
-            <p className="ft-label mb-1">// Body Metrics</p>
-            <h2 className="ft-title text-2xl text-white mb-6">Physical Stats</h2>
+            <p className="ft-label mb-1">{t('progress:bodyMetrics.eyebrow')}</p>
+            <h2 className="ft-title text-2xl text-white mb-6">{t('progress:bodyMetrics.title')}</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {bodyMetrics.weightHistory?.length > 0 && (
                 <div style={{ background: 'rgba(204,255,0,0.03)', border: '1px solid rgba(204,255,0,0.08)', borderRadius: '2px', padding: '16px' }}>
-                  <p className="ft-label mb-3">Weight Trend</p>
+                  <p className="ft-label mb-3">{t('progress:bodyMetrics.weightTrend')}</p>
                   <ResponsiveContainer width="100%" height={180}>
                     <LineChart data={bodyMetrics.weightHistory.map(w => ({
-                      date: new Date(w.date).toLocaleDateString(), value: w.value
+                      date: formatDate(w.date, lang), value: w.value
                     }))}>
                       <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.03)" vertical={false} />
                       <XAxis dataKey="date" stroke="#333" tick={{ fill: '#555', fontSize: 10 }} axisLine={{ stroke: '#1A1A1A' }} />
                       <YAxis stroke="#333" tick={{ fill: '#555', fontSize: 10 }} axisLine={{ stroke: '#1A1A1A' }} />
                       <Tooltip contentStyle={TOOLTIP_STYLE} />
-                      <Line type="monotone" dataKey="value" stroke="#CCFF00" strokeWidth={2} dot={{ r: 2, fill: '#CCFF00', strokeWidth: 0 }} name="Weight (kg)" />
+                      <Line type="monotone" dataKey="value" stroke="#CCFF00" strokeWidth={2} dot={{ r: 2, fill: '#CCFF00', strokeWidth: 0 }} name={t('progress:bodyMetrics.weightKg')} />
                     </LineChart>
                   </ResponsiveContainer>
                 </div>
@@ -312,16 +328,16 @@ export default function ProgressTracking() {
 
               {bodyMetrics.bodyFatHistory?.length > 0 && (
                 <div style={{ background: 'rgba(255,92,0,0.03)', border: '1px solid rgba(255,92,0,0.08)', borderRadius: '2px', padding: '16px' }}>
-                  <p className="ft-label mb-3">Body Fat Trend</p>
+                  <p className="ft-label mb-3">{t('progress:bodyMetrics.bodyFatTrend')}</p>
                   <ResponsiveContainer width="100%" height={180}>
                     <LineChart data={bodyMetrics.bodyFatHistory.map(bf => ({
-                      date: new Date(bf.date).toLocaleDateString(), value: bf.value
+                      date: formatDate(bf.date, lang), value: bf.value
                     }))}>
                       <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.03)" vertical={false} />
                       <XAxis dataKey="date" stroke="#333" tick={{ fill: '#555', fontSize: 10 }} axisLine={{ stroke: '#1A1A1A' }} />
                       <YAxis stroke="#333" tick={{ fill: '#555', fontSize: 10 }} axisLine={{ stroke: '#1A1A1A' }} />
                       <Tooltip contentStyle={TOOLTIP_STYLE} />
-                      <Line type="monotone" dataKey="value" stroke="#FF5C00" strokeWidth={2} dot={{ r: 2, fill: '#FF5C00', strokeWidth: 0 }} name="Body Fat (%)" />
+                      <Line type="monotone" dataKey="value" stroke="#FF5C00" strokeWidth={2} dot={{ r: 2, fill: '#FF5C00', strokeWidth: 0 }} name={t('progress:bodyMetrics.bodyFatPct')} />
                     </LineChart>
                   </ResponsiveContainer>
                 </div>

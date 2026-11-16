@@ -2,6 +2,13 @@ import React, { createContext, useState, useEffect } from 'react';
 import { authAPI } from '../api';
 import { getAccessToken, clearAccessToken, setOnAuthFailure } from '../api/tokenStore';
 import { queryClient } from '../lib/queryClient';
+import i18n from '../i18n';
+
+const syncUserLanguage = (userData) => {
+    if (userData?.preferredLanguage) {
+        i18n.changeLanguage(userData.preferredLanguage);
+    }
+};
 
 export const AuthContext = createContext();
 
@@ -21,7 +28,9 @@ export const AuthProvider = ({ children }) => {
 
         if (token && storedUser) {
             try {
-                setUser(JSON.parse(storedUser));
+                const parsedUser = JSON.parse(storedUser);
+                setUser(parsedUser);
+                syncUserLanguage(parsedUser);
                 setLoading(false);
                 return () => {
                     cancelled = true;
@@ -40,6 +49,7 @@ export const AuthProvider = ({ children }) => {
                 const data = await authAPI.refreshSession();
                 if (!cancelled && data?.user) {
                     setUser(data.user);
+                    syncUserLanguage(data.user);
                 }
             } catch {
                 if (!cancelled) {
@@ -64,6 +74,7 @@ export const AuthProvider = ({ children }) => {
         const data = await authAPI.login(credentials);
         queryClient.clear();
         setUser(data.user);
+        syncUserLanguage(data?.user);
         return data;
     };
 
@@ -71,6 +82,7 @@ export const AuthProvider = ({ children }) => {
         const data = await authAPI.googleLogin(idToken);
         queryClient.clear();
         setUser(data.user);
+        syncUserLanguage(data?.user);
         return data;
     };
 
