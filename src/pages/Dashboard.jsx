@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next";
 import { useAuth } from "../hooks/useAuth";
 import { userAPI, weeklyScheduleAPI, workoutSessionAPI } from "../api";
 import { queryKeys } from "../lib/queryClient";
-import { Dumbbell, TrendingUp, Calendar, Zap, User, ClipboardList, Play, Bell } from "lucide-react";
+import { Dumbbell, TrendingUp, Calendar, Zap, User, ClipboardList, Play } from "lucide-react";
 import LanguageSwitcher from "../components/LanguageSwitcher";
 import { formatDate, formatNumber } from "../utils/formatters";
 
@@ -249,15 +249,6 @@ export default function Dashboard() {
           {/* User info */}
           <div className="flex items-center gap-3">
             <LanguageSwitcher />
-            <button
-              id="notification-btn"
-              className="w-9 h-9 flex items-center justify-center transition-colors"
-              style={{ border: "1px solid #1A1A1A", borderRadius: "2px", color: "#A0A0A0" }}
-              onMouseEnter={e => { e.currentTarget.style.borderColor = "#CCFF00"; e.currentTarget.style.color = "#CCFF00"; }}
-              onMouseLeave={e => { e.currentTarget.style.borderColor = "#1A1A1A"; e.currentTarget.style.color = "#A0A0A0"; }}
-            >
-              <Bell size={16} />
-            </button>
             <button
               id="profile-btn"
               onClick={() => navigate("/profile")}
