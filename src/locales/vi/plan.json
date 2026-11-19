@@ -19,6 +19,9 @@
   },
   "builder": {
     "backToDashboard": "Bảng điều khiển",
+    "backToLibrary": "Thư viện kế hoạch",
+    "activePlanNotice": "Kế hoạch này đang được tập trong tuần hiện tại. Mọi thay đổi ở đây sẽ áp dụng cho các tuần sau và không ảnh hưởng tiến độ tuần này.",
+    "confirmDeleteActive": "Xóa \"{{name}}\"? Kế hoạch này đang được dùng cho tuần hiện tại — lịch tuần đang tập vẫn được giữ nguyên, nhưng mẫu kế hoạch sẽ bị xóa vĩnh viễn.",
     "editTitle": "Chỉnh sửa kế hoạch",
     "newTitle": "Kế hoạch tuần mới",
     "delete": "Xóa",
@@ -77,9 +80,16 @@
     "restDays": "ngày nghỉ",
     "edit": "Chỉnh sửa",
     "startThisWeek": "Bắt đầu tuần này",
-    "startFailed": "Không thể bắt đầu kế hoạch"
+    "startFailed": "Không thể bắt đầu kế hoạch",
+    "activeThisWeek": "Đang tập tuần này",
+    "activeBannerTitle": "Tuần này đang tập \"{{name}}\" ({{completed}}/{{total}} buổi)",
+    "activeBannerSubtitle": "Bạn vẫn có thể tạo hoặc chỉnh sửa mọi kế hoạch bên dưới. Hãy hoàn thành hoặc bỏ qua tuần hiện tại trước khi bắt đầu một kế hoạch khác.",
+    "viewCurrentWeek": "Xem lịch tuần",
+    "activePlanEditHint": "Chỉnh sửa mẫu này sẽ áp dụng cho các tuần sau, không ảnh hưởng tiến độ tuần hiện tại.",
+    "weekAlreadyActiveHint": "Hoàn thành hoặc bỏ qua tuần hiện tại để bắt đầu kế hoạch này"
   },
   "calendar": {
+    "planLibrary": "Thư viện kế hoạch",
     "loading": "Đang tải lịch tập...",
     "noActivePlanTitle": "Chưa có kế hoạch hoạt động",
     "noActivePlanSubtitle": "Bạn chưa bắt đầu lịch tập hàng tuần nào.",

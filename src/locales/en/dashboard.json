@@ -16,6 +16,7 @@
   },
   "cards": {
     "currentSchedule": "Current Schedule",
+    "managePlans": "Manage Plans",
     "weeklyPlanning": "Weekly Planning",
     "currentScheduleDesc": "Continue \"{{name}}\" — {{completed}}/{{total}} sessions done.",
     "weeklyPlanningDesc": "Create or start a weekly workout plan to stay consistent.",

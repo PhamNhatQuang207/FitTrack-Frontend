@@ -22,8 +22,10 @@ import AiCoachWidget from './components/AiCoachWidget';
 
 import axiosClient from './api/axiosClient';
 import { siteConfigAPI } from './api';
+import { usePreventImeScrollJump } from './hooks/usePreventImeScrollJump';
 
 function AppContent() {
+  usePreventImeScrollJump();
   // Wake up Render server on initial load
   React.useEffect(() => {
     const wakeUpServer = async () => {

@@ -6,7 +6,7 @@ import { weeklyScheduleAPI, workoutSessionAPI } from "../api";
 import { invalidateWorkoutAndAnalytics, queryKeys } from "../lib/queryClient";
 import {
   ArrowLeft, Play, CheckCircle2, Calendar as CalendarIcon,
-  Edit2, RefreshCcw, X as XIcon, Save
+  Edit2, RefreshCcw, X as XIcon, Save, ClipboardList
 } from "lucide-react";
 import LanguageSwitcher from "../components/LanguageSwitcher";
 import { getApiErrorMessage } from "../utils/localize";
@@ -262,6 +262,17 @@ export default function WeeklyCalendar() {
 
           <div className="flex items-center gap-2">
             <LanguageSwitcher />
+            {!editMode && (
+              <button
+                id="plan-library-btn"
+                onClick={() => navigate('/weekly-plan-library')}
+                className="ft-btn-ghost flex items-center gap-2 text-xs"
+                style={{ padding: '7px 12px' }}
+              >
+                <ClipboardList size={13} />
+                <span className="hidden sm:inline">{t('plan:calendar.planLibrary')}</span>
+              </button>
+            )}
             {editMode ? (
               Object.keys(editingWorkoutName).length > 0 ? (
                 <button id="save-changes-btn" onClick={saveAllChanges} className="ft-btn-primary flex items-center gap-2 text-xs" style={{ padding: '7px 14px' }}>

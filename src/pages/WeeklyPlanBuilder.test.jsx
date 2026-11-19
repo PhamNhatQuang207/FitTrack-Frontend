@@ -1,7 +1,7 @@
 import React from 'react';
-import { screen, waitFor } from '@testing-library/react';
+import { fireEvent, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { setMockParams } from 'react-router-dom';
+import { setMockParams, mockNavigate } from 'react-router-dom';
 import WeeklyPlanBuilder from './WeeklyPlanBuilder';
 import axiosClient from '../api/axiosClient';
 import { renderWithQueryClient } from '../test-utils/queryTestUtils';
@@ -64,6 +64,7 @@ const samplePlan = {
 
 beforeEach(() => {
   jest.clearAllMocks();
+  window.scrollTo = jest.fn();
   setMockParams({ id: 'plan-1' });
   axiosClient.get.mockImplementation((url) => {
     if (url === '/muscle-groups') {
@@ -120,6 +121,167 @@ test('allows swapping two days (including workout and rest day) in edit weekly p
             dayOfWeek: 1,
             isRestDay: false,
             workout: expect.objectContaining({ name: 'Push Day' }),
+          }),
+        ]),
+      })
+    );
+  });
+});
+
+test('navigates back to plan library and warns when editing or deleting the active week template', async () => {
+  axiosClient.get.mockImplementation((url) => {
+    if (url === '/muscle-groups') {
+      return Promise.resolve({ data: [{ id: 'mg-1', slug: 'chest', name: 'Chest' }] });
+    }
+    if (url === '/weekly-plans/plan-1') {
+      return Promise.resolve({ data: samplePlan });
+    }
+    if (url === '/weekly-schedules/current') {
+      return Promise.resolve({
+        data: { id: 'sched-1', weeklyPlanId: 'plan-1', weeklyPlanName: 'PPL Split' },
+      });
+    }
+    return Promise.resolve({ data: [] });
+  });
+  axiosClient.delete.mockResolvedValue({ data: { message: 'Deleted' } });
+
+  const confirmSpy = jest.spyOn(window, 'confirm').mockReturnValue(false);
+
+  renderWithQueryClient(<WeeklyPlanBuilder />);
+
+  await waitFor(() => {
+    expect(screen.getByDisplayValue('Push Day')).toBeInTheDocument();
+  });
+
+  const statusBanner = screen.getByRole('status');
+  expect(statusBanner).toHaveTextContent(
+    "This plan is active for the current week. Changes here apply to future weeks and won't affect this week's progress."
+  );
+
+  userEvent.click(document.getElementById('back-btn'));
+  expect(mockNavigate).toHaveBeenCalledWith('/weekly-plan-library');
+
+  userEvent.click(document.getElementById('delete-plan-btn'));
+  expect(confirmSpy).toHaveBeenCalledWith(
+    expect.stringContaining('current week\'s schedule stays intact')
+  );
+  confirmSpy.mockRestore();
+});
+
+test('preserves rest days when backend returns workout: null', async () => {
+  const planWithNullRestDay = {
+    ...samplePlan,
+    days: [
+      ...samplePlan.days,
+      {
+        dayOfWeek: 3,
+        dayName: 'Thursday',
+        isRestDay: true,
+        workout: null,
+      },
+    ],
+  };
+
+  axiosClient.get.mockImplementation((url) => {
+    if (url === '/muscle-groups') {
+      return Promise.resolve({ data: [{ id: 'mg-1', slug: 'chest', name: 'Chest' }] });
+    }
+    if (url === '/weekly-plans/plan-1') {
+      return Promise.resolve({ data: planWithNullRestDay });
+    }
+    return Promise.resolve({ data: [] });
+  });
+
+  renderWithQueryClient(<WeeklyPlanBuilder />);
+
+  await waitFor(() => {
+    expect(screen.getByDisplayValue('Push Day')).toBeInTheDocument();
+  });
+
+  expect(document.getElementById('rest-toggle-3')).toBeChecked();
+});
+
+test('cancels Chromium IME scroll jump when Thursday workout name is filled and Update Plan is clicked while offscreen below', async () => {
+  const planWithUnnamedThursday = {
+    ...samplePlan,
+    days: [
+      ...samplePlan.days,
+      {
+        dayOfWeek: 3,
+        dayName: 'Thursday',
+        isRestDay: false,
+        workout: {
+          name: '',
+          exercises: [
+            {
+              exerciseId: 'ex-3',
+              exerciseName: 'Squat',
+              category: 'Quadriceps',
+              sets: [{ setNumber: 1, targetReps: 8, targetWeight: 80 }],
+            },
+          ],
+        },
+      },
+    ],
+  };
+
+  axiosClient.get.mockImplementation((url) => {
+    if (url === '/muscle-groups') {
+      return Promise.resolve({ data: [{ id: 'mg-1', slug: 'chest', name: 'Chest' }] });
+    }
+    if (url === '/weekly-plans/plan-1') {
+      return Promise.resolve({ data: planWithUnnamedThursday });
+    }
+    return Promise.resolve({ data: [] });
+  });
+
+  renderWithQueryClient(<WeeklyPlanBuilder />);
+
+  await waitFor(() => {
+    expect(screen.getByDisplayValue('Push Day')).toBeInTheDocument();
+  });
+
+  const saveBtn = document.getElementById('save-plan-btn');
+  userEvent.click(saveBtn);
+
+  expect(screen.getByRole('alert')).toHaveTextContent('Please enter a workout name for Thursday.');
+
+  const thursdayInput = document.getElementById('day-workout-name-3');
+  thursdayInput.focus();
+  userEvent.type(thursdayInput, 'Leg Day');
+
+  expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+
+  thursdayInput.getBoundingClientRect = () => ({
+    top: 950,
+    bottom: 1000,
+    left: 0,
+    right: 200,
+    width: 200,
+    height: 50,
+  });
+  Object.defineProperty(window, 'innerHeight', { configurable: true, writable: true, value: 800 });
+  Object.defineProperty(window, 'scrollY', { configurable: true, writable: true, value: 0 });
+
+  fireEvent.pointerDown(saveBtn);
+  fireEvent.compositionEnd(thursdayInput);
+  Object.defineProperty(window, 'scrollY', { configurable: true, writable: true, value: 520 });
+  fireEvent.scroll(window);
+
+  expect(window.scrollTo).toHaveBeenCalledWith({ top: 0, behavior: 'instant' });
+
+  userEvent.click(saveBtn);
+
+  await waitFor(() => {
+    expect(axiosClient.put).toHaveBeenCalledWith(
+      '/weekly-plans/plan-1',
+      expect.objectContaining({
+        name: 'PPL Split',
+        days: expect.arrayContaining([
+          expect.objectContaining({
+            dayOfWeek: 3,
+            isRestDay: false,
+            workout: expect.objectContaining({ name: 'Leg Day' }),
           }),
         ]),
       })
