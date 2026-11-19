@@ -6,7 +6,7 @@ import { weeklyScheduleAPI, workoutSessionAPI } from "../api";
 import { invalidateWorkoutAndAnalytics, queryKeys } from "../lib/queryClient";
 import {
   ArrowLeft, Play, CheckCircle2, Calendar as CalendarIcon,
-  Edit2, RefreshCcw, X as XIcon, Save
+  Edit2, RefreshCcw, X as XIcon, Save, ClipboardList
 } from "lucide-react";
 import LanguageSwitcher from "../components/LanguageSwitcher";
 import { getApiErrorMessage } from "../utils/localize";
@@ -262,6 +262,17 @@ export default function WeeklyCalendar() {
 
           <div className="flex items-center gap-2">
             <LanguageSwitcher />
+            {!editMode && (
+              <button
+                id="plan-library-btn"
+                onClick={() => navigate('/weekly-plan-library')}
+                className="ft-btn-ghost flex items-center gap-2 text-xs"
+                style={{ padding: '7px 12px' }}
+              >
+                <ClipboardList size={13} />
+                <span className="hidden sm:inline">{t('plan:calendar.planLibrary')}</span>
+              </button>
+            )}
             {editMode ? (
               Object.keys(editingWorkoutName).length > 0 ? (
                 <button id="save-changes-btn" onClick={saveAllChanges} className="ft-btn-primary flex items-center gap-2 text-xs" style={{ padding: '7px 14px' }}>
@@ -348,14 +359,16 @@ export default function WeeklyCalendar() {
                 {/* Day body */}
                 <div className="p-4 flex-1 flex flex-col">
                   {isRest ? (
-                    <div className="flex-1 flex flex-col items-center justify-center py-6 gap-2">
-                      <span style={{ fontSize: '1.5rem' }}>🛌</span>
-                      <span className="ft-label text-center">{t('plan:calendar.restDay')}</span>
+                    <div className="flex-1 flex flex-col">
+                      <div className={`flex-1 flex flex-col items-center justify-center gap-2 ${editMode ? 'py-3' : 'py-6'}`}>
+                        <span style={{ fontSize: '1.5rem' }}>🛌</span>
+                        <span className="ft-label text-center mb-0">{t('plan:calendar.restDay')}</span>
+                      </div>
                       {editMode && (
-                        <div className="mt-3 w-full space-y-2">
+                        <div className="mt-auto space-y-2">
                           <button
                             onClick={() => handleSwapDays(day)}
-                            className="w-full flex items-center justify-center gap-2 py-2 font-display font-bold uppercase tracking-wider text-xs transition-colors"
+                            className="w-full flex items-center justify-center gap-2 py-2.5 font-display font-bold uppercase tracking-wider text-xs transition-colors"
                             style={{
                               background: swapSourceDay?.dayOfWeek === day.dayOfWeek ? 'rgba(204,255,0,0.2)' : 'rgba(204,255,0,0.06)',
                               border: '1px solid rgba(204,255,0,0.3)',
@@ -368,7 +381,7 @@ export default function WeeklyCalendar() {
                           </button>
                           <button
                             onClick={() => handleToggleRestDay(day)}
-                            className="w-full py-2 font-display font-bold uppercase tracking-wider text-xs transition-colors"
+                            className="w-full py-2.5 font-display font-bold uppercase tracking-wider text-xs transition-colors"
                             style={{ background: 'rgba(255,92,0,0.06)', border: '1px solid rgba(255,92,0,0.3)', borderRadius: '2px', color: '#FF5C00' }}
                           >
                             {t('plan:calendar.makeWorkoutDay')}

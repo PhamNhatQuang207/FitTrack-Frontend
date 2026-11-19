@@ -23,7 +23,7 @@
     font-family: 'Inter', system-ui, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    overflow-x: hidden;
+    overflow-x: clip;
   }
 
   /* Scrollbar */
@@ -52,7 +52,8 @@
 @layer components {
   /* -------- LAYOUT -------- */
   .ft-page {
-    @apply min-h-screen text-white relative overflow-hidden;
+    @apply min-h-screen text-white relative;
+    overflow-x: clip;
     background-color: #050505;
     background-image:
       linear-gradient(rgba(204,255,0,0.035) 1px, transparent 1px),

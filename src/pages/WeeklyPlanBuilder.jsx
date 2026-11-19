@@ -1,13 +1,14 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import axiosClient from "../api/axiosClient";
-import { exerciseAPI, muscleGroupAPI } from "../api";
+import { exerciseAPI, muscleGroupAPI, weeklyScheduleAPI } from "../api";
 import { queryKeys } from "../lib/queryClient";
 import { ArrowLeft, Save, Plus, Trash2, X, Check, Search, Trash, ChevronDown, AlertCircle, RefreshCcw } from "lucide-react";
 import ErrorBoundary from "../components/ErrorBoundary";
 import LanguageSwitcher from "../components/LanguageSwitcher";
+import { usePreventImeScrollJump, unlockImeScrollGuard } from "../hooks/usePreventImeScrollJump";
 import { getApiErrorMessage, getLocalizedExerciseName, getLocalizedField, getLocalizedMuscleGroupName } from "../utils/localize";
 
 const DAYS = [
@@ -27,11 +28,14 @@ const DEFAULT_MUSCLE_GROUPS = [
 ];
 
 function WeeklyPlanBuilderContent() {
+  usePreventImeScrollJump();
   const { t, i18n } = useTranslation(['plan', 'errors']);
   const lang = i18n.resolvedLanguage || 'en';
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { id } = useParams();
+  const planNameInputRef = useRef(null);
+  const dayNameInputRefs = useRef({});
   const [isEditMode, setIsEditMode] = useState(false);
   const [planName, setPlanName] = useState("");
   const [description, setDescription] = useState("");
@@ -44,6 +48,8 @@ function WeeklyPlanBuilderContent() {
   const [selectedMuscleGroup, setSelectedMuscleGroup] = useState("all");
   const [showMuscleGroupDropdown, setShowMuscleGroupDropdown] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  const [errorField, setErrorField] = useState(null);
+  const [errorDayId, setErrorDayId] = useState(null);
   const [swapSourceIndex, setSwapSourceIndex] = useState(null);
 
   const { data: rawMuscleGroups } = useQuery({
@@ -65,6 +71,22 @@ function WeeklyPlanBuilderContent() {
     enabled: Boolean(id),
   });
 
+  const { data: scheduleData, isError: scheduleError } = useQuery({
+    queryKey: queryKeys.weeklySchedule.current,
+    queryFn: weeklyScheduleAPI.getCurrent,
+    enabled: Boolean(id),
+    retry: false,
+  });
+
+  const activeSchedule =
+    !scheduleError && scheduleData && !Array.isArray(scheduleData) ? scheduleData : null;
+  const isEditingActivePlan = Boolean(
+    isEditMode &&
+    id &&
+    activeSchedule?.weeklyPlanId &&
+    String(activeSchedule.weeklyPlanId) === String(id)
+  );
+
   useEffect(() => {
     const plan = planQuery.data;
     if (!plan) return;
@@ -72,6 +94,9 @@ function WeeklyPlanBuilderContent() {
     setDescription(plan.description || "");
     const loadedSchedule = DAYS.map(day => {
       const planDay = plan.days.find(d => d.dayOfWeek === day.id);
+      if (planDay?.isRestDay) {
+        return { ...day, isRestDay: true, workout: { name: "Rest Day", exercises: [] } };
+      }
       if (planDay && planDay.workout && planDay.workout.exercises) {
         const normalizedExercises = planDay.workout.exercises.map(ex => {
           if (ex.sets && Array.isArray(ex.sets)) return ex;
@@ -82,7 +107,7 @@ function WeeklyPlanBuilderContent() {
           }
           return { ...ex, sets: [{ setNumber: 1, targetReps: 10, targetWeight: 0 }, { setNumber: 2, targetReps: 10, targetWeight: 0 }, { setNumber: 3, targetReps: 10, targetWeight: 0 }] };
         });
-        return { ...day, isRestDay: planDay.isRestDay, workout: { ...planDay.workout, exercises: normalizedExercises } };
+        return { ...day, isRestDay: false, workout: { ...planDay.workout, exercises: normalizedExercises } };
       }
       return { ...day, isRestDay: false, workout: { name: "", exercises: [] } };
     });
@@ -149,15 +174,39 @@ function WeeklyPlanBuilderContent() {
   const loading = (Boolean(id) && planQuery.isLoading) || savePlanMutation.isPending || deletePlanMutation.isPending;
 
   const handleDayUpdate = (index, field, value) => {
-    const newSchedule = [...schedule];
-    if (field === 'isRestDay') {
-      newSchedule[index].isRestDay = value;
-      if (value) { newSchedule[index].workout.name = "Rest Day"; newSchedule[index].workout.exercises = []; }
-      else if (newSchedule[index].workout.name === "Rest Day") newSchedule[index].workout.name = "";
-    } else if (field === 'workoutName') {
-      newSchedule[index].workout.name = value;
+    setSchedule((prev) =>
+      prev.map((day, idx) => {
+        if (idx !== index) return day;
+        if (field === 'isRestDay') {
+          const nextName = value
+            ? "Rest Day"
+            : day.workout.name === "Rest Day"
+            ? ""
+            : day.workout.name;
+          return {
+            ...day,
+            isRestDay: value,
+            workout: {
+              ...day.workout,
+              name: nextName,
+              exercises: value ? [] : day.workout.exercises,
+            },
+          };
+        }
+        if (field === 'workoutName') {
+          return {
+            ...day,
+            workout: { ...day.workout, name: value },
+          };
+        }
+        return day;
+      })
+    );
+    if (errorMessage) {
+      setErrorMessage("");
+      setErrorField(null);
+      setErrorDayId(null);
     }
-    setSchedule(newSchedule);
   };
 
   const handleSwapDays = (index) => {
@@ -231,28 +280,67 @@ function WeeklyPlanBuilderContent() {
   };
 
   const handleSavePlan = () => {
-    if (!planName.trim()) {
+    unlockImeScrollGuard();
+    const effectivePlanName = planNameInputRef.current?.value ?? planName;
+    const effectiveSchedule = schedule.map((day) => {
+      if (day.isRestDay) return day;
+      const inputEl = dayNameInputRefs.current[day.id];
+      if (!inputEl) return day;
+      return {
+        ...day,
+        workout: { ...day.workout, name: inputEl.value },
+      };
+    });
+
+    if (effectivePlanName !== planName) {
+      setPlanName(effectivePlanName);
+    }
+
+    if (!effectivePlanName.trim()) {
       setErrorMessage(t('plan:builder.errors.planNameRequired'));
+      setErrorField('planName');
+      setErrorDayId(null);
+      planNameInputRef.current?.scrollIntoView?.({ behavior: 'smooth', block: 'center' });
+      planNameInputRef.current?.focus?.({ preventScroll: true });
       return;
     }
-    const unnamedDayWithExercises = schedule.find(
+
+    const unnamedDayWithExercises = effectiveSchedule.find(
       (day) => !day.isRestDay && day.workout.exercises.length > 0 && !day.workout.name.trim()
     );
     if (unnamedDayWithExercises) {
-      setErrorMessage(t('plan:builder.errors.dayWorkoutNameRequired', { day: t(`plan:days.${unnamedDayWithExercises.name}`) }));
+      setErrorMessage(
+        t('plan:builder.errors.dayWorkoutNameRequired', {
+          day: t(`plan:days.${unnamedDayWithExercises.name}`),
+        })
+      );
+      setErrorField('day');
+      setErrorDayId(unnamedDayWithExercises.id);
+      const targetInput = dayNameInputRefs.current[unnamedDayWithExercises.id];
+      targetInput?.scrollIntoView?.({ behavior: 'smooth', block: 'center' });
+      targetInput?.focus?.({ preventScroll: true });
       return;
     }
+
     setErrorMessage("");
-    const transformedDays = schedule.map(day => ({ dayOfWeek: day.id, dayName: day.name, isRestDay: day.isRestDay, workout: day.workout }));
+    setErrorField(null);
+    setErrorDayId(null);
+    const transformedDays = effectiveSchedule.map((day) => ({
+      dayOfWeek: day.id,
+      dayName: day.name,
+      isRestDay: day.isRestDay,
+      workout: day.workout,
+    }));
     savePlanMutation.mutate({
       isEdit: isEditMode,
       planId: id,
-      payload: { name: planName, description, days: transformedDays },
+      payload: { name: effectivePlanName, description, days: transformedDays },
     });
   };
 
   const handleDeletePlan = () => {
-    if (!window.confirm(t('plan:builder.confirmDelete', { name: planName }))) return;
+    const confirmKey = isEditingActivePlan ? 'plan:builder.confirmDeleteActive' : 'plan:builder.confirmDelete';
+    if (!window.confirm(t(confirmKey, { name: planName }))) return;
     deletePlanMutation.mutate(id);
   };
 
@@ -272,14 +360,15 @@ function WeeklyPlanBuilderContent() {
         <div className="max-w-5xl mx-auto flex items-center justify-between h-16 gap-4">
           <button
             id="back-btn"
-            onClick={() => navigate("/dashboard")}
+            type="button"
+            onClick={() => navigate("/weekly-plan-library")}
             className="flex items-center gap-2 transition-colors group"
             style={{ color: '#A0A0A0' }}
             onMouseEnter={e => e.currentTarget.style.color = '#CCFF00'}
             onMouseLeave={e => e.currentTarget.style.color = '#A0A0A0'}
           >
             <ArrowLeft size={18} className="group-hover:-translate-x-1 transition-transform" />
-            <span className="hidden md:inline font-display font-bold uppercase tracking-widest text-xs">{t('plan:builder.backToDashboard')}</span>
+            <span className="hidden md:inline font-display font-bold uppercase tracking-widest text-xs">{t('plan:builder.backToLibrary')}</span>
           </button>
 
           <h1 className="ft-title text-xl md:text-2xl text-neon-lime">
@@ -291,6 +380,7 @@ function WeeklyPlanBuilderContent() {
             {isEditMode && (
               <button
                 id="delete-plan-btn"
+                type="button"
                 onClick={handleDeletePlan}
                 disabled={loading}
                 className="flex items-center gap-2 text-xs font-display font-bold uppercase tracking-wider px-3 py-2 transition-colors disabled:opacity-50"
@@ -301,6 +391,7 @@ function WeeklyPlanBuilderContent() {
             )}
             <button
               id="save-plan-btn"
+              type="button"
               onClick={handleSavePlan}
               disabled={loading}
               className="ft-btn-primary flex items-center gap-2 text-xs disabled:opacity-50"
@@ -313,6 +404,21 @@ function WeeklyPlanBuilderContent() {
       </div>
 
       <main className="max-w-5xl mx-auto px-4 md:px-8 py-8">
+        {isEditingActivePlan && (
+          <div
+            role="status"
+            className="mb-6 px-4 py-3 flex items-center gap-3 text-sm animate-slide-up"
+            style={{
+              color: '#CCFF00',
+              background: 'rgba(204, 255, 0, 0.06)',
+              border: '1px solid rgba(204, 255, 0, 0.3)',
+              borderRadius: '2px',
+            }}
+          >
+            <AlertCircle size={18} style={{ flexShrink: 0 }} />
+            <span>{t('plan:builder.activePlanNotice')}</span>
+          </div>
+        )}
         {errorMessage && (
           <div
             role="alert"
@@ -339,12 +445,24 @@ function WeeklyPlanBuilderContent() {
             <div>
               <label className="ft-label">{t('plan:builder.planNameLabel')}</label>
               <input
+                ref={planNameInputRef}
                 id="plan-name-input"
                 type="text"
                 placeholder={t('plan:builder.planNamePlaceholder')}
                 value={planName}
-                onChange={(e) => setPlanName(e.target.value)}
+                onChange={(e) => {
+                  setPlanName(e.target.value);
+                  if (errorMessage) {
+                    setErrorMessage("");
+                    setErrorField(null);
+                    setErrorDayId(null);
+                  }
+                }}
                 className="ft-input font-display font-bold italic uppercase"
+                style={{
+                  scrollMarginTop: '96px',
+                  ...(errorField === 'planName' ? { borderColor: '#FF5C00' } : {}),
+                }}
               />
             </div>
             <div>
@@ -394,12 +512,18 @@ function WeeklyPlanBuilderContent() {
                 {/* Workout name input */}
                 {!day.isRestDay && (
                   <input
+                    id={`day-workout-name-${day.id}`}
+                    ref={(el) => { dayNameInputRefs.current[day.id] = el; }}
                     type="text"
                     placeholder={t('plan:builder.workoutNamePlaceholder')}
                     value={day.workout.name}
                     onChange={(e) => handleDayUpdate(index, 'workoutName', e.target.value)}
                     className="ft-input flex-1 font-display font-bold italic uppercase"
-                    style={{ minWidth: '120px' }}
+                    style={{
+                      minWidth: '120px',
+                      scrollMarginTop: '96px',
+                      ...(errorField === 'day' && errorDayId === day.id ? { borderColor: '#FF5C00' } : {}),
+                    }}
                   />
                 )}
 
@@ -453,6 +577,7 @@ function WeeklyPlanBuilderContent() {
                 {!day.isRestDay && (
                   <button
                     id={`configure-day-${day.id}`}
+                    type="button"
                     onClick={() => handleConfigureDay(index)}
                     className="flex items-center gap-1.5 text-xs font-display font-bold uppercase tracking-wider px-3 py-2 transition-colors flex-shrink-0"
                     style={{ border: '1px solid rgba(204,255,0,0.3)', borderRadius: '2px', color: '#CCFF00', background: 'rgba(204,255,0,0.06)' }}

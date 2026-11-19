@@ -19,6 +19,9 @@
   },
   "builder": {
     "backToDashboard": "Dashboard",
+    "backToLibrary": "Plan Library",
+    "activePlanNotice": "This plan is active for the current week. Changes here apply to future weeks and won't affect this week's progress.",
+    "confirmDeleteActive": "Delete \"{{name}}\"? This plan is active this week — your current week's schedule stays intact, but this template will be permanently deleted.",
     "editTitle": "Edit Plan",
     "newTitle": "New Weekly Plan",
     "delete": "Delete",
@@ -77,9 +80,16 @@
     "restDays": "rest days",
     "edit": "Edit",
     "startThisWeek": "Start This Week",
-    "startFailed": "Failed to start plan"
+    "startFailed": "Failed to start plan",
+    "activeThisWeek": "Active This Week",
+    "activeBannerTitle": "Active this week: \"{{name}}\" ({{completed}}/{{total}} sessions)",
+    "activeBannerSubtitle": "You can still create or edit any plan below. Complete or dismiss the current week before starting another plan.",
+    "viewCurrentWeek": "View This Week",
+    "activePlanEditHint": "Edits to this template apply to future weeks and won't affect this week's progress.",
+    "weekAlreadyActiveHint": "Complete or dismiss the current week to start this plan"
   },
   "calendar": {
+    "planLibrary": "Plan Library",
     "loading": "Loading Schedule...",
     "noActivePlanTitle": "No Active Plan",
     "noActivePlanSubtitle": "You haven't started a weekly schedule yet.",

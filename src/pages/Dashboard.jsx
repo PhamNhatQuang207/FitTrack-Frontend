@@ -71,7 +71,7 @@ function StatCard({ icon: Icon, value, label, accent = "lime", delay = "" }) {
 }
 
 // ── Feature card ───────────────────────────────────────────
-function FeatureCard({ icon: Icon, title, description, extra, onClick, accent = "lime", delay = "" }) {
+function FeatureCard({ icon: Icon, title, description, extra, secondaryAction = null, onClick, accent = "lime", delay = "" }) {
   const isLime = accent === "lime";
   const color = isLime ? "#CCFF00" : "#FF5C00";
   const bg = isLime ? "rgba(204,255,0,0.06)" : "rgba(255,92,0,0.06)";
@@ -140,10 +140,30 @@ function FeatureCard({ icon: Icon, title, description, extra, onClick, accent = 
             {title}
           </h2>
           <p className="text-sm mb-3" style={{ color: "#A0A0A0", lineHeight: 1.5 }}>{description}</p>
-          {extra && (
-            <span className="text-xs font-display font-bold uppercase tracking-widest" style={{ color }}>
-              {extra}
-            </span>
+          {(extra || secondaryAction) && (
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5">
+              {extra && (
+                <span className="text-xs font-display font-bold uppercase tracking-widest" style={{ color }}>
+                  {extra}
+                </span>
+              )}
+              {secondaryAction && (
+                <button
+                  type="button"
+                  id={secondaryAction.id}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    secondaryAction.onClick();
+                  }}
+                  className="text-xs font-display font-bold uppercase tracking-widest underline underline-offset-4 transition-colors"
+                  style={{ color: "#A0A0A0" }}
+                  onMouseEnter={e => e.currentTarget.style.color = color}
+                  onMouseLeave={e => e.currentTarget.style.color = "#A0A0A0"}
+                >
+                  {secondaryAction.label} →
+                </button>
+              )}
+            </div>
           )}
         </div>
 
@@ -325,6 +345,15 @@ export default function Dashboard() {
                   : t('dashboard:cards.weeklyPlanningDesc')
               }
               extra={activeSchedule ? t('dashboard:cards.percentComplete', { percent: Math.round((activeSchedule.completedDays / activeSchedule.totalWorkoutDays) * 100) }) : null}
+              secondaryAction={
+                activeSchedule
+                  ? {
+                      id: "manage-plans-btn",
+                      label: t('dashboard:cards.managePlans'),
+                      onClick: () => navigate('/weekly-plan-library'),
+                    }
+                  : null
+              }
               onClick={handleWeeklyActionClick}
               accent="lime"
               delay="ft-stagger-1"

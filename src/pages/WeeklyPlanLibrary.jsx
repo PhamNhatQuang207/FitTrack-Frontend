@@ -18,6 +18,15 @@ export default function WeeklyPlanLibrary() {
     queryFn: weeklyPlanAPI.getAll,
   });
 
+  const { data: scheduleData, isError: scheduleError } = useQuery({
+    queryKey: queryKeys.weeklySchedule.current,
+    queryFn: weeklyScheduleAPI.getCurrent,
+    retry: false,
+  });
+
+  const activeSchedule =
+    !scheduleError && scheduleData && !Array.isArray(scheduleData) ? scheduleData : null;
+
   const startPlanMutation = useMutation({
     mutationFn: (planId) => weeklyScheduleAPI.start(planId),
     onSuccess: async () => {
@@ -74,6 +83,38 @@ export default function WeeklyPlanLibrary() {
           </div>
         )}
 
+        {!loading && activeSchedule && (
+          <div
+            className="mb-6 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-slide-up"
+            style={{
+              background: 'rgba(204,255,0,0.05)',
+              border: '1px solid rgba(204,255,0,0.3)',
+              borderRadius: '2px',
+            }}
+          >
+            <div>
+              <p className="font-display font-bold uppercase tracking-wider text-sm" style={{ color: '#CCFF00' }}>
+                {t('plan:library.activeBannerTitle', {
+                  name: activeSchedule.weeklyPlanName,
+                  completed: activeSchedule.completedDays,
+                  total: activeSchedule.totalWorkoutDays,
+                })}
+              </p>
+              <p className="text-xs mt-1" style={{ color: '#A0A0A0' }}>
+                {t('plan:library.activeBannerSubtitle')}
+              </p>
+            </div>
+            <button
+              id="view-current-week-banner-btn"
+              onClick={() => navigate('/weekly-schedule')}
+              className="ft-btn-secondary flex items-center justify-center gap-2 text-xs shrink-0"
+              style={{ padding: '8px 14px' }}
+            >
+              <Calendar size={13} /> {t('plan:library.viewCurrentWeek')}
+            </button>
+          </div>
+        )}
+
         {!loading && plans.length === 0 && (
           <div
             className="text-center py-20 animate-slide-up"
@@ -98,14 +139,20 @@ export default function WeeklyPlanLibrary() {
               {plans.map((plan, idx) => {
                 const workoutDays = plan.days.filter(d => !d.isRestDay).length;
                 const restDays = 7 - workoutDays;
+                const isActivePlan = Boolean(
+                  activeSchedule?.weeklyPlanId &&
+                  String(activeSchedule.weeklyPlanId) === String(plan.id)
+                );
+                const hasOtherActivePlan = Boolean(activeSchedule && !isActivePlan);
                 return (
                   <div
                     key={plan.id}
-                    className="relative overflow-hidden p-5 animate-slide-up"
+                    className="relative overflow-hidden p-5 flex flex-col animate-slide-up"
                     style={{
                       background: 'rgba(10,10,10,0.95)',
-                      border: '1px solid rgba(204,255,0,0.15)',
+                      border: isActivePlan ? '1px solid #CCFF00' : '1px solid rgba(204,255,0,0.15)',
                       borderRadius: '2px',
+                      boxShadow: isActivePlan ? '0 0 16px rgba(204,255,0,0.15)' : 'none',
                       animationDelay: `${idx * 0.05}s`,
                       animationFillMode: 'both',
                     }}
@@ -115,7 +162,12 @@ export default function WeeklyPlanLibrary() {
                     <span style={{ position: 'absolute', bottom: 0, right: 0, width: 14, height: 14, borderBottom: '2px solid #CCFF00', borderRight: '2px solid #CCFF00' }} />
 
                     {/* Plan name */}
-                    <h3 className="ft-title text-2xl text-white mb-1">{plan.name}</h3>
+                    <div className="flex items-start justify-between gap-2 mb-1">
+                      <h3 className="ft-title text-2xl text-white">{plan.name}</h3>
+                      {isActivePlan && (
+                        <span className="ft-badge-lime shrink-0">{t('plan:library.activeThisWeek')}</span>
+                      )}
+                    </div>
                     {plan.description && (
                       <p className="text-sm mb-3" style={{ color: '#A0A0A0' }}>{plan.description}</p>
                     )}
@@ -140,25 +192,54 @@ export default function WeeklyPlanLibrary() {
                       ))}
                     </div>
 
-                    {/* Neon divider */}
-                    <div className="ft-divider" style={{ margin: '0 0 12px' }} />
+                    <div className="mt-auto">
+                      {isActivePlan && (
+                        <p className="text-xs mb-3" style={{ color: '#A0A0A0' }}>
+                          {t('plan:library.activePlanEditHint')}
+                        </p>
+                      )}
 
-                    {/* Buttons */}
-                    <div className="flex gap-2">
-                      <button
-                        id={`edit-plan-${plan.id}`}
-                        onClick={() => navigate(`/weekly-planning/${plan.id}`)}
-                        className="ft-btn-ghost flex-1 py-2.5 text-xs"
-                      >
-                        {t('plan:library.edit')}
-                      </button>
-                      <button
-                        id={`start-plan-${plan.id}`}
-                        onClick={() => handleStartPlan(plan.id)}
-                        className="ft-btn-primary flex-1 flex items-center justify-center gap-2 py-2.5 text-xs"
-                      >
-                        <Play size={12} /> {t('plan:library.startThisWeek')}
-                      </button>
+                      {/* Neon divider */}
+                      <div className="ft-divider" style={{ margin: '0 0 12px' }} />
+
+                      {/* Buttons */}
+                      <div className="flex gap-2">
+                        <button
+                          id={`edit-plan-${plan.id}`}
+                          onClick={() => navigate(`/weekly-planning/${plan.id}`)}
+                          className="ft-btn-ghost flex-1 py-2.5 text-xs"
+                        >
+                          {t('plan:library.edit')}
+                        </button>
+                        {isActivePlan ? (
+                          <button
+                            id={`view-week-${plan.id}`}
+                            onClick={() => navigate('/weekly-schedule')}
+                            className="ft-btn-primary flex-1 flex items-center justify-center gap-2 py-2.5 text-xs"
+                          >
+                            <Calendar size={12} /> {t('plan:library.viewCurrentWeek')}
+                          </button>
+                        ) : hasOtherActivePlan ? (
+                          <button
+                            id={`start-plan-${plan.id}`}
+                            type="button"
+                            disabled
+                            title={t('plan:library.weekAlreadyActiveHint')}
+                            className="ft-btn-ghost flex-1 flex items-center justify-center gap-2 py-2.5 text-xs opacity-50 cursor-not-allowed"
+                          >
+                            <Play size={12} /> {t('plan:library.startThisWeek')}
+                          </button>
+                        ) : (
+                          <button
+                            id={`start-plan-${plan.id}`}
+                            onClick={() => handleStartPlan(plan.id)}
+                            disabled={startPlanMutation.isPending}
+                            className="ft-btn-primary flex-1 flex items-center justify-center gap-2 py-2.5 text-xs disabled:opacity-50"
+                          >
+                            <Play size={12} /> {t('plan:library.startThisWeek')}
+                          </button>
+                        )}
+                      </div>
                     </div>
                   </div>
                 );

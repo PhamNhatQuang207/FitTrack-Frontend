@@ -16,6 +16,7 @@
   },
   "cards": {
     "currentSchedule": "Lịch tập hiện tại",
+    "managePlans": "Quản lý kế hoạch",
     "weeklyPlanning": "Kế hoạch tuần",
     "currentScheduleDesc": "Tiếp tục \"{{name}}\" — đã xong {{completed}}/{{total}} buổi.",
     "weeklyPlanningDesc": "Tạo hoặc bắt đầu kế hoạch tập luyện hàng tuần để duy trì đều đặn.",
