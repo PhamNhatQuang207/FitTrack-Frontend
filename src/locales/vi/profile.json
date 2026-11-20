@@ -43,5 +43,32 @@
     "saving": "Đang lưu...",
     "saveChanges": "Lưu thay đổi",
     "logOut": "Đăng xuất"
+  },
+  "feedback": {
+    "button": "Góp ý cho Developer",
+    "modalTitle": "Góp ý cho Developer",
+    "subtitle": "Chia sẻ ý kiến đóng góp hoặc báo lỗi để chúng tôi cải thiện FitTrack tốt hơn.",
+    "selectScreen": "Chọn màn hình muốn góp ý",
+    "screenPlaceholder": "Chọn màn hình...",
+    "contentLabel": "Nội dung phản hồi",
+    "contentPlaceholder": "Mô tả chi tiết ý kiến đóng góp hoặc vấn đề bạn gặp phải...",
+    "charCount": "{{current}} / {{max}} ký tự",
+    "submit": "Gửi phản hồi",
+    "submitting": "Đang gửi...",
+    "cancel": "Hủy",
+    "success": "Cảm ơn bạn! Phản hồi đã được gửi đến đội ngũ phát triển.",
+    "errorEmpty": "Vui lòng nhập nội dung phản hồi ít nhất 3 ký tự.",
+    "screens": {
+      "Dashboard": "Bảng điều khiển (Dashboard)",
+      "Weekly Planning": "Lập kế hoạch tuần (Weekly Planning)",
+      "Weekly Plan Library": "Thư viện giáo án (Weekly Plan Library)",
+      "Weekly Calendar": "Lịch tập tuần (Weekly Schedule)",
+      "Workout Planning": "Kế hoạch bài tập (Workout Planning)",
+      "Active Workout": "Màn hình đang tập (Active Workout)",
+      "Workout History": "Lịch sử tập luyện (Workout History)",
+      "Progress Tracking": "Theo dõi tiến độ & thể trạng (Progress Tracking)",
+      "Profile": "Trang cá nhân (Profile)",
+      "General": "Góp ý chung / Khác"
+    }
   }
 }

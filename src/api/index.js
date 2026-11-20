@@ -251,3 +251,10 @@ export const aiAPI = {
     }
 };
 
+export const feedbackAPI = {
+    submit: async ({ screen, content }) => {
+        const response = await axiosClient.post('/feedbacks', { screen, content });
+        return response.data;
+    }
+};
+
