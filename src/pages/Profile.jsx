@@ -1,13 +1,28 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "../hooks/useAuth";
-import { userAPI } from "../api";
+import { userAPI, feedbackAPI } from "../api";
 import { queryKeys } from "../lib/queryClient";
-import { ArrowLeft, User, LogOut, Save } from "lucide-react";
+import { ArrowLeft, User, LogOut, Save, MessageSquare, X, Send, CheckCircle2 } from "lucide-react";
 import LanguageSwitcher from "../components/LanguageSwitcher";
 import { getApiErrorMessage } from "../utils/localize";
+
+const MAX_FEEDBACK_LENGTH = 1000;
+const SCREEN_OPTIONS = [
+  'Profile',
+  'Dashboard',
+  'Weekly Planning',
+  'Weekly Plan Library',
+  'Weekly Calendar',
+  'Workout Planning',
+  'Active Workout',
+  'Workout History',
+  'Progress Tracking',
+  'AI Coach',
+  'General',
+];
 
 export default function Profile() {
   const { t } = useTranslation(['profile', 'errors']);
@@ -18,7 +33,22 @@ export default function Profile() {
   });
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
+  const [isFeedbackModalOpen, setIsFeedbackModalOpen] = useState(false);
+  const [feedbackScreen, setFeedbackScreen] = useState("Profile");
+  const [feedbackContent, setFeedbackContent] = useState("");
+  const [feedbackError, setFeedbackError] = useState("");
+  const [feedbackSuccess, setFeedbackSuccess] = useState("");
+  const closeTimerRef = useRef(null);
   const navigate = useNavigate();
+
+  const clearCloseTimer = useCallback(() => {
+    if (closeTimerRef.current) {
+      clearTimeout(closeTimerRef.current);
+      closeTimerRef.current = null;
+    }
+  }, []);
+
+  useEffect(() => () => clearCloseTimer(), [clearCloseTimer]);
 
   useEffect(() => {
     if (!user) {
@@ -66,6 +96,65 @@ export default function Profile() {
       setError(getApiErrorMessage(err, t, t('profile:messages.updateFailed')));
     },
   });
+
+  const feedbackMutation = useMutation({
+    mutationFn: feedbackAPI.submit,
+    onSuccess: () => {
+      clearCloseTimer();
+      setFeedbackSuccess(t('profile:feedback.success'));
+      setFeedbackError("");
+      setFeedbackContent("");
+      closeTimerRef.current = setTimeout(() => {
+        closeTimerRef.current = null;
+        setIsFeedbackModalOpen(false);
+        setFeedbackSuccess("");
+      }, 1800);
+    },
+    onError: (err) => {
+      setFeedbackError(getApiErrorMessage(err, t, t('profile:feedback.errorFailed')));
+    },
+  });
+
+  const isSubmittingFeedback = feedbackMutation.isPending;
+
+  const openFeedbackModal = useCallback(() => {
+    clearCloseTimer();
+    setFeedbackError("");
+    setFeedbackSuccess("");
+    setIsFeedbackModalOpen(true);
+  }, [clearCloseTimer]);
+
+  const closeFeedbackModal = useCallback(() => {
+    if (isSubmittingFeedback) return;
+    clearCloseTimer();
+    setIsFeedbackModalOpen(false);
+    setFeedbackSuccess("");
+    setFeedbackError("");
+  }, [isSubmittingFeedback, clearCloseTimer]);
+
+  useEffect(() => {
+    if (!isFeedbackModalOpen) return undefined;
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        closeFeedbackModal();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isFeedbackModalOpen, closeFeedbackModal]);
+
+  const handleSendFeedback = (e) => {
+    e.preventDefault();
+    if (!feedbackContent.trim() || feedbackContent.trim().length < 3) {
+      setFeedbackError(t('profile:feedback.errorEmpty'));
+      return;
+    }
+    setFeedbackError("");
+    feedbackMutation.mutate({
+      screen: feedbackScreen,
+      content: feedbackContent.trim(),
+    });
+  };
 
   const saving = updateProfileMutation.isPending;
 
@@ -179,7 +268,7 @@ export default function Profile() {
             className="mb-5 p-5 animate-slide-up"
             style={{ background: 'rgba(10,10,10,0.95)', border: '1px solid rgba(204,255,0,0.1)', borderRadius: '2px' }}
           >
-            <p className="ft-label mb-4">// {group.title}</p>
+            <p className="ft-label mb-4">{'// '}{group.title}</p>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {group.fields.map(field => (
                 <div key={field.name} className={field.full ? 'md:col-span-2' : ''}>
@@ -253,7 +342,173 @@ export default function Profile() {
             <LogOut size={16} /> {t('profile:actions.logOut')}
           </button>
         </div>
+
+        {/* Feedback button below Save */}
+        <div className="mt-4 pt-4 border-t border-[rgba(204,255,0,0.15)] animate-slide-up">
+          <button
+            id="feedback-btn"
+            type="button"
+            onClick={openFeedbackModal}
+            className="w-full flex items-center justify-center gap-2 py-3 font-display font-bold uppercase tracking-wider text-sm transition-all"
+            style={{
+              background: 'rgba(204,255,0,0.05)',
+              border: '1px solid rgba(204,255,0,0.3)',
+              borderRadius: '2px',
+              color: '#CCFF00',
+            }}
+            onMouseEnter={e => {
+              e.currentTarget.style.background = 'rgba(204,255,0,0.12)';
+              e.currentTarget.style.borderColor = '#CCFF00';
+            }}
+            onMouseLeave={e => {
+              e.currentTarget.style.background = 'rgba(204,255,0,0.05)';
+              e.currentTarget.style.borderColor = 'rgba(204,255,0,0.3)';
+            }}
+          >
+            <MessageSquare size={16} />
+            <span>{t('profile:feedback.button')}</span>
+          </button>
+        </div>
       </main>
+
+      {/* Feedback Modal */}
+      {isFeedbackModalOpen && (
+        <div
+          className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
+          onClick={closeFeedbackModal}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="feedback-modal-title"
+            className="w-full max-w-lg p-6 animate-slide-up"
+            style={{
+              background: '#0A0A0A',
+              border: '1px solid rgba(204,255,0,0.3)',
+              borderRadius: '2px',
+              boxShadow: '0 0 30px rgba(0,0,0,0.8), 0 0 15px rgba(204,255,0,0.1)',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="flex items-center justify-between pb-4 mb-4 border-b border-[rgba(204,255,0,0.15)]">
+              <div className="flex items-center gap-2">
+                <div
+                  className="w-8 h-8 flex items-center justify-center"
+                  style={{ background: 'rgba(204,255,0,0.1)', border: '1px solid rgba(204,255,0,0.3)', borderRadius: '2px' }}
+                >
+                  <MessageSquare size={16} style={{ color: '#CCFF00' }} />
+                </div>
+                <h3 id="feedback-modal-title" className="ft-title text-xl text-white">
+                  <span>{t('profile:feedback.modalTitle')}</span>
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={closeFeedbackModal}
+                disabled={feedbackMutation.isPending}
+                aria-label={t('profile:feedback.closeModal')}
+                className="p-1 text-gray-400 hover:text-white transition-colors"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <p className="text-xs text-gray-400 mb-5">
+              <span>{t('profile:feedback.subtitle')}</span>
+            </p>
+
+            <form onSubmit={handleSendFeedback}>
+              {/* Screen selector */}
+              <div className="mb-4">
+                <label htmlFor="feedback-screen-select" className="ft-label block mb-1">
+                  <span>{t('profile:feedback.selectScreen')}</span>
+                </label>
+                <select
+                  id="feedback-screen-select"
+                  value={feedbackScreen}
+                  onChange={(e) => setFeedbackScreen(e.target.value)}
+                  className="ft-input"
+                  style={{ cursor: 'pointer' }}
+                  disabled={feedbackMutation.isPending}
+                >
+                  {SCREEN_OPTIONS.map((screenKey) => (
+                    <option key={screenKey} value={screenKey} style={{ background: '#0A0A0A' }}>
+                      {t(`profile:feedback.screens.${screenKey}`)}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Feedback content text */}
+              <div className="mb-4">
+                <div className="flex justify-between items-center mb-1">
+                  <label htmlFor="feedback-content-input" className="ft-label">
+                    <span>{t('profile:feedback.contentLabel')}</span>
+                  </label>
+                  <span className="text-xs font-mono text-gray-500">
+                    {t('profile:feedback.charCount', { current: feedbackContent.length, max: MAX_FEEDBACK_LENGTH })}
+                  </span>
+                </div>
+                <textarea
+                  id="feedback-content-input"
+                  value={feedbackContent}
+                  onChange={(e) => setFeedbackContent(e.target.value.slice(0, MAX_FEEDBACK_LENGTH))}
+                  placeholder={t('profile:feedback.contentPlaceholder')}
+                  className="ft-input"
+                  rows={5}
+                  disabled={feedbackMutation.isPending}
+                  style={{ resize: 'vertical' }}
+                  autoFocus
+                />
+              </div>
+
+              {/* Alerts */}
+              {feedbackSuccess && (
+                <div className="mb-4 p-3 bg-[rgba(204,255,0,0.1)] border border-[rgba(204,255,0,0.4)] text-neon-lime text-xs rounded-sm flex items-center gap-2">
+                  <CheckCircle2 size={16} className="flex-shrink-0" />
+                  <span>{feedbackSuccess}</span>
+                </div>
+              )}
+              {feedbackError && (
+                <div className="mb-4 p-3 bg-[rgba(255,92,0,0.1)] border border-[rgba(255,92,0,0.4)] text-[#FF5C00] text-xs rounded-sm">
+                  <span>{feedbackError}</span>
+                </div>
+              )}
+
+              {/* Action Buttons */}
+              <div className="flex gap-3 justify-end pt-2">
+                <button
+                  type="button"
+                  onClick={closeFeedbackModal}
+                  disabled={feedbackMutation.isPending}
+                  className="px-4 py-2 font-display font-bold uppercase tracking-wider text-xs border border-gray-700 hover:border-gray-500 text-gray-300 transition-colors rounded-sm"
+                >
+                  <span>{t('profile:feedback.cancel')}</span>
+                </button>
+                <button
+                  id="submit-feedback-btn"
+                  type="submit"
+                  disabled={feedbackMutation.isPending || !feedbackContent.trim()}
+                  className="ft-btn-primary flex items-center gap-2 px-5 py-2 text-xs disabled:opacity-50"
+                >
+                  {feedbackMutation.isPending ? (
+                    <>
+                      <span className="w-3.5 h-3.5 border-2 border-black border-t-transparent rounded-full animate-spin inline-block" />
+                      <span>{t('profile:feedback.submitting')}</span>
+                    </>
+                  ) : (
+                    <>
+                      <Send size={14} />
+                      <span>{t('profile:feedback.submit')}</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
