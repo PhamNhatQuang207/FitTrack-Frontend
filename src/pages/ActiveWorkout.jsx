@@ -255,31 +255,33 @@ export default function ActiveWorkout() {
     <div className="ft-page min-h-screen">
       {/* Header */}
       <div className="ft-header px-4 md:px-8 py-0">
-        <div className="max-w-4xl mx-auto flex items-center justify-between h-16 gap-4">
-          <button
-            id="back-btn"
-            onClick={() => navigate('/dashboard')}
-            className="flex items-center gap-2 transition-colors group"
-            style={{ color: '#A0A0A0' }}
-            onMouseEnter={e => e.currentTarget.style.color = '#CCFF00'}
-            onMouseLeave={e => e.currentTarget.style.color = '#A0A0A0'}
-          >
-            <ArrowLeft size={18} className="group-hover:-translate-x-1 transition-transform" />
-          </button>
+        <div className="max-w-6xl mx-auto ft-header-grid">
+          <div className="flex items-center justify-start min-w-0">
+            <button
+              id="back-btn"
+              onClick={() => navigate('/dashboard')}
+              className="flex items-center gap-2 transition-colors group"
+              style={{ color: '#A0A0A0' }}
+              onMouseEnter={e => e.currentTarget.style.color = '#CCFF00'}
+              onMouseLeave={e => e.currentTarget.style.color = '#A0A0A0'}
+            >
+              <ArrowLeft size={18} className="group-hover:-translate-x-1 transition-transform" />
+            </button>
+          </div>
 
-          <div className="text-center flex-1">
-            <h1 className="ft-title text-lg md:text-2xl text-white leading-none">{session.name}</h1>
-            <p className="text-xs mt-0.5" style={{ color: '#A0A0A0' }}>
+          <div className="min-w-0 text-center">
+            <h1 className="ft-title text-lg md:text-2xl text-white leading-none truncate">{session.name}</h1>
+            <p className="text-xs mt-0.5 truncate" style={{ color: '#A0A0A0' }}>
               {t('workout:active.exercisesDone', { completed: completedExercises, total: totalExercises })}
             </p>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center justify-end gap-2 min-w-0">
             <LanguageSwitcher />
             <button
               id="manage-exercises-btn"
               onClick={handleManageExercises}
-              className="ft-btn-secondary flex items-center gap-2 text-xs"
+              className="ft-btn-secondary flex items-center gap-2 text-xs whitespace-nowrap"
               style={{ padding: '7px 12px' }}
             >
               <Edit3 size={13} /> <span className="hidden sm:inline">{t('workout:active.manage')}</span>

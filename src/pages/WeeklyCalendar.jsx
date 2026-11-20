@@ -238,35 +238,37 @@ export default function WeeklyCalendar() {
     <div className="ft-page min-h-screen">
       {/* Header */}
       <div className="ft-header px-4 md:px-8 py-0">
-        <div className="max-w-6xl mx-auto flex items-center justify-between h-16 gap-4">
-          <button
-            id="back-btn"
-            onClick={() => navigate("/dashboard")}
-            className="flex items-center gap-2 transition-colors group"
-            style={{ color: '#A0A0A0' }}
-            onMouseEnter={e => e.currentTarget.style.color = '#CCFF00'}
-            onMouseLeave={e => e.currentTarget.style.color = '#A0A0A0'}
-          >
-            <ArrowLeft size={18} className="group-hover:-translate-x-1 transition-transform" />
-            <span className="hidden md:inline font-display font-bold uppercase tracking-widest text-xs">{t('plan:calendar.dashboard')}</span>
-          </button>
+        <div className="max-w-6xl mx-auto ft-header-grid">
+          <div className="flex items-center justify-start min-w-0">
+            <button
+              id="back-btn"
+              onClick={() => navigate("/dashboard")}
+              className="flex items-center gap-2 transition-colors group"
+              style={{ color: '#A0A0A0' }}
+              onMouseEnter={e => e.currentTarget.style.color = '#CCFF00'}
+              onMouseLeave={e => e.currentTarget.style.color = '#A0A0A0'}
+            >
+              <ArrowLeft size={18} className="group-hover:-translate-x-1 transition-transform" />
+              <span className="hidden md:inline font-display font-bold uppercase tracking-widest text-xs whitespace-nowrap">{t('plan:calendar.dashboard')}</span>
+            </button>
+          </div>
 
-          <div className="text-center">
-            <h1 className="ft-title text-xl md:text-2xl text-white leading-none">
+          <div className="min-w-0 text-center">
+            <h1 className="ft-title text-xl md:text-2xl text-white leading-none truncate">
               {currentSchedule.weeklyPlanName}
             </h1>
-            <p className="text-xs mt-0.5 uppercase tracking-widest font-display font-bold" style={{ color: '#CCFF00' }}>
+            <p className="text-xs mt-0.5 uppercase tracking-widest font-display font-bold truncate" style={{ color: '#CCFF00' }}>
               {t('plan:calendar.weekNumber', { number: currentSchedule.weekNumber })}
             </p>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center justify-end gap-2 min-w-0">
             <LanguageSwitcher />
             {!editMode && (
               <button
                 id="plan-library-btn"
                 onClick={() => navigate('/weekly-plan-library')}
-                className="ft-btn-ghost flex items-center gap-2 text-xs"
+                className="ft-btn-ghost flex items-center gap-2 text-xs whitespace-nowrap"
                 style={{ padding: '7px 12px' }}
               >
                 <ClipboardList size={13} />
@@ -275,16 +277,16 @@ export default function WeeklyCalendar() {
             )}
             {editMode ? (
               Object.keys(editingWorkoutName).length > 0 ? (
-                <button id="save-changes-btn" onClick={saveAllChanges} className="ft-btn-primary flex items-center gap-2 text-xs" style={{ padding: '7px 14px' }}>
+                <button id="save-changes-btn" onClick={saveAllChanges} className="ft-btn-primary flex items-center gap-2 text-xs whitespace-nowrap" style={{ padding: '7px 14px' }}>
                   <Save size={13} /> {t('plan:calendar.save')}
                 </button>
               ) : (
-                <button id="cancel-edit-btn" onClick={cancelEditMode} className="ft-btn-ghost flex items-center gap-2 text-xs" style={{ padding: '7px 14px' }}>
+                <button id="cancel-edit-btn" onClick={cancelEditMode} className="ft-btn-ghost flex items-center gap-2 text-xs whitespace-nowrap" style={{ padding: '7px 14px' }}>
                   <XIcon size={13} /> {t('plan:calendar.cancel')}
                 </button>
               )
             ) : (
-              <button id="edit-btn" onClick={() => setEditMode(true)} className="ft-btn-secondary flex items-center gap-2 text-xs" style={{ padding: '7px 14px' }}>
+              <button id="edit-btn" onClick={() => setEditMode(true)} className="ft-btn-secondary flex items-center gap-2 text-xs whitespace-nowrap" style={{ padding: '7px 14px' }}>
                 <Edit2 size={13} /> {t('plan:calendar.edit')}
               </button>
             )}

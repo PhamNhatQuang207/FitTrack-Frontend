@@ -121,22 +121,26 @@ export default function ProgressTracking() {
     <div className="ft-page min-h-screen">
       {/* Header */}
       <div className="ft-header px-4 md:px-8 py-0">
-        <div className="max-w-6xl mx-auto flex items-center h-16 gap-4">
-          <button
-            id="back-btn"
-            onClick={() => navigate("/dashboard")}
-            className="flex items-center gap-2 transition-colors group"
-            style={{ color: '#A0A0A0' }}
-            onMouseEnter={e => e.currentTarget.style.color = '#CCFF00'}
-            onMouseLeave={e => e.currentTarget.style.color = '#A0A0A0'}
-          >
-            <ArrowLeft size={18} className="group-hover:-translate-x-1 transition-transform" />
-            <span className="hidden md:inline font-display font-bold uppercase tracking-widest text-xs">{t('progress:backToDashboard')}</span>
-          </button>
-          <div className="flex-1 text-center">
-            <h1 className="ft-title text-2xl md:text-3xl text-neon-lime">{t('progress:title')}</h1>
+        <div className="max-w-6xl mx-auto ft-header-grid">
+          <div className="flex items-center justify-start min-w-0">
+            <button
+              id="back-btn"
+              onClick={() => navigate("/dashboard")}
+              className="flex items-center gap-2 transition-colors group"
+              style={{ color: '#A0A0A0' }}
+              onMouseEnter={e => e.currentTarget.style.color = '#CCFF00'}
+              onMouseLeave={e => e.currentTarget.style.color = '#A0A0A0'}
+            >
+              <ArrowLeft size={18} className="group-hover:-translate-x-1 transition-transform" />
+              <span className="hidden md:inline font-display font-bold uppercase tracking-widest text-xs whitespace-nowrap">{t('progress:backToDashboard')}</span>
+            </button>
           </div>
-          <LanguageSwitcher />
+          <div className="min-w-0 text-center">
+            <h1 className="ft-title text-2xl md:text-3xl text-neon-lime truncate">{t('progress:title')}</h1>
+          </div>
+          <div className="flex items-center justify-end min-w-0">
+            <LanguageSwitcher />
+          </div>
         </div>
       </div>
 
