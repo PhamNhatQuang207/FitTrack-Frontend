@@ -49,15 +49,16 @@
     "modalTitle": "Góp ý cho Developer",
     "subtitle": "Chia sẻ ý kiến đóng góp hoặc báo lỗi để chúng tôi cải thiện FitTrack tốt hơn.",
     "selectScreen": "Chọn màn hình muốn góp ý",
-    "screenPlaceholder": "Chọn màn hình...",
     "contentLabel": "Nội dung phản hồi",
     "contentPlaceholder": "Mô tả chi tiết ý kiến đóng góp hoặc vấn đề bạn gặp phải...",
     "charCount": "{{current}} / {{max}} ký tự",
     "submit": "Gửi phản hồi",
     "submitting": "Đang gửi...",
     "cancel": "Hủy",
+    "closeModal": "Đóng hộp thoại góp ý",
     "success": "Cảm ơn bạn! Phản hồi đã được gửi đến đội ngũ phát triển.",
     "errorEmpty": "Vui lòng nhập nội dung phản hồi ít nhất 3 ký tự.",
+    "errorFailed": "Không thể gửi phản hồi. Vui lòng thử lại.",
     "screens": {
       "Dashboard": "Bảng điều khiển (Dashboard)",
       "Weekly Planning": "Lập kế hoạch tuần (Weekly Planning)",
@@ -67,6 +68,7 @@
       "Active Workout": "Màn hình đang tập (Active Workout)",
       "Workout History": "Lịch sử tập luyện (Workout History)",
       "Progress Tracking": "Theo dõi tiến độ & thể trạng (Progress Tracking)",
+      "AI Coach": "Huấn luyện viên AI (AI Coach)",
       "Profile": "Trang cá nhân (Profile)",
       "General": "Góp ý chung / Khác"
     }

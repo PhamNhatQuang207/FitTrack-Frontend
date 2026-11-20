@@ -49,15 +49,16 @@
     "modalTitle": "Developer Feedback",
     "subtitle": "Share your suggestions or report bugs to help us improve FitTrack.",
     "selectScreen": "Select Screen",
-    "screenPlaceholder": "Choose a screen...",
     "contentLabel": "Feedback Message",
     "contentPlaceholder": "Describe your feedback, suggestion, or bug in detail...",
     "charCount": "{{current}} / {{max}} chars",
     "submit": "Send Feedback",
     "submitting": "Sending...",
     "cancel": "Cancel",
+    "closeModal": "Close feedback dialog",
     "success": "Thank you! Your feedback has been sent to the developers.",
     "errorEmpty": "Please enter feedback content (at least 3 characters).",
+    "errorFailed": "Failed to send feedback. Please try again.",
     "screens": {
       "Dashboard": "Dashboard",
       "Weekly Planning": "Weekly Planning",
@@ -67,6 +68,7 @@
       "Active Workout": "Active Workout",
       "Workout History": "Workout History",
       "Progress Tracking": "Progress Tracking",
+      "AI Coach": "AI Coach",
       "Profile": "Profile",
       "General": "General / Other"
     }

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
@@ -8,6 +8,21 @@ import { queryKeys } from "../lib/queryClient";
 import { ArrowLeft, User, LogOut, Save, MessageSquare, X, Send, CheckCircle2 } from "lucide-react";
 import LanguageSwitcher from "../components/LanguageSwitcher";
 import { getApiErrorMessage } from "../utils/localize";
+
+const MAX_FEEDBACK_LENGTH = 1000;
+const SCREEN_OPTIONS = [
+  'Profile',
+  'Dashboard',
+  'Weekly Planning',
+  'Weekly Plan Library',
+  'Weekly Calendar',
+  'Workout Planning',
+  'Active Workout',
+  'Workout History',
+  'Progress Tracking',
+  'AI Coach',
+  'General',
+];
 
 export default function Profile() {
   const { t } = useTranslation(['profile', 'errors']);
@@ -23,7 +38,17 @@ export default function Profile() {
   const [feedbackContent, setFeedbackContent] = useState("");
   const [feedbackError, setFeedbackError] = useState("");
   const [feedbackSuccess, setFeedbackSuccess] = useState("");
+  const closeTimerRef = useRef(null);
   const navigate = useNavigate();
+
+  const clearCloseTimer = useCallback(() => {
+    if (closeTimerRef.current) {
+      clearTimeout(closeTimerRef.current);
+      closeTimerRef.current = null;
+    }
+  }, []);
+
+  useEffect(() => () => clearCloseTimer(), [clearCloseTimer]);
 
   useEffect(() => {
     if (!user) {
@@ -75,18 +100,48 @@ export default function Profile() {
   const feedbackMutation = useMutation({
     mutationFn: feedbackAPI.submit,
     onSuccess: () => {
+      clearCloseTimer();
       setFeedbackSuccess(t('profile:feedback.success'));
       setFeedbackError("");
       setFeedbackContent("");
-      setTimeout(() => {
+      closeTimerRef.current = setTimeout(() => {
+        closeTimerRef.current = null;
         setIsFeedbackModalOpen(false);
         setFeedbackSuccess("");
       }, 1800);
     },
     onError: (err) => {
-      setFeedbackError(getApiErrorMessage(err, t, t('profile:feedback.errorEmpty')));
+      setFeedbackError(getApiErrorMessage(err, t, t('profile:feedback.errorFailed')));
     },
   });
+
+  const isSubmittingFeedback = feedbackMutation.isPending;
+
+  const openFeedbackModal = useCallback(() => {
+    clearCloseTimer();
+    setFeedbackError("");
+    setFeedbackSuccess("");
+    setIsFeedbackModalOpen(true);
+  }, [clearCloseTimer]);
+
+  const closeFeedbackModal = useCallback(() => {
+    if (isSubmittingFeedback) return;
+    clearCloseTimer();
+    setIsFeedbackModalOpen(false);
+    setFeedbackSuccess("");
+    setFeedbackError("");
+  }, [isSubmittingFeedback, clearCloseTimer]);
+
+  useEffect(() => {
+    if (!isFeedbackModalOpen) return undefined;
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        closeFeedbackModal();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isFeedbackModalOpen, closeFeedbackModal]);
 
   const handleSendFeedback = (e) => {
     e.preventDefault();
@@ -100,19 +155,6 @@ export default function Profile() {
       content: feedbackContent.trim(),
     });
   };
-
-  const SCREEN_OPTIONS = [
-    'Profile',
-    'Dashboard',
-    'Weekly Planning',
-    'Weekly Plan Library',
-    'Weekly Calendar',
-    'Workout Planning',
-    'Active Workout',
-    'Workout History',
-    'Progress Tracking',
-    'General',
-  ];
 
   const saving = updateProfileMutation.isPending;
 
@@ -306,11 +348,7 @@ export default function Profile() {
           <button
             id="feedback-btn"
             type="button"
-            onClick={() => {
-              setIsFeedbackModalOpen(true);
-              setFeedbackError("");
-              setFeedbackSuccess("");
-            }}
+            onClick={openFeedbackModal}
             className="w-full flex items-center justify-center gap-2 py-3 font-display font-bold uppercase tracking-wider text-sm transition-all"
             style={{
               background: 'rgba(204,255,0,0.05)',
@@ -336,12 +374,13 @@ export default function Profile() {
       {/* Feedback Modal */}
       {isFeedbackModalOpen && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in"
-          onClick={() => {
-            if (!feedbackMutation.isPending) setIsFeedbackModalOpen(false);
-          }}
+          className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
+          onClick={closeFeedbackModal}
         >
           <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="feedback-modal-title"
             className="w-full max-w-lg p-6 animate-slide-up"
             style={{
               background: '#0A0A0A',
@@ -360,14 +399,15 @@ export default function Profile() {
                 >
                   <MessageSquare size={16} style={{ color: '#CCFF00' }} />
                 </div>
-                <h3 className="ft-title text-xl text-white">
+                <h3 id="feedback-modal-title" className="ft-title text-xl text-white">
                   <span>{t('profile:feedback.modalTitle')}</span>
                 </h3>
               </div>
               <button
                 type="button"
-                onClick={() => setIsFeedbackModalOpen(false)}
+                onClick={closeFeedbackModal}
                 disabled={feedbackMutation.isPending}
+                aria-label={t('profile:feedback.closeModal')}
                 className="p-1 text-gray-400 hover:text-white transition-colors"
               >
                 <X size={18} />
@@ -381,7 +421,7 @@ export default function Profile() {
             <form onSubmit={handleSendFeedback}>
               {/* Screen selector */}
               <div className="mb-4">
-                <label className="ft-label block mb-1">
+                <label htmlFor="feedback-screen-select" className="ft-label block mb-1">
                   <span>{t('profile:feedback.selectScreen')}</span>
                 </label>
                 <select
@@ -403,17 +443,17 @@ export default function Profile() {
               {/* Feedback content text */}
               <div className="mb-4">
                 <div className="flex justify-between items-center mb-1">
-                  <label className="ft-label">
+                  <label htmlFor="feedback-content-input" className="ft-label">
                     <span>{t('profile:feedback.contentLabel')}</span>
                   </label>
                   <span className="text-xs font-mono text-gray-500">
-                    {feedbackContent.length}/1000
+                    {t('profile:feedback.charCount', { current: feedbackContent.length, max: MAX_FEEDBACK_LENGTH })}
                   </span>
                 </div>
                 <textarea
                   id="feedback-content-input"
                   value={feedbackContent}
-                  onChange={(e) => setFeedbackContent(e.target.value.slice(0, 1000))}
+                  onChange={(e) => setFeedbackContent(e.target.value.slice(0, MAX_FEEDBACK_LENGTH))}
                   placeholder={t('profile:feedback.contentPlaceholder')}
                   className="ft-input"
                   rows={5}
@@ -440,7 +480,7 @@ export default function Profile() {
               <div className="flex gap-3 justify-end pt-2">
                 <button
                   type="button"
-                  onClick={() => setIsFeedbackModalOpen(false)}
+                  onClick={closeFeedbackModal}
                   disabled={feedbackMutation.isPending}
                   className="px-4 py-2 font-display font-bold uppercase tracking-wider text-xs border border-gray-700 hover:border-gray-500 text-gray-300 transition-colors rounded-sm"
                 >
