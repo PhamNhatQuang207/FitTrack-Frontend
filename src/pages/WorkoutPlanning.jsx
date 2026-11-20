@@ -290,35 +290,41 @@ function WorkoutPlanningContent() {
     <div className="ft-page min-h-screen">
       {/* Header */}
       <div className="ft-header px-4 md:px-8 py-0">
-        <div className="max-w-6xl mx-auto flex items-center justify-between h-16 gap-4">
-          <button
-            id="back-btn"
-            type="button"
-            onClick={() => {
-              if (step > 1) {
-                unlockScroll();
-                setStep(step - 1);
-                setErrorMessage("");
-                setErrorField(null);
-                window.scrollTo?.({ top: 0, behavior: 'smooth' });
-              } else {
-                navigate("/dashboard");
-              }
-            }}
-            className="flex items-center gap-2 transition-colors group"
-            style={{ color: '#A0A0A0' }}
-            onMouseEnter={e => e.currentTarget.style.color = '#CCFF00'}
-            onMouseLeave={e => e.currentTarget.style.color = '#A0A0A0'}
-          >
-            <ArrowLeft size={18} className="group-hover:-translate-x-1 transition-transform" />
-            <span className="hidden md:inline font-display font-bold uppercase tracking-widest text-xs">
-              {step === 1 ? t('workout:planning.backToDashboard') : t('workout:planning.back')}
-            </span>
-          </button>
+        <div className="max-w-6xl mx-auto ft-header-grid">
+          <div className="flex items-center justify-start min-w-0">
+            <button
+              id="back-btn"
+              type="button"
+              onClick={() => {
+                if (step > 1) {
+                  unlockScroll();
+                  setStep(step - 1);
+                  setErrorMessage("");
+                  setErrorField(null);
+                  window.scrollTo?.({ top: 0, behavior: 'smooth' });
+                } else {
+                  navigate("/dashboard");
+                }
+              }}
+              className="flex items-center gap-2 transition-colors group"
+              style={{ color: '#A0A0A0' }}
+              onMouseEnter={e => e.currentTarget.style.color = '#CCFF00'}
+              onMouseLeave={e => e.currentTarget.style.color = '#A0A0A0'}
+            >
+              <ArrowLeft size={18} className="group-hover:-translate-x-1 transition-transform" />
+              <span className="hidden md:inline font-display font-bold uppercase tracking-widest text-xs whitespace-nowrap">
+                {step === 1 ? t('workout:planning.backToDashboard') : t('workout:planning.back')}
+              </span>
+            </button>
+          </div>
 
-          <StepIndicator current={step} />
+          <div className="flex items-center justify-center">
+            <StepIndicator current={step} />
+          </div>
 
-          <LanguageSwitcher />
+          <div className="flex items-center justify-end min-w-0">
+            <LanguageSwitcher />
+          </div>
         </div>
       </div>
 

@@ -47,27 +47,29 @@ export default function WeeklyPlanLibrary() {
     <div className="ft-page min-h-screen">
       {/* Header */}
       <div className="ft-header px-4 md:px-8 py-0">
-        <div className="max-w-6xl mx-auto flex items-center justify-between h-16">
-          <button
-            id="back-btn"
-            onClick={() => navigate("/dashboard")}
-            className="flex items-center gap-2 transition-colors group"
-            style={{ color: '#A0A0A0' }}
-            onMouseEnter={e => e.currentTarget.style.color = '#CCFF00'}
-            onMouseLeave={e => e.currentTarget.style.color = '#A0A0A0'}
-          >
-            <ArrowLeft size={18} className="group-hover:-translate-x-1 transition-transform" />
-            <span className="hidden md:inline font-display font-bold uppercase tracking-widest text-xs">{t('plan:library.backToDashboard')}</span>
-          </button>
+        <div className="max-w-6xl mx-auto ft-header-grid">
+          <div className="flex items-center justify-start min-w-0">
+            <button
+              id="back-btn"
+              onClick={() => navigate("/dashboard")}
+              className="flex items-center gap-2 transition-colors group"
+              style={{ color: '#A0A0A0' }}
+              onMouseEnter={e => e.currentTarget.style.color = '#CCFF00'}
+              onMouseLeave={e => e.currentTarget.style.color = '#A0A0A0'}
+            >
+              <ArrowLeft size={18} className="group-hover:-translate-x-1 transition-transform" />
+              <span className="hidden md:inline font-display font-bold uppercase tracking-widest text-xs whitespace-nowrap">{t('plan:library.backToDashboard')}</span>
+            </button>
+          </div>
 
-          <h1 className="ft-title text-2xl md:text-3xl text-neon-lime">{t('plan:library.title')}</h1>
+          <h1 className="ft-title text-2xl md:text-3xl text-neon-lime text-center truncate">{t('plan:library.title')}</h1>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center justify-end gap-2 min-w-0">
             <LanguageSwitcher />
             <button
               id="new-plan-btn"
               onClick={() => navigate('/weekly-planning')}
-              className="ft-btn-primary flex items-center gap-2 text-xs"
+              className="ft-btn-primary flex items-center gap-2 text-xs whitespace-nowrap"
               style={{ padding: '8px 16px' }}
             >
               <Plus size={14} /> {t('plan:library.newPlan')}

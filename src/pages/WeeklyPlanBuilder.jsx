@@ -357,25 +357,27 @@ function WeeklyPlanBuilderContent() {
     <div className="ft-page min-h-screen">
       {/* Header */}
       <div className="ft-header px-4 md:px-8 py-0">
-        <div className="max-w-5xl mx-auto flex items-center justify-between h-16 gap-4">
-          <button
-            id="back-btn"
-            type="button"
-            onClick={() => navigate("/weekly-plan-library")}
-            className="flex items-center gap-2 transition-colors group"
-            style={{ color: '#A0A0A0' }}
-            onMouseEnter={e => e.currentTarget.style.color = '#CCFF00'}
-            onMouseLeave={e => e.currentTarget.style.color = '#A0A0A0'}
-          >
-            <ArrowLeft size={18} className="group-hover:-translate-x-1 transition-transform" />
-            <span className="hidden md:inline font-display font-bold uppercase tracking-widest text-xs">{t('plan:builder.backToLibrary')}</span>
-          </button>
+        <div className="max-w-6xl mx-auto ft-header-grid">
+          <div className="flex items-center justify-start min-w-0">
+            <button
+              id="back-btn"
+              type="button"
+              onClick={() => navigate("/weekly-plan-library")}
+              className="flex items-center gap-2 transition-colors group"
+              style={{ color: '#A0A0A0' }}
+              onMouseEnter={e => e.currentTarget.style.color = '#CCFF00'}
+              onMouseLeave={e => e.currentTarget.style.color = '#A0A0A0'}
+            >
+              <ArrowLeft size={18} className="group-hover:-translate-x-1 transition-transform" />
+              <span className="hidden md:inline font-display font-bold uppercase tracking-widest text-xs whitespace-nowrap">{t('plan:builder.backToLibrary')}</span>
+            </button>
+          </div>
 
-          <h1 className="ft-title text-xl md:text-2xl text-neon-lime">
+          <h1 className="ft-title text-xl md:text-2xl text-neon-lime text-center truncate">
             {isEditMode ? t('plan:builder.editTitle') : t('plan:builder.newTitle')}
           </h1>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center justify-end gap-2 min-w-0">
             <LanguageSwitcher />
             {isEditMode && (
               <button
@@ -383,7 +385,7 @@ function WeeklyPlanBuilderContent() {
                 type="button"
                 onClick={handleDeletePlan}
                 disabled={loading}
-                className="flex items-center gap-2 text-xs font-display font-bold uppercase tracking-wider px-3 py-2 transition-colors disabled:opacity-50"
+                className="flex items-center gap-2 text-xs font-display font-bold uppercase tracking-wider px-3 py-2 transition-colors disabled:opacity-50 whitespace-nowrap"
                 style={{ border: '1px solid rgba(255,92,0,0.3)', borderRadius: '2px', color: '#FF5C00', background: 'rgba(255,92,0,0.06)' }}
               >
                 <Trash size={13} /> <span className="hidden md:inline">{t('plan:builder.delete')}</span>
@@ -394,7 +396,7 @@ function WeeklyPlanBuilderContent() {
               type="button"
               onClick={handleSavePlan}
               disabled={loading}
-              className="ft-btn-primary flex items-center gap-2 text-xs disabled:opacity-50"
+              className="ft-btn-primary flex items-center gap-2 text-xs disabled:opacity-50 whitespace-nowrap"
               style={{ padding: '8px 16px' }}
             >
               <Save size={13} /> <span className="hidden md:inline">{isEditMode ? t('plan:builder.updatePlan') : t('plan:builder.savePlan')}</span>
